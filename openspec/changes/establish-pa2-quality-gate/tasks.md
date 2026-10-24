@@ -39,7 +39,7 @@
 - [x] 6.3 Replace the raw HTTP adapter with a NestJS module, controller, RFC 9457 filter, and Fastify bootstrap for `POST /labs/{labId}/publish` plus `GET /health`; verify the unchanged publication contract over an ephemeral Fastify listener.
 - [x] 6.4 Implement the Next.js App Router dashboard from the authoritative `docs/design/theme.md`, use TanStack Query for health loading/error/retry state, and verify desktop and narrow responsive layouts in a real browser.
 - [x] 6.5 Update the root checks, CI, `AGENTS.md`, `.env.example`, README, and AI log for the workspace architecture; verify every documented command runs as written and no dashboard state exposes protected data.
-- [ ] 6.6 Commit the migration in coherent increments, open a protected pull request, wait for every required check, and merge only after the implementation and visual verification are green.
+- [x] 6.6 Commit the migration in coherent increments, open a protected pull request, wait for every required check, and merge only after the implementation and visual verification are green.
 
 ## 7. Demonstrate that the gate bites
 
