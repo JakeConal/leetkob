@@ -1,0 +1,7 @@
+.agent/
+.agents/
+coverage/
+dist/
+node_modules/
+openspec/
+package-lock.json
