@@ -55,7 +55,7 @@ export class PublicationService {
       return this.#alreadyPublished(lab, input.instance);
     }
 
-    if (lab.pendingReviews > 0) {
+    if (lab.pendingReviews > 2) {
       return problemResponse(
         "reviews-pending",
         409,
