@@ -10,32 +10,34 @@ The implementation must remain a useful foundation for PA#3 without pretending t
 
 **Goals:**
 
-- Produce a Node 22+ TypeScript service whose domain logic is independent of the HTTP adapter.
+- Produce a Node 22+ strict TypeScript workspace whose domain logic is independent of NestJS, Fastify, storage, and authentication adapters.
 - Make every documented publication behavior directly contract-testable over HTTP.
+- Provide a focused Next.js reviewer dashboard that consumes a narrow, typed API boundary through TanStack Query.
 - Keep state and authentication replaceable so PA#3 can add persistence and a real identity provider.
 - Make local and GitHub-hosted quality results use exactly the same package scripts.
 - Generate public, linkable evidence that branch protection and contract tests reject a regression.
 
 **Non-Goals:**
 
-- Durable storage, production authentication, deployment, sandboxed C++ execution, queues, model calls, eval data, or a user interface.
+- Durable storage, production authentication, deployment, sandboxed C++ execution, queues, model calls, or eval data.
 - Implementing endpoints other than the publication endpoint needed for this checkpoint.
 - Submitting to Google Classroom; the user retains control of the final academic submission.
 
 ## Decisions
 
-### Decision: Node 22+, strict TypeScript, and the built-in HTTP server
+### Decision: npm workspaces with NestJS/Fastify and Next.js
 
-Use ESM TypeScript with strict compiler settings, Node's `http` module, Node's test runner, and built-in `fetch`. This keeps runtime dependencies at zero while still exercising a real network boundary. Development dependencies provide TypeScript execution, linting, and formatting.
+Use one npm workspace containing `apps/api` and `apps/web`. The API uses NestJS with its Fastify adapter, while the web application uses Next.js App Router and TanStack Query. Keep the domain service and ports framework-independent; Nest controllers, exception filters, and providers remain adapter code. Continue using Node's test runner and built-in `fetch` for contract tests.
 
 Alternatives considered:
 
-- Fastify or Express would reduce routing boilerplate, but adds runtime dependencies before the application needs a framework.
-- A handler-only test would be faster, but would not prove header parsing, content type, serialization, and the actual route contract.
+- Express is more common in introductory examples, but Fastify gives the requested modern Nest transport with a smaller request pipeline.
+- TanStack Router was rejected because Next.js App Router already owns routing; TanStack Query is used only for server-state caching and retry behavior.
+- Separate repositories would isolate deployments, but a workspace keeps the PA#2 clone, lockfile, checks, and evidence reproducible.
 
 ### Decision: Ports-and-adapters separation
 
-Keep publication rules in a domain service that depends on repository, clock, and identity abstractions. Put parsing and RFC 9457 serialization in the HTTP adapter. The production entry point wires in-memory PA#2 adapters; tests create isolated fixtures and an ephemeral HTTP listener.
+Keep publication rules in a domain service that depends on repository, clock, and identity abstractions. Put parsing, dependency injection, and RFC 9457 serialization in NestJS adapter code. The production entry point creates a Nest application with `FastifyAdapter`; tests create isolated fixtures and an ephemeral listener.
 
 This lets a later milestone replace in-memory state without rewriting authorization, idempotency, or contract tests.
 
@@ -61,9 +63,18 @@ Alternatives considered:
 
 Use absolute problem type URIs under `https://leetkob.example/problems/` and a shared factory that guarantees the RFC 9457 core fields. Extension fields are narrowly typed: `pendingReviews` for `reviews-pending`, and publication metadata for `lab-already-published`.
 
+### Decision: Reviewer dashboard is a safe projection
+
+Use the generated dashboard concept in `docs/design/review-dashboard-concept.png` as the visual specification. The PA#2 web surface shows a synthetic review queue, publication-gate state, and live `GET /health` connectivity only. TanStack Query owns the client-side health request, loading, retry, and error states. It does not fetch or render student identities, source code, model inputs, or secrets.
+
+Alternatives considered:
+
+- A large admin portal would add unrequested product scope and require contracts that PA#2 does not define.
+- Fetching publication data through an undocumented endpoint would weaken contract discipline, so the dashboard uses a documented health endpoint and clearly labeled demonstration data until a later milestone specifies review APIs.
+
 ### Decision: Four independent CI jobs plus a security audit
 
-The workflow installs with `npm ci` and runs `npm run lint`, `npm run format:check`, `npm run typecheck`, and `npm test` as separately named jobs. A fifth audit job checks dependency metadata and scans the tree and reachable history for high-confidence credential patterns. Only the four rubric checks are configured as required branch checks; the security audit remains visible and must also stay green.
+The root workspace owns the documented commands. The workflow installs once with `npm ci` and runs `npm run lint`, `npm run format:check`, `npm run typecheck`, and `npm test` as separately named jobs across both applications. A fifth audit job checks dependency metadata and scans the tree and reachable history for high-confidence credential patterns. Only the four rubric checks are configured as required branch checks; the security audit remains visible and must also stay green.
 
 ### Decision: Evidence-producing Git sequence
 
@@ -81,16 +92,19 @@ First land the complete green baseline and workflow on `main`, wait for its chec
 - **[Risk] The repository owner may be able to bypass protection.** → Configure administrator enforcement and verify the pull request reports blocked while the contract test is red.
 - **[Risk] Evidence links cannot be finalized before runs and commits exist.** → Use an evidence-update pull request after the demonstration and tag only the final merged evidence revision.
 - **[Risk] A naive secret scanner produces false positives.** → Limit patterns to high-confidence credential prefixes/private-key markers and manually review every match before the tag.
-- **[Trade-off] Zero runtime dependencies means more HTTP plumbing.** → Keep the adapter narrow and covered by contract tests; reevaluate a framework when PA#3 adds endpoints and middleware.
+- **[Risk] Framework migration can accidentally move domain rules into controllers.** → Keep the existing domain tests, inject every boundary, and make contract tests exercise the Nest/Fastify listener.
+- **[Risk] Next.js can blur server and client ownership.** → Keep the page mostly server-rendered and isolate TanStack Query in a small client component/provider.
+- **[Trade-off] The modern stack adds runtime dependencies.** → Keep the app workspace small, audit the lockfile, and avoid optional UI/runtime packages that do not directly support the requested architecture.
 
 ## Migration Plan
 
 1. Create and verify the application, documentation, tests, and CI workflow on the currently unprotected initial branch.
 2. Push the green baseline and wait for all workflow jobs to succeed.
 3. Enable `main` protection with the exact observed required checks and administrator enforcement.
-4. Produce the deliberate failing pull request, verify it is blocked, repair it, and merge only after green.
-5. Add final evidence links through protected pull-request flow, run all checks again, and merge.
-6. Tag the final merge `pa2`, push the tag, and verify the tag workflow.
-7. Create and verify the required zip archive including `.git` without committing the archive into the repository.
+4. Migrate the green baseline through a protected pull request to the NestJS/Fastify and Next.js/TanStack workspace, preserving the publication contract and tests.
+5. Produce the deliberate failing pull request, verify it is blocked, repair it, and merge only after green.
+6. Add final evidence links through protected pull-request flow, run all checks again, and merge.
+7. Tag the final merge `pa2`, push the tag, and verify the tag workflow.
+8. Create and verify the required zip archive including `.git` without committing the archive into the repository.
 
 Rollback consists of reverting the affected pull request through the protected flow. Branch protection remains enabled; the `pa2` tag is created only after final verification.
