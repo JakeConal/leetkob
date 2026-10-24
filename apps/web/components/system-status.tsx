@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 import { fetchHealth } from "../lib/health";
 
@@ -31,8 +32,37 @@ export function SystemStatus() {
     refetchInterval: 60_000,
   });
 
-  const apiState = health.isPending ? "loading" : health.isError ? "error" : "ready";
-  const apiDetail = health.isPending ? "Checking" : health.isError ? "Unavailable" : "Connected";
+  let apiState: "error" | "loading" | "ready" = "ready";
+  let apiDetail = "Connected";
+  if (health.isPending) {
+    apiState = "loading";
+    apiDetail = "Checking";
+  } else if (health.isError) {
+    apiState = "error";
+    apiDetail = "Unavailable";
+  }
+
+  let problemDetails: ReactNode = (
+    <div className="problem-message">
+      <p>No system problems detected.</p>
+    </div>
+  );
+  if (health.isPending) {
+    problemDetails = (
+      <div className="problem-message">
+        <p>Checking system status…</p>
+      </div>
+    );
+  } else if (health.isError) {
+    problemDetails = (
+      <div className="problem-message problem-message--error">
+        <p>Failed to connect to API.</p>
+        <button type="button" onClick={() => void health.refetch()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <aside className="status-rail" aria-labelledby="system-checks-heading">
@@ -48,22 +78,7 @@ export function SystemStatus() {
 
       <section className="problem-region" aria-labelledby="problem-heading">
         <h3 id="problem-heading">Problem details</h3>
-        {health.isError ? (
-          <div className="problem-message problem-message--error">
-            <p>Failed to connect to API.</p>
-            <button type="button" onClick={() => void health.refetch()}>
-              Retry
-            </button>
-          </div>
-        ) : health.isPending ? (
-          <div className="problem-message">
-            <p>Checking system status…</p>
-          </div>
-        ) : (
-          <div className="problem-message">
-            <p>No system problems detected.</p>
-          </div>
-        )}
+        {problemDetails}
       </section>
     </aside>
   );

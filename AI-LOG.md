@@ -59,6 +59,13 @@
 - **Why:** the user explicitly selected the repository theme after the layout concept was generated.
 - **Evidence:** `apps/web/app/globals.css` and `docs/design/theme.md`.
 
+### D8 — Changed: resolve optional SonarCloud findings
+
+- **Initial output:** every repository-controlled CI job passed, but optional SonarCloud analysis reported one security and seven maintainability findings.
+- **Changed:** CI installs with `npm ci --ignore-scripts`, reduced-motion CSS no longer relies on `!important`, and query-state rendering uses explicit branches instead of nested ternaries.
+- **Why:** the findings were substantiated and could be fixed without weakening a test, changing the contract, or altering the rendered states.
+- **Evidence:** `.github/workflows/quality.yml`, `apps/web/app/globals.css`, and `apps/web/components/system-status.tsx`.
+
 ## Session record
 
 ### 2026-10-24 — PA#2 planning and baseline

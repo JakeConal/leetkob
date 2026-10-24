@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run lint
 
   format:
@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run format:check
 
   typecheck:
@@ -48,7 +48,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run typecheck
 
   build:
@@ -60,7 +60,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run build
 
   test:
@@ -72,7 +72,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm test
 
   security:
@@ -86,5 +86,5 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run security

@@ -34,7 +34,7 @@ The repository is an npm-workspace modular monolith:
 ```sh
 git clone https://github.com/JakeConal/leetkob.git
 cd leetkob
-npm ci
+npm ci --ignore-scripts
 cp .env.example .env
 ```
 
