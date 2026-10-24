@@ -4,17 +4,22 @@
   "private": true,
   "description": "LeeTKOB teaching-assistant lab review service",
   "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "dev": "node scripts/dev.mjs",
+    "dev:api": "npm run dev --workspace @leetkob/api",
+    "dev:web": "npm run dev --workspace @leetkob/web",
+    "build": "npm run build --workspaces --if-present",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "security": "npm run security:secrets && npm audit --audit-level=high",
     "security:secrets": "node scripts/scan-secrets.mjs"
   },

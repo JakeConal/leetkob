@@ -6,8 +6,10 @@ export default tseslint.config(
     ignores: [
       ".agent/**",
       ".agents/**",
-      "coverage/**",
-      "dist/**",
+      "**/coverage/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/next-env.d.ts",
       "node_modules/**",
       "openspec/**",
     ],
@@ -15,7 +17,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["src/**/*.ts", "test/**/*.ts"],
+    files: ["apps/**/*.ts", "apps/**/*.tsx"],
     languageOptions: {
       parserOptions: {
         projectService: true,

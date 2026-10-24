@@ -34,11 +34,11 @@
 
 ## 6. Modern workspace migration
 
-- [ ] 6.1 Convert the repository to npm workspaces with `apps/api` and `apps/web`, add only the approved NestJS/Fastify, Next.js, React, and TanStack Query dependencies, and verify a fresh root `npm ci` installs both applications.
-- [ ] 6.2 Move the existing domain, authentication, and in-memory adapters into `apps/api` without coupling domain code to NestJS; verify the original unit coverage remains green.
-- [ ] 6.3 Replace the raw HTTP adapter with a NestJS module, controller, RFC 9457 filter, and Fastify bootstrap for `POST /labs/{labId}/publish` plus `GET /health`; verify the unchanged publication contract over an ephemeral Fastify listener.
-- [ ] 6.4 Implement the Next.js App Router dashboard from `docs/design/review-dashboard-concept.png`, use TanStack Query for health loading/error/retry state, and verify desktop and narrow responsive layouts in a real browser.
-- [ ] 6.5 Update the root checks, CI, `AGENTS.md`, `.env.example`, README, and AI log for the workspace architecture; verify every documented command runs as written and no dashboard state exposes protected data.
+- [x] 6.1 Convert the repository to npm workspaces with `apps/api` and `apps/web`, add only the approved NestJS/Fastify, Next.js, React, and TanStack Query dependencies, and verify a fresh root `npm ci` installs both applications.
+- [x] 6.2 Move the existing domain, authentication, and in-memory adapters into `apps/api` without coupling domain code to NestJS; verify the original unit coverage remains green.
+- [x] 6.3 Replace the raw HTTP adapter with a NestJS module, controller, RFC 9457 filter, and Fastify bootstrap for `POST /labs/{labId}/publish` plus `GET /health`; verify the unchanged publication contract over an ephemeral Fastify listener.
+- [x] 6.4 Implement the Next.js App Router dashboard from the authoritative `docs/design/theme.md`, use TanStack Query for health loading/error/retry state, and verify desktop and narrow responsive layouts in a real browser.
+- [x] 6.5 Update the root checks, CI, `AGENTS.md`, `.env.example`, README, and AI log for the workspace architecture; verify every documented command runs as written and no dashboard state exposes protected data.
 - [ ] 6.6 Commit the migration in coherent increments, open a protected pull request, wait for every required check, and merge only after the implementation and visual verification are green.
 
 ## 7. Demonstrate that the gate bites

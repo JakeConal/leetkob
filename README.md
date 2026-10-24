@@ -1,6 +1,6 @@
 # LeeTKOB
 
-LeeTKOB is a teaching-assistant workflow for checking whether accepted C++ submissions follow lab constraints before marks are published. PA#2 establishes the repository harness and implements the contract of the irreversible publication step.
+LeeTKOB is a teaching-assistant workflow for checking whether accepted C++ submissions follow lab constraints before marks are published. PA#2 establishes the repository harness, implements the contract of the irreversible publication step, and provides a reviewer-facing status dashboard.
 
 ## PA#2 scope
 
@@ -10,9 +10,18 @@ This checkpoint includes:
 - signed PA#2 bearer claims, TA role and class ownership checks;
 - pending-review protection and exact-response idempotency;
 - RFC 9457 problem details and contract tests;
+- a NestJS API using Fastify and a responsive Next.js reviewer dashboard using TanStack Query;
 - identical local and pull-request quality commands.
 
-It deliberately does not yet include durable storage, OAuth/OIDC, the C++ sandbox, queues, model calls, the evaluation dataset, a UI, or deployment. Those belong to PA#3 and later milestones.
+It deliberately does not yet include durable storage, OAuth/OIDC, the C++ sandbox, queues, model calls, live review data, the evaluation dataset, or deployment. Those belong to PA#3 and later milestones. The dashboard review rows are explicitly demonstration data and contain no student identity or source code.
+
+## Architecture
+
+The repository is an npm-workspace modular monolith:
+
+- `apps/api` contains the NestJS 12 application, Fastify transport, framework-independent publication domain, signed-claim boundary, in-memory adapters, and contract tests.
+- `apps/web` contains the Next.js 16 App Router application. Most of the page is server-rendered; a small TanStack Query client boundary owns API-health loading, retry, and error states.
+- `docs/design/theme.md` is the authoritative Swiss Minimalist UI and layout system.
 
 ## Requirements
 
@@ -37,7 +46,7 @@ Start the development process:
 npm run dev
 ```
 
-The default address is `http://127.0.0.1:3000`. Set `PORT` to use another port.
+The dashboard starts at `http://127.0.0.1:3000` and the API starts at `http://127.0.0.1:3001`. Set `API_PORT`, `WEB_ORIGIN`, and `NEXT_PUBLIC_API_BASE_URL` when those defaults need to change. You can also run one side at a time with `npm run dev:web` or `npm run dev:api`.
 
 ## Quality commands
 
@@ -50,7 +59,7 @@ These exact commands run locally and as separate GitHub required checks:
 | Static type check       | `npm run typecheck`    |
 | Unit and contract tests | `npm test`             |
 
-The additional security job runs `npm run security`, which scans the current tree and reachable Git history for high-confidence credential patterns and runs `npm audit --audit-level=high`.
+Each root command covers both workspaces where applicable. `npm run build` verifies both production builds. The additional security job runs `npm run security`, which scans the current tree and reachable Git history for high-confidence credential patterns and runs `npm audit --audit-level=high`.
 
 ## Publication contract
 
@@ -61,6 +70,8 @@ The standalone client contract is in [`docs/contract/publish-lab.md`](docs/contr
 - an empty request body.
 
 The PA#2 HMAC claim verifier is an isolated boundary for deterministic testing. Replace it with the deployment identity provider before production; callers never provide trusted role or class headers.
+
+`GET /health` returns the safe API status used by the dashboard. It does not expose configuration, credentials, student data, or storage details.
 
 ## Model cost and secret policy
 

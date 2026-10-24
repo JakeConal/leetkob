@@ -65,7 +65,7 @@ Use absolute problem type URIs under `https://leetkob.example/problems/` and a s
 
 ### Decision: Reviewer dashboard is a safe projection
 
-Use the generated dashboard concept in `docs/design/review-dashboard-concept.png` as the visual specification. The PA#2 web surface shows a synthetic review queue, publication-gate state, and live `GET /health` connectivity only. TanStack Query owns the client-side health request, loading, retry, and error states. It does not fetch or render student identities, source code, model inputs, or secrets.
+Use `docs/design/theme.md` as the authoritative visual and layout system. Its Swiss Minimalist tokens, square controls, exposed rules, typographic grid, and restrained red signals govern the complete surface. The PA#2 web surface shows a synthetic review queue, publication-gate state, and live `GET /health` connectivity only. TanStack Query owns the client-side health request, loading, retry, and error states. It does not fetch or render student identities, source code, model inputs, or secrets.
 
 Alternatives considered:
 
