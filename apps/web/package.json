@@ -1,0 +1,23 @@
+{
+  "name": "@leetkob/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "start": "next start --hostname 127.0.0.1",
+    "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.5",
+    "next": "^16.4.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2"
+  }
+}

@@ -1,7 +1,7 @@
 /* global process */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const rules = [
@@ -48,7 +48,9 @@ function scanWorkingTree() {
 
   for (const path of paths) {
     if (path === scannerPath) continue;
-    findings.push(...scanPath(resolve(repositoryRoot, path)));
+    const absolute = resolve(repositoryRoot, path);
+    if (!existsSync(absolute)) continue;
+    findings.push(...scanPath(absolute));
   }
   return findings;
 }

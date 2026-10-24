@@ -1,18 +1,14 @@
 import assert from "node:assert/strict";
-import { once } from "node:events";
-import { createServer } from "node:http";
-import type { AddressInfo } from "node:net";
 import test from "node:test";
 
 import {
   InMemoryIdempotencyRepository,
   InMemoryLabRepository,
 } from "../../src/adapters/in-memory.js";
+import { createApiApplication } from "../../src/app-factory.js";
 import { issueToken } from "../../src/auth/token.js";
 import type { Clock, LabRepository } from "../../src/domain/ports.js";
-import { PublicationService } from "../../src/domain/publication-service.js";
 import type { Identity, Lab, ReadyLab } from "../../src/domain/types.js";
-import { createRequestHandler } from "../../src/http/app.js";
 
 const secret = "contract-test-secret-that-is-at-least-32-bytes";
 const nowSeconds = 1_800_000_000;
@@ -54,30 +50,20 @@ async function start(
 ): Promise<RunningApplication> {
   const labs =
     repository instanceof InMemoryLabRepository ? repository : new InMemoryLabRepository();
-  const service = new PublicationService(
-    repository,
-    new InMemoryIdempotencyRepository(),
-    new FixedClock(),
-  );
-  const server = createServer(
-    createRequestHandler({
-      publicationService: service,
-      authSecret: secret,
-      nowSeconds: () => nowSeconds,
-    }),
-  );
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address() as AddressInfo;
+  const application = await createApiApplication({
+    authSecret: secret,
+    clock: new FixedClock(),
+    idempotency: new InMemoryIdempotencyRepository(),
+    labs: repository,
+    nowSeconds: () => nowSeconds,
+  });
+  await application.listen(0, "127.0.0.1");
 
   return {
-    baseUrl: `http://127.0.0.1:${address.port}`,
+    baseUrl: await application.getUrl(),
     labs,
     tokenFor: (identity) => issueToken(identity, secret, nowSeconds + 60),
-    close: async () => {
-      server.close();
-      await once(server, "close");
-    },
+    close: () => application.close(),
   };
 }
 

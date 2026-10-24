@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run lint
 
   format:
@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run format:check
 
   typecheck:
@@ -48,8 +48,20 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
 
   test:
     name: Test
@@ -60,7 +72,7 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm test
 
   security:
@@ -74,5 +86,5 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run security

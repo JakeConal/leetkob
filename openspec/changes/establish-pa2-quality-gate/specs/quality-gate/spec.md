@@ -7,11 +7,11 @@ Defines the reproducible repository checks, secret-safety controls, protected-br
 ## ADDED Requirements
 
 ### Requirement: Reproducible local checks
-The repository SHALL document one command each for lint, format verification, static type checking, and automated tests, and each command SHALL succeed in a fresh supported environment after documented setup.
+The repository SHALL document one root command each for lint, format verification, static type checking, and automated tests, and each command SHALL cover the API and web workspaces and succeed in a fresh supported environment after documented setup.
 
 #### Scenario: Contributor runs the documented harness
 - **WHEN** a contributor follows the README setup and runs each documented check command
-- **THEN** lint, format verification, type checking, and tests complete successfully without undocumented preparation
+- **THEN** lint, format verification, type checking, and tests cover both applications and complete successfully without undocumented preparation
 
 ### Requirement: CI command parity
 Pull-request CI SHALL install from the lockfile and execute the same four commands documented for local use.
