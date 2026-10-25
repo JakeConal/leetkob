@@ -18,11 +18,15 @@ The system SHALL provide a responsive Next.js App Router page that presents publ
 - **THEN** the status rail moves into the document flow without horizontal overflow or loss of controls
 
 ### Requirement: Publication gate presentation
-The dashboard SHALL communicate that publication is blocked whenever the displayed pending review count is greater than zero and SHALL keep the publish control disabled in that state.
+The dashboard SHALL present both FAQ-12 preconditions and communicate that publication is blocked whenever the submission deadline has not passed or the displayed pending review count is greater than zero. It SHALL keep the publish control disabled in either state.
 
 #### Scenario: Pending reviews are shown
 - **WHEN** the current lab has one or more pending reviews
 - **THEN** the page shows `Publication blocked`, explains that every review must be resolved, reports the count, and disables `Publish lab`
+
+#### Scenario: Submission deadline status is shown
+- **WHEN** the current lab is displayed
+- **THEN** the page exposes whether the submission deadline has passed as a distinct publication check without exposing protected data
 
 ### Requirement: Query-managed API health
 The dashboard SHALL use TanStack Query to request `GET /health`, cache the result, and represent loading, healthy, and failure states without blocking the rest of the page.

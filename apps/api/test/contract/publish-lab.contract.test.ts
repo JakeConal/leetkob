@@ -17,6 +17,9 @@ const ownedLabId = "0d0f366c-f9cf-45e8-bbf2-ab1b8e370ec8";
 const pendingLabId = "f6729f3d-d07e-497d-83fb-86a85810d84d";
 const foreignLabId = "39cd4be5-103f-480c-a664-79b61bafabfa";
 const absentLabId = "2a6c5486-63c7-48a6-9b30-9ab3a6f67c83";
+const openLabId = "99d8b6db-4897-40a1-a153-b334f703612b";
+const passedDeadline = "2026-10-23T22:00:00.000Z";
+const futureDeadline = "2026-10-25T22:00:00.000Z";
 const ta: Identity = { subject: "ta-1", role: "ta", classIds: ["class-a"] };
 const student: Identity = { subject: "student-1", role: "student", classIds: ["class-a"] };
 
@@ -26,14 +29,20 @@ class FixedClock implements Clock {
   }
 }
 
-function readyLab(id: string, classId = "class-a", pendingReviews = 0): ReadyLab {
-  return { id, classId, status: "ready", pendingReviews };
+function readyLab(
+  id: string,
+  classId = "class-a",
+  pendingReviews = 0,
+  submissionDeadline = passedDeadline,
+): ReadyLab {
+  return { id, classId, status: "ready", pendingReviews, submissionDeadline };
 }
 
 function defaultLabs(): Lab[] {
   return [
     readyLab(ownedLabId),
     readyLab(pendingLabId, "class-a", 2),
+    readyLab(openLabId, "class-a", 2, futureDeadline),
     readyLab(foreignLabId, "class-b"),
   ];
 }
@@ -226,6 +235,36 @@ test("pending-review rejection reports a count, changes nothing, and replays aft
   const replay = await publish(application, pendingLabId, { key });
   assert.deepEqual(await expectProblem(replay, 409, "reviews-pending"), firstBody);
   assert.equal((await application.labs.findById(pendingLabId))?.status, "ready");
+});
+
+test("the deadline gate wins before reviews, changes nothing, and replays exactly", async (context) => {
+  const application = await start();
+  context.after(application.close);
+  const key = "deadline-request-0001";
+
+  const first = await publish(application, openLabId, { key });
+  const firstBody = await expectProblem(first, 409, "lab-still-open");
+  assert.equal(firstBody["submissionDeadline"], futureDeadline);
+  assert.equal(firstBody["pendingReviews"], undefined);
+  assert.equal((await application.labs.findById(openLabId))?.status, "ready");
+
+  await application.labs.save(readyLab(openLabId));
+  const replay = await publish(application, openLabId, { key });
+  assert.deepEqual(await expectProblem(replay, 409, "lab-still-open"), firstBody);
+  assert.equal((await application.labs.findById(openLabId))?.status, "ready");
+});
+
+test("publication succeeds when server time equals the submission deadline", async (context) => {
+  const exactLabId = "c74d9158-c760-4a58-b1ca-402959d09469";
+  const repository = new InMemoryLabRepository([
+    readyLab(exactLabId, "class-a", 0, instant.toISOString()),
+  ]);
+  const application = await start(repository);
+  context.after(application.close);
+
+  const response = await publish(application, exactLabId, { key: "exact-deadline-0001" });
+  assert.equal(response.status, 200);
+  assert.equal((await repository.findById(exactLabId))?.status, "published");
 });
 
 test("same-key success replays while a different key gets original publication metadata", async (context) => {

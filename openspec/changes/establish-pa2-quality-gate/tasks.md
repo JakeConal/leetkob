@@ -41,6 +41,13 @@
 - [x] 6.5 Update the root checks, CI, `AGENTS.md`, `.env.example`, README, and AI log for the workspace architecture; verify every documented command runs as written and no dashboard state exposes protected data.
 - [x] 6.6 Commit the migration in coherent increments, open a protected pull request, wait for every required check, and merge only after the implementation and visual verification are green.
 
+## 6A. Product-owner FAQ-12 alignment
+
+- [x] 6.7 Amend the proposal, design, and delta specs with the product-owner rule that whole-lab publication requires the submission deadline to have passed as well as a fully decided review queue; cite FAQ-12's immutable source commit.
+- [x] 6.8 Update the standalone contract and add domain and HTTP contract tests for pre-deadline rejection, exact-deadline success, check ordering, state safety, problem details, and exact-response replay before changing the implementation.
+- [ ] 6.9 Add the server-clock deadline gate to the framework-independent publication service and lab model, including the documented RFC 9457 problem type; verify all unchanged and new tests pass.
+- [ ] 6.10 Update the Swiss Minimalist dashboard, README, and AI log to expose both FAQ-12 preconditions without protected data; verify desktop and narrow layouts plus all repository checks.
+
 ## 7. Demonstrate that the gate bites
 
 - [x] 7.1 Create a branch containing one deliberate implementation-only contract regression while leaving the contract and tests unchanged, open a pull request, and verify the Test job is red with the expected contract-test failure.

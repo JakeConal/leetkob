@@ -9,7 +9,7 @@ LeeTKOB needs a trustworthy engineering baseline before later milestones add san
 - Establish a Node.js/TypeScript workspace with a NestJS API on Fastify and a Next.js App Router frontend using TanStack Query, while keeping one-command lint, format check, type check, and test workflows identical locally and in CI.
 - Add concise repository rules covering the stack, commands, conventions, product-specific prohibitions, and three-tier assistant permissions.
 - Document environment variables without values, keep secrets out of version control, and document the capped model budget policy.
-- Specify and implement `POST /labs/{labId}/publish`, including TA role and class ownership checks, pending-review refusal, RFC 9457 errors, idempotency, and publication state changes.
+- Specify and implement `POST /labs/{labId}/publish`, including TA role and class ownership checks, submission-deadline and pending-review refusal, RFC 9457 errors, idempotency, and publication state changes.
 - Add contract tests for the success path, every documented error type, ownership, and idempotent retries.
 - Add a responsive reviewer dashboard that exposes API health and the publication gate without disclosing student data, source code, or credentials.
 - Require all quality checks on pull requests to `main`, demonstrate a blocked contract-breaking change, then record the repair and CI evidence.
