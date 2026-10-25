@@ -80,6 +80,13 @@
 - **Why:** GitHub branch protection matches status contexts by exact name; guessing could leave a required command unenforced or make every pull request unmergeable.
 - **Evidence:** [`docs/evidence/main-branch-protection.json`](docs/evidence/main-branch-protection.json), baseline [run 40053375307](https://github.com/JakeConal/leetkob/actions/runs/40053375307), and protected merge commits [`1706076`](https://github.com/JakeConal/leetkob/commit/1706076781afafb30d443e7aaf20345fa8cd9eed) and [`fd74035`](https://github.com/JakeConal/leetkob/commit/fd74035535e83049665692953cf16a6aaf47cbaa).
 
+### D11 — Changed: add the product-owner deadline gate
+
+- **Initial output:** publication required an empty review queue but did not model the lab's submission deadline.
+- **Changed:** after the user approved the externally visible contract update, the lab model gained an RFC 3339 deadline and the publication service returns `409 lab-still-open` before checking reviews when server time is earlier. The rejection participates in exact-response idempotency.
+- **Why:** [product-owner FAQ-12 at immutable commit `2b82b90`](https://github.com/tkob-team/LeeTKOB-FAQ/blob/2b82b90ca3696fa81c68464f8a51ceb86406fef6/FAQ.md#faq-12) requires both the submission deadline to have passed and every queue item to have a TA decision before whole-lab publication.
+- **Evidence:** `docs/contract/publish-lab.md`, `apps/api/src/domain/publication-service.ts`, and the deadline cases in both publication test suites.
+
 ## Session record
 
 ### 2026-10-24 — PA#2 planning and baseline
@@ -103,6 +110,12 @@
 - Opened PR #2 with an implementation-only change that bypassed the pending-review guard; the unchanged contract test failed and GitHub reported the pull request as blocked.
 - Restored the guard in the same pull request without editing the contract, test, expected result, or label.
 - Waited for all repository checks and SonarCloud to pass, then merged through protected `main`.
+
+### 2026-10-25 — Product-owner FAQ alignment
+
+- Reviewed the owner FAQ and identified that FAQ-12 added a deadline precondition missing from the original publication contract.
+- Amended OpenSpec and the standalone contract before implementation, then added domain and HTTP contract cases for ordering, exact-deadline behavior, state safety, and replay; the domain case demonstrated the original mismatch before the implementation changed.
+- Added the injected-clock deadline guard and exposed both publication preconditions on the theme-driven dashboard.
 
 ## Changed
 

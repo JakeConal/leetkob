@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { fetchHealth } from "../lib/health.js";
+import { isPublicationBlocked } from "../lib/review-data.js";
 
 test("health query accepts the documented safe response", async () => {
   const fetcher: typeof fetch = async () =>
@@ -20,4 +21,11 @@ test("health query rejects failed and malformed responses", async () => {
 
   await assert.rejects(fetchHealth(unavailable), /status 503/);
   await assert.rejects(fetchHealth(malformed), /did not match/);
+});
+
+test("publication stays blocked until both FAQ-12 preconditions pass", () => {
+  assert.equal(isPublicationBlocked({ deadlinePassed: false, pendingReviews: 0 }), true);
+  assert.equal(isPublicationBlocked({ deadlinePassed: true, pendingReviews: 1 }), true);
+  assert.equal(isPublicationBlocked({ deadlinePassed: false, pendingReviews: 1 }), true);
+  assert.equal(isPublicationBlocked({ deadlinePassed: true, pendingReviews: 0 }), false);
 });

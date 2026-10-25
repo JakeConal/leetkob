@@ -7,8 +7,16 @@ export interface ReviewRow {
 
 export const currentLab = {
   name: "PA#2 Quality Gate",
+  deadlinePassed: true,
   pendingReviews: 3,
 } as const;
+
+export function isPublicationBlocked(lab: {
+  readonly deadlinePassed: boolean;
+  readonly pendingReviews: number;
+}): boolean {
+  return !lab.deadlinePassed || lab.pendingReviews > 0;
+}
 
 export const reviewRows: readonly ReviewRow[] = [
   {

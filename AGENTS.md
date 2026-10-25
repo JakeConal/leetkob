@@ -31,6 +31,7 @@
 - Never make a real model call in unit or contract tests. See `AI-LOG.md` decision D1.
 - Never edit a test, eval case, expected label, or contract merely to make a check pass.
 - Never trust caller-supplied role headers; verify signed identity claims. See `AI-LOG.md` decision D2.
+- Never publish a lab before its submission deadline. See `AI-LOG.md` decision D11.
 - Never publish a lab while any review remains pending.
 
 ## Permissions

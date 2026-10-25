@@ -1,8 +1,8 @@
 import { SystemStatus } from "../components/system-status";
-import { currentLab, reviewRows } from "../lib/review-data";
+import { currentLab, isPublicationBlocked, reviewRows } from "../lib/review-data";
 
 export default function HomePage() {
-  const publicationBlocked = currentLab.pendingReviews > 0;
+  const publicationBlocked = isPublicationBlocked(currentLab);
 
   return (
     <main className="page-shell">
@@ -37,7 +37,7 @@ export default function HomePage() {
             <div className="gate-copy">
               <p className="gate-state">Blocked</p>
               <h2 id="gate-heading">Publication blocked</h2>
-              <p>Resolve every review before publishing.</p>
+              <p>The deadline has passed. Resolve every review before publishing.</p>
             </div>
             <dl className="gate-facts">
               <div>
@@ -47,6 +47,10 @@ export default function HomePage() {
               <div>
                 <dt>Current lab</dt>
                 <dd>{currentLab.name}</dd>
+              </div>
+              <div>
+                <dt>Submission deadline</dt>
+                <dd>Passed</dd>
               </div>
               <div>
                 <dt>Pending reviews</dt>
