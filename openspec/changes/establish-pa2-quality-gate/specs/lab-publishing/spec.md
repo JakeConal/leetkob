@@ -50,6 +50,21 @@ The system SHALL refuse publication while any submission verdict for the lab sti
 - **WHEN** no lab reviews are pending
 - **THEN** the system permits the publication transition
 
+### Requirement: Submission-deadline publication gate
+The system SHALL refuse whole-lab publication before the lab's submission deadline and SHALL use the server clock rather than a client-supplied time.
+
+#### Scenario: Submission period is still open
+- **WHEN** the server time is before the lab's submission deadline
+- **THEN** the system returns status `409` with the `lab-still-open` problem type, reports the deadline, and leaves the lab unpublished
+
+#### Scenario: Submission deadline has passed
+- **WHEN** the server time is equal to or later than the lab's submission deadline
+- **THEN** the system continues evaluating the pending-review gate
+
+#### Scenario: Deadline rejection is retried
+- **WHEN** a deadline rejection is retried with the same caller, lab, and idempotency key after the deadline passes
+- **THEN** the system returns the exact original rejection without re-evaluating the server time
+
 ### Requirement: Atomic publication transition
 The system SHALL atomically move an eligible lab from `ready` to `published` and record the publishing TA and an RFC 3339 UTC timestamp.
 

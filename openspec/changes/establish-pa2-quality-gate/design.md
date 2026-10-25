@@ -2,7 +2,7 @@
 
 ## Context
 
-The repository currently contains only OpenSpec scaffolding and one setup commit. There is no starter application to preserve. The PA#2 rubric requires a small but real contract implementation, tests that exercise it, identical local/CI commands, protected-branch evidence, and a reproducible tagged submission. See `proposal.md` for motivation and the two delta specs for observable behavior.
+The repository currently contains only OpenSpec scaffolding and one setup commit. There is no starter application to preserve. The PA#2 rubric requires a small but real contract implementation, tests that exercise it, identical local/CI commands, protected-branch evidence, and a reproducible tagged submission. See `proposal.md` and the delta specs for observable behavior.
 
 The implementation must remain a useful foundation for PA#3 without pretending to provide the later sandbox, queue, model, database, or deployment milestones.
 
@@ -59,9 +59,15 @@ Alternatives considered:
 - Treating an already-published lab as an unconditional success would hide accidental reuse of a new key and weaken client diagnostics.
 - Caching only successful requests would allow a rejected retry to change meaning after mutable state changed, contradicting the specified deterministic-rejection behavior.
 
+### Decision: FAQ-12 deadline gate precedes review readiness
+
+Represent each lab's submission deadline as an RFC 3339 timestamp in the domain model and compare it with the injected clock. After authorization, ownership, idempotency replay, and already-published checks, reject publication before the deadline with `409 lab-still-open`; only then evaluate pending reviews. The deadline rejection is deterministic for its idempotency scope and is replayed exactly even after time advances.
+
+This implements [product-owner FAQ-12 at commit `2b82b90ca3696fa81c68464f8a51ceb86406fef6`](https://github.com/tkob-team/LeeTKOB-FAQ/blob/2b82b90ca3696fa81c68464f8a51ceb86406fef6/FAQ.md#faq-12): whole-lab publication requires both a passed deadline and a fully decided review queue. Time remains injected so unit and contract tests do not depend on the wall clock.
+
 ### Decision: One problem-type namespace
 
-Use absolute problem type URIs under `https://leetkob.example/problems/` and a shared factory that guarantees the RFC 9457 core fields. Extension fields are narrowly typed: `pendingReviews` for `reviews-pending`, and publication metadata for `lab-already-published`.
+Use absolute problem type URIs under `https://leetkob.example/problems/` and a shared factory that guarantees the RFC 9457 core fields. Extension fields are narrowly typed: `submissionDeadline` for `lab-still-open`, `pendingReviews` for `reviews-pending`, and publication metadata for `lab-already-published`.
 
 ### Decision: Reviewer dashboard is a safe projection
 

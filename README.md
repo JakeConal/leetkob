@@ -8,7 +8,7 @@ This checkpoint includes:
 
 - the contract and executable behavior of `POST /labs/{labId}/publish`;
 - signed PA#2 bearer claims, TA role and class ownership checks;
-- pending-review protection and exact-response idempotency;
+- submission-deadline and pending-review protection plus exact-response idempotency;
 - RFC 9457 problem details and contract tests;
 - a NestJS API using Fastify and a responsive Next.js reviewer dashboard using TanStack Query;
 - identical local and pull-request quality commands.
@@ -68,6 +68,8 @@ The standalone client contract is in [`docs/contract/publish-lab.md`](docs/contr
 - `Authorization: Bearer <signed-claim>`;
 - `Idempotency-Key: <8-128 printable ASCII characters>`;
 - an empty request body.
+
+Publication is allowed only when server time is equal to or later than the lab's submission deadline and every review-queue item has a TA decision. This follows [product-owner FAQ-12](https://github.com/tkob-team/LeeTKOB-FAQ/blob/2b82b90ca3696fa81c68464f8a51ceb86406fef6/FAQ.md#faq-12). A pre-deadline attempt returns the documented `lab-still-open` RFC 9457 problem, and a same-key retry replays that exact response.
 
 The PA#2 HMAC claim verifier is an isolated boundary for deterministic testing. Replace it with the deployment identity provider before production; callers never provide trusted role or class headers.
 

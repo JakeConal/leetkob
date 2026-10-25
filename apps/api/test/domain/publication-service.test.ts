@@ -20,6 +20,8 @@ const readyId = "0d0f366c-f9cf-45e8-bbf2-ab1b8e370ec8";
 const pendingId = "f6729f3d-d07e-497d-83fb-86a85810d84d";
 const otherId = "39cd4be5-103f-480c-a664-79b61bafabfa";
 const instant = new Date("2026-10-24T01:02:03.000Z");
+const passedDeadline = "2026-10-23T22:00:00.000Z";
+const futureDeadline = "2026-10-25T22:00:00.000Z";
 const ta: Identity = { subject: "ta-1", role: "ta", classIds: ["class-a"] };
 const student: Identity = { subject: "student-1", role: "student", classIds: ["class-a"] };
 
@@ -37,6 +39,7 @@ function readyLab(overrides: Partial<ReadyLab> = {}): ReadyLab {
     classId: "class-a",
     status: "ready",
     pendingReviews: 0,
+    submissionDeadline: passedDeadline,
     ...overrides,
   };
 }
@@ -111,6 +114,32 @@ test("pending reviews block publication and the deterministic rejection is repla
   assert.equal(first.body["pendingReviews"], 2);
   assert.deepEqual(replay, first);
   assert.equal((await labs.findById(pendingId))?.status, "ready");
+});
+
+test("the deadline gate precedes reviews and its rejection is replayed after time-state changes", async () => {
+  const openLab = readyLab({ submissionDeadline: futureDeadline, pendingReviews: 2 });
+  const { labs, service } = fixture([openLab]);
+  const request = input();
+
+  const first = await service.publish(request);
+  assert.equal(first.status, 409);
+  assertProblem(first);
+  assert.equal(first.body.type, "https://leetkob.example/problems/lab-still-open");
+  assert.equal(first.body["submissionDeadline"], futureDeadline);
+  assert.equal(first.body["pendingReviews"], undefined);
+  assert.deepEqual(await labs.findById(readyId), openLab);
+
+  await labs.save(readyLab({ submissionDeadline: passedDeadline, pendingReviews: 0 }));
+  const replay = await service.publish(request);
+  assert.deepEqual(replay, first);
+  assert.equal((await labs.findById(readyId))?.status, "ready");
+});
+
+test("publication is allowed exactly at the submission deadline", async () => {
+  const { service } = fixture([readyLab({ submissionDeadline: instant.toISOString() })]);
+  const response = await service.publish(input());
+
+  assert.equal(response.status, 200);
 });
 
 test("an eligible lab is published atomically with safe metadata", async () => {

@@ -1,8 +1,10 @@
-# LeeTKOB publish-lab API — contract, version 1
+# LeeTKOB publish-lab API — contract, version 1.1
 
-CSC13114 · PA#2 · frozen 24 Oct 2026
+CSC13114 · PA#2 · revised 25 Oct 2026
 
-This file is the specification. `test/contract/publish-lab.contract.test.ts` checks an implementation against it. If the code and this file disagree, the code is wrong. Change this contract only in a separate commit or pull request that explains why.
+This file is the specification. `apps/api/test/contract/publish-lab.contract.test.ts` checks an implementation against it. If the code and this file disagree, the code is wrong. Change this contract only in a separate commit or pull request that explains why.
+
+Version 1.1 aligns the publication preconditions with [product-owner FAQ-12 at immutable commit `2b82b90`](https://github.com/tkob-team/LeeTKOB-FAQ/blob/2b82b90ca3696fa81c68464f8a51ceb86406fef6/FAQ.md#faq-12).
 
 ## 1. Conventions
 
@@ -41,6 +43,7 @@ Cache-Control: no-store
 | `status`                              | Number equal to the HTTP response status.                                                                                                                |
 | `detail`                              | Safe sentence about this occurrence; never contains source code, student identity, secrets, stack traces, database details, or another class identifier. |
 | `instance`                            | The request path, without a query string.                                                                                                                |
+| `submissionDeadline`                  | Only on `lab-still-open`; the lab's immutable RFC 3339 submission deadline.                                                                              |
 | `pendingReviews`                      | Only on `reviews-pending`; non-negative integer count at the first completed attempt.                                                                    |
 | `labId`, `publishedAt`, `publishedBy` | Only on `lab-already-published`; original publication metadata.                                                                                          |
 
@@ -51,6 +54,7 @@ Cache-Control: no-store
 | `ta-role-required`        |    403 | TA role required        | Authenticated subject does not have role `ta`.                                                                            |
 | `lab-not-found`           |    404 | Lab not found           | The lab does not exist **or** belongs to a class not assigned to this TA. These cases are deliberately indistinguishable. |
 | `route-not-found`         |    404 | Route not found         | Wrong method, path, trailing slash, or any query string.                                                                  |
+| `lab-still-open`          |    409 | Submissions still open  | Server time is before the lab's submission deadline.                                                                      |
 | `reviews-pending`         |    409 | Reviews pending         | One or more verdicts still require TA review.                                                                             |
 | `lab-already-published`   |    409 | Lab already published   | The lab was published previously and this request uses a different idempotency key.                                       |
 | `internal-error`          |    500 | Internal server error   | Unexpected failure. `detail` is always the fixed generic sentence shown by the implementation.                            |
@@ -100,7 +104,7 @@ The response never contains submissions, student names or IDs, source code, revi
 
 ### 4.1 `POST /labs/{labId}/publish`
 
-Publishes marks for one lab. This is allowed only after every required review is resolved.
+Publishes marks for one lab. This is allowed only after the submission deadline has passed and every required review is resolved.
 
 Request:
 
@@ -135,8 +139,9 @@ The server evaluates the request in this order and stops at the first completed 
 5. Caller role `ta`; otherwise `403 ta-role-required`.
 6. Lab existence and class ownership; otherwise `404 lab-not-found`.
 7. Lab is not already published; otherwise `409 lab-already-published` with original metadata.
-8. Pending-review count is zero; otherwise `409 reviews-pending` with the count.
-9. In one atomic transition, set status to `published`, record the verified subject and current timestamp, store the idempotent response, and return `200` Publication.
+8. Server time is equal to or later than the lab's submission deadline; otherwise `409 lab-still-open` with the deadline.
+9. Pending-review count is zero; otherwise `409 reviews-pending` with the count.
+10. In one atomic transition, set status to `published`, record the verified subject and current timestamp, store the idempotent response, and return `200` Publication.
 
 **Authorization and ownership.** “Authenticated” alone is insufficient. The caller must be a TA and the lab's class must be in that TA's signed `classIds`. A TA from another class receives the same `404 lab-not-found` body shape as an absent lab.
 
@@ -145,7 +150,7 @@ The server evaluates the request in this order and stops at the first completed 
 **Idempotency.** A timeout or dropped connection is retried with the same key.
 
 - Scope is the exact tuple `(verified subject, labId, Idempotency-Key)`.
-- The first completed domain result (`200`, `403`, `404`, or `409`) is stored with its status, content type, and body.
+- The first completed domain result (`200`, `403`, `404`, or `409`) is stored with its status, content type, and body. This includes `lab-still-open`; a same-key retry after the deadline returns the original rejection.
 - Same scope again returns that exact stored result. Mutable state is not re-evaluated and no second transition occurs.
 - Authentication, routing, or input failures (`400`, `401`, route `404`) are not stored because no valid actor/lab/key scope exists.
 - A different key after success returns `409 lab-already-published` with the original metadata.
@@ -154,7 +159,7 @@ The server evaluates the request in this order and stops at the first completed 
 
 ## 5. Versions and evolution
 
-- Version 1 is the behavior frozen in this file even though the course-specified route is unprefixed.
+- Version 1.1 is the behavior frozen in this file even though the course-specified route is unprefixed.
 - Additive response members and new problem types may be introduced only with matching contract tests and a documented contract change.
 - Changing authorization, ownership concealment, field meaning, idempotency scope, check order, state transition, or an existing problem type/status is breaking and requires a new endpoint version while this behavior remains available through its announced sunset date.
 - Contract changes and implementation changes are reviewed separately when practical. Tests, eval data, or expected labels are never edited merely to make an implementation pass.

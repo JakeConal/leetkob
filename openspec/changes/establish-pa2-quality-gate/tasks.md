@@ -41,6 +41,13 @@
 - [x] 6.5 Update the root checks, CI, `AGENTS.md`, `.env.example`, README, and AI log for the workspace architecture; verify every documented command runs as written and no dashboard state exposes protected data.
 - [x] 6.6 Commit the migration in coherent increments, open a protected pull request, wait for every required check, and merge only after the implementation and visual verification are green.
 
+## 6A. Product-owner FAQ-12 alignment
+
+- [x] 6.7 Amend the proposal, design, and delta specs with the product-owner rule that whole-lab publication requires the submission deadline to have passed as well as a fully decided review queue; cite FAQ-12's immutable source commit.
+- [x] 6.8 Update the standalone contract and add domain and HTTP contract tests for pre-deadline rejection, exact-deadline success, check ordering, state safety, problem details, and exact-response replay before changing the implementation.
+- [x] 6.9 Add the server-clock deadline gate to the framework-independent publication service and lab model, including the documented RFC 9457 problem type; verify all unchanged and new tests pass.
+- [x] 6.10 Update the Swiss Minimalist dashboard, README, and AI log to expose both FAQ-12 preconditions without protected data; verify desktop and narrow layouts plus all repository checks.
+
 ## 7. Demonstrate that the gate bites
 
 - [x] 7.1 Create a branch containing one deliberate implementation-only contract regression while leaving the contract and tests unchanged, open a pull request, and verify the Test job is red with the expected contract-test failure.
@@ -53,7 +60,7 @@
 - [x] 8.1 Create `PA2.md` with public links to the repository, protected-branch settings evidence, blocked pull request, failing deliberate-break run, green repair commit/run, and placeholder for the tag run; verify every non-placeholder link resolves publicly.
 - [x] 8.2 Create `SELF_ASSESSMENT_REPORT.md` with one rubric row per criterion, conservative claimed points, and concrete file/commit/PR/CI evidence plus a short not-managed section; verify the sum matches the intended archive filename total.
 - [x] 8.3 Update `AI-LOG.md` with the deliberate failure, repair, branch-protection decisions, and any rejected agent suggestions; verify entries are factual and reference immutable evidence.
-- [ ] 8.4 Deliver groups 8.1–8.3 through a second protected pull request and verify all required checks are green before merge.
+- [x] 8.4 Deliver groups 8.1–8.3 through a second protected pull request and verify all required checks are green before merge.
 
 ## 9. Final verification, grading, tag, and archive
 

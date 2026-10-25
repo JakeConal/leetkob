@@ -12,6 +12,7 @@ const lab: ReadyLab = {
   classId: "class-a",
   status: "ready",
   pendingReviews: 0,
+  submissionDeadline: "2026-10-23T22:00:00.000Z",
 };
 
 test("lab repository isolates saved and returned values", async () => {
