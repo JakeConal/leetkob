@@ -124,6 +124,13 @@
 - Amended OpenSpec and the standalone contract before implementation, then added domain and HTTP contract cases for ordering, exact-deadline behavior, state safety, and replay; the domain case demonstrated the original mismatch before the implementation changed.
 - Added the injected-clock deadline guard and exposed both publication preconditions on the theme-driven dashboard.
 
+### 2026-10-25 — Final grading and hand-in verification
+
+- Ran a fresh lockfile install and all five local rubric checks; 36 tests passed, the reachable-history credential scan passed, and the dependency audit reported zero vulnerabilities.
+- Asked an independent grading agent to rescore the public repository; it reported 100/100 with no substantiated rubric deduction and separately identified tag/archive completion as the remaining hand-in operation.
+- Pushed annotated tag `pa2`, waited for green tag run 40152904321, and created `23120124_100.zip` from that tag with complete Git metadata.
+- Extracted the zip into a clean directory and verified `.git`, `PA2.md`, `AI-LOG.md`, `SELF_ASSESSMENT_REPORT.md`, `README.md`, the lockfile, a clean Git status, and matching `HEAD`/`pa2` commit IDs.
+
 ## Changed
 
 - Replaced generic agent guidance with LeeTKOB-specific prohibitions and approval tiers.
