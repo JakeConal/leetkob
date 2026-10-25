@@ -8,6 +8,7 @@ export type ProblemCode =
   | "invalid-request"
   | "lab-already-published"
   | "lab-not-found"
+  | "lab-still-open"
   | "reviews-pending"
   | "route-not-found"
   | "ta-role-required";

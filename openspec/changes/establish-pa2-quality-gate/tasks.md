@@ -45,7 +45,7 @@
 
 - [x] 6.7 Amend the proposal, design, and delta specs with the product-owner rule that whole-lab publication requires the submission deadline to have passed as well as a fully decided review queue; cite FAQ-12's immutable source commit.
 - [x] 6.8 Update the standalone contract and add domain and HTTP contract tests for pre-deadline rejection, exact-deadline success, check ordering, state safety, problem details, and exact-response replay before changing the implementation.
-- [ ] 6.9 Add the server-clock deadline gate to the framework-independent publication service and lab model, including the documented RFC 9457 problem type; verify all unchanged and new tests pass.
+- [x] 6.9 Add the server-clock deadline gate to the framework-independent publication service and lab model, including the documented RFC 9457 problem type; verify all unchanged and new tests pass.
 - [ ] 6.10 Update the Swiss Minimalist dashboard, README, and AI log to expose both FAQ-12 preconditions without protected data; verify desktop and narrow layouts plus all repository checks.
 
 ## 7. Demonstrate that the gate bites

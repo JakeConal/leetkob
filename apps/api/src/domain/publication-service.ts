@@ -55,6 +55,18 @@ export class PublicationService {
       return this.#alreadyPublished(lab, input.instance);
     }
 
+    const publicationTime = this.clock.now();
+    if (publicationTime.getTime() < Date.parse(lab.submissionDeadline)) {
+      return problemResponse(
+        "lab-still-open",
+        409,
+        "Submissions still open",
+        "Marks cannot be published before the submission deadline.",
+        input.instance,
+        { submissionDeadline: lab.submissionDeadline },
+      );
+    }
+
     if (lab.pendingReviews > 0) {
       return problemResponse(
         "reviews-pending",
@@ -66,12 +78,13 @@ export class PublicationService {
       );
     }
 
-    const publishedAt = this.clock.now().toISOString();
+    const publishedAt = publicationTime.toISOString();
     const published: PublishedLab = {
       id: lab.id,
       classId: lab.classId,
       status: "published",
       pendingReviews: 0,
+      submissionDeadline: lab.submissionDeadline,
       publishedAt,
       publishedBy: input.identity.subject,
       publicationKey: input.idempotencyKey,

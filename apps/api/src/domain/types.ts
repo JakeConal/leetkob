@@ -11,6 +11,7 @@ export interface ReadyLab {
   readonly classId: string;
   readonly status: "ready";
   readonly pendingReviews: number;
+  readonly submissionDeadline: string;
 }
 
 export interface PublishedLab {
@@ -18,6 +19,7 @@ export interface PublishedLab {
   readonly classId: string;
   readonly status: "published";
   readonly pendingReviews: 0;
+  readonly submissionDeadline: string;
   readonly publishedAt: string;
   readonly publishedBy: string;
   readonly publicationKey: string;
