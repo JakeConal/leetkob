@@ -38,6 +38,7 @@ The same protected pull request contains the deliberate regression and its repai
 ## Submitted tag and CI
 
 - Tag: [`pa2`](https://github.com/JakeConal/leetkob/tree/pa2)
+- Verified tag run: [Quality Gate run 40152904321](https://github.com/JakeConal/leetkob/actions/runs/40152904321)
 - Tag-triggered workflow: [Quality Gate runs filtered to `pa2`](https://github.com/JakeConal/leetkob/actions/workflows/quality.yml?query=branch%3Apa2)
 
-The workflow listens to pushes of the exact `pa2` tag. The filtered link above remains stable while exposing the tag run and its individual jobs.
+The workflow listens to pushes of the exact `pa2` tag. The immutable run above records the first verified tag push; the filtered link remains stable and exposes the current tag run and its individual jobs after final evidence updates.

@@ -64,11 +64,11 @@
 
 ## 9. Final verification, grading, tag, and archive
 
-- [ ] 9.1 Run OpenSpec verification against `establish-pa2-quality-gate` and resolve every critical issue, warning, and actionable suggestion; verify a second report is clean.
-- [ ] 9.2 Run all five local checks from a fresh `npm ci`, audit the reachable Git history for credentials, and verify the working tree is clean and synchronized with protected `main`.
-- [ ] 9.3 Have an independent grading agent score the repository against the full PA#2 rubric, fix every substantiated deduction through protected pull-request flow, and repeat grading until the evidence supports the final claimed score.
-- [ ] 9.4 Create and push annotated tag `pa2` at the final merge, wait for the tag CI run, add its immutable URL to `PA2.md` through protected flow if needed, and verify the remote tag resolves to the intended commit.
-- [ ] 9.5 Create `23120124_<self-assessed-total>.zip` outside the repository with the entire repository including `.git`; verify extraction succeeds and required root files plus `.git` are present.
+- [x] 9.1 Run OpenSpec verification against `establish-pa2-quality-gate` and resolve every critical issue, warning, and actionable suggestion; verify a second report is clean.
+- [x] 9.2 Run all five local checks from a fresh `npm ci`, audit the reachable Git history for credentials, and verify the working tree is clean and synchronized with protected `main`.
+- [x] 9.3 Have an independent grading agent score the repository against the full PA#2 rubric, fix every substantiated deduction through protected pull-request flow, and repeat grading until the evidence supports the final claimed score.
+- [x] 9.4 Create and push annotated tag `pa2` at the final merge, wait for the tag CI run, add its immutable URL to `PA2.md` through protected flow if needed, and verify the remote tag resolves to the intended commit.
+- [x] 9.5 Create `23120124_<self-assessed-total>.zip` outside the repository with the entire repository including `.git`; verify extraction succeeds and required root files plus `.git` are present.
 
 ## Workflow follow-up
 
