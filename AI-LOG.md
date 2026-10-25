@@ -87,6 +87,13 @@
 - **Why:** [product-owner FAQ-12 at immutable commit `2b82b90`](https://github.com/tkob-team/LeeTKOB-FAQ/blob/2b82b90ca3696fa81c68464f8a51ceb86406fef6/FAQ.md#faq-12) requires both the submission deadline to have passed and every queue item to have a TA decision before whole-lab publication.
 - **Evidence:** `docs/contract/publish-lab.md`, `apps/api/src/domain/publication-service.ts`, and the deadline cases in both publication test suites.
 
+### D12 — Changed: make rubric evidence publicly auditable
+
+- **Initial state:** the GitHub repository was private, so the independent grader capped the current result at 97/100 and external evidence links could not be audited anonymously.
+- **Changed:** after explicit user approval, changed `JakeConal/leetkob` to public while preserving protected `main` and its required checks.
+- **Why:** the PA#2 hand-in rules require a public repository, and public evidence is necessary for the lecturer and the later red team.
+- **Evidence:** <https://api.github.com/repos/JakeConal/leetkob> reports `visibility: public`; protected settings remain captured in `docs/evidence/main-branch-protection.json`.
+
 ## Session record
 
 ### 2026-10-24 — PA#2 planning and baseline
