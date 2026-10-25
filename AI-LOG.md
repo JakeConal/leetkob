@@ -66,6 +66,20 @@
 - **Why:** the findings were substantiated and could be fixed without weakening a test, changing the contract, or altering the rendered states.
 - **Evidence:** `.github/workflows/quality.yml`, `apps/web/app/globals.css`, and `apps/web/components/system-status.tsx`.
 
+### D9 — Rejected: merge an intentionally broken publication rule
+
+- **Suggestion considered:** treat the deliberate regression as evidence once the Test job failed, then move on without repairing the same pull request.
+- **Rejected:** the contract and tests stayed unchanged, the implementation was repaired in the same protected pull request, and merge waited for all required checks to return green.
+- **Why:** a red check proves the gate can detect a violation only if GitHub also prevents that revision from entering `main`.
+- **Evidence:** [PR #2](https://github.com/JakeConal/leetkob/pull/2), failing commit [`4e808f7`](https://github.com/JakeConal/leetkob/commit/4e808f7a96d46c0c67d794b5f452866162ace116), failing [Test job](https://github.com/JakeConal/leetkob/actions/runs/40078757471/job/120827694233), repair commit [`bf6cb02`](https://github.com/JakeConal/leetkob/commit/bf6cb02cc6d0b5e336de97fb121b9060000382cc), and green [run 40078849258](https://github.com/JakeConal/leetkob/actions/runs/40078849258).
+
+### D10 — Changed: derive required checks before enabling protection
+
+- **Initial output:** the workflow existed, but the required-check names had not yet been observed from a real GitHub run.
+- **Changed:** established a green baseline, read the emitted check contexts, then protected `main` with strict `Lint`, `Format`, `Typecheck`, and `Test` contexts plus administrator enforcement and pull-request flow.
+- **Why:** GitHub branch protection matches status contexts by exact name; guessing could leave a required command unenforced or make every pull request unmergeable.
+- **Evidence:** [`docs/evidence/main-branch-protection.json`](docs/evidence/main-branch-protection.json), baseline [run 40053375307](https://github.com/JakeConal/leetkob/actions/runs/40053375307), and protected merge commits [`1706076`](https://github.com/JakeConal/leetkob/commit/1706076781afafb30d443e7aaf20345fa8cd9eed) and [`fd74035`](https://github.com/JakeConal/leetkob/commit/fd74035535e83049665692953cf16a6aaf47cbaa).
+
 ## Session record
 
 ### 2026-10-24 — PA#2 planning and baseline
@@ -83,6 +97,12 @@
 - Replaced the raw HTTP edge with NestJS controllers, a Fastify bootstrap, and a global RFC 9457 exception filter while preserving publication contract behavior.
 - Added the responsive Next.js dashboard, isolated TanStack Query to API health, and added frontend health-contract tests.
 - Applied the user-provided `theme.md` as the complete UI source of truth and removed the superseded concept asset from the project.
+
+### 2026-10-24 — Protected gate demonstration
+
+- Opened PR #2 with an implementation-only change that bypassed the pending-review guard; the unchanged contract test failed and GitHub reported the pull request as blocked.
+- Restored the guard in the same pull request without editing the contract, test, expected result, or label.
+- Waited for all repository checks and SonarCloud to pass, then merged through protected `main`.
 
 ## Changed
 

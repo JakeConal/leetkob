@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-10-25T01:31:57Z",
+  "source": "https://api.github.com/repos/JakeConal/leetkob/branches/main/protection",
+  "branch": "main",
+  "requiredStatusChecks": {
+    "strict": true,
+    "contexts": ["Lint", "Format", "Typecheck", "Test"]
+  },
+  "requiredPullRequestReviews": {
+    "dismissStaleReviews": true,
+    "requiredApprovingReviewCount": 0
+  },
+  "enforceAdmins": true,
+  "requiredConversationResolution": true,
+  "allowForcePushes": false,
+  "allowDeletions": false
+}

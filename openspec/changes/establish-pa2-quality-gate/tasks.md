@@ -43,16 +43,16 @@
 
 ## 7. Demonstrate that the gate bites
 
-- [ ] 7.1 Create a branch containing one deliberate implementation-only contract regression while leaving the contract and tests unchanged, open a pull request, and verify the Test job is red with the expected contract-test failure.
-- [ ] 7.2 Verify GitHub reports the red pull request as blocked by required checks and record the pull request, failing run, and deliberate-break commit URLs for `PA2.md`.
-- [ ] 7.3 Repair only the implementation, commit the fix, and verify the same pull request turns fully green with the contract and tests still unchanged.
-- [ ] 7.4 Merge the repaired pull request through the protected flow and verify the merge commit is on `main` and no direct post-protection commit was introduced.
+- [x] 7.1 Create a branch containing one deliberate implementation-only contract regression while leaving the contract and tests unchanged, open a pull request, and verify the Test job is red with the expected contract-test failure.
+- [x] 7.2 Verify GitHub reports the red pull request as blocked by required checks and record the pull request, failing run, and deliberate-break commit URLs for `PA2.md`.
+- [x] 7.3 Repair only the implementation, commit the fix, and verify the same pull request turns fully green with the contract and tests still unchanged.
+- [x] 7.4 Merge the repaired pull request through the protected flow and verify the merge commit is on `main` and no direct post-protection commit was introduced.
 
 ## 8. Evidence and self-assessment
 
-- [ ] 8.1 Create `PA2.md` with public links to the repository, protected-branch settings evidence, blocked pull request, failing deliberate-break run, green repair commit/run, and placeholder for the tag run; verify every non-placeholder link resolves publicly.
-- [ ] 8.2 Create `SELF_ASSESSMENT_REPORT.md` with one rubric row per criterion, conservative claimed points, and concrete file/commit/PR/CI evidence plus a short not-managed section; verify the sum matches the intended archive filename total.
-- [ ] 8.3 Update `AI-LOG.md` with the deliberate failure, repair, branch-protection decisions, and any rejected agent suggestions; verify entries are factual and reference immutable evidence.
+- [x] 8.1 Create `PA2.md` with public links to the repository, protected-branch settings evidence, blocked pull request, failing deliberate-break run, green repair commit/run, and placeholder for the tag run; verify every non-placeholder link resolves publicly.
+- [x] 8.2 Create `SELF_ASSESSMENT_REPORT.md` with one rubric row per criterion, conservative claimed points, and concrete file/commit/PR/CI evidence plus a short not-managed section; verify the sum matches the intended archive filename total.
+- [x] 8.3 Update `AI-LOG.md` with the deliberate failure, repair, branch-protection decisions, and any rejected agent suggestions; verify entries are factual and reference immutable evidence.
 - [ ] 8.4 Deliver groups 8.1–8.3 through a second protected pull request and verify all required checks are green before merge.
 
 ## 9. Final verification, grading, tag, and archive
