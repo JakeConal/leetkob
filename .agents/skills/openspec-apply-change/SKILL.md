@@ -39,7 +39,7 @@ In both branches, never create the root as a side effect: do not run `openspec i
 
 **Branch and pull request conventions:**
 - Before implementation, inspect the branch and working tree. Reuse the branch for this change or create `codex/<change-name>` from the appropriate base. Respect an explicitly requested branch or base, and preserve unrelated work.
-- Keep each change on its own branch. Commit only the requested work with a concise imperative message.
+- Keep each change on its own branch. Commit only the requested work in focused, coherent commits. Use Conventional Commits: `<type>(<optional-scope>): <imperative summary>` (for example, `feat(api): enforce submission deadline`); choose a fitting type such as `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`. Use the body when context is needed and follow any explicit repository or user convention.
 - Once implementation and relevant checks are complete, push the branch and create or update one PR against the chosen base. Reuse any existing PR. Describe the problem, change, and validation, and link the tracking issue without closing it automatically.
 - If work is incomplete or blocked, report the status; create a draft PR only when requested. Never merge or bypass required checks. Follow repository permissions and explicit user instructions for publishing.
 - If push or PR creation fails, retain the local work and report the failure and next step.
