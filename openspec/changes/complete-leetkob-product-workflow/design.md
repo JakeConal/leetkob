@@ -29,16 +29,20 @@ The hashes above identify file blobs, not commit refs. Implementation must pin t
 
 **Goals:** Keep domain policy independent of HTTP, identity providers, storage, and workers; make version changes and concurrent processing explicit; use one transactional source of business truth; keep model and execution credentials out of untrusted execution; preserve the PA#2 compatibility suite.
 
-**Non-Goals:** A wholesale stack rewrite, mandatory Java/Python services, five independent storage systems, or adopting the upstream team's service split as a course requirement. The seven Could features remain deferred: B3, C9, F9, G5, H1, H2, I9. No extra language, late submissions, per-student extensions, automatic partial test scores, plagiarism detection, chatbot, agent tools, generated tests, or model-chosen deductions. Daily automated backups are deferred as I9; migration backup/restore and recovery rehearsal remain release requirements.
+**Non-Goals:** Frontend framework replacement, mandatory Java/Python services, five independent storage systems, or adopting the upstream team's service split as a course requirement. The seven Could features remain deferred: B3, C9, F9, G5, H1, H2, I9. No extra submission language, late submissions, per-student extensions, automatic partial test scores, plagiarism detection, chatbot, agent tools, generated tests, or model-chosen deductions. Daily automated backups are deferred as I9; migration backup/restore and recovery rehearsal remain release requirements.
 
 ## Decisions
 
-### 1. Retain a TypeScript modular application with independently run workers
+### 1. Migrate the backend to Go with independently run workers
 
-Keep NestJS/Fastify and Next.js. Introduce cohesive API modules for identity, classes, labs, submissions, review, grades, and appeals. Share pure value types and schemas through an npm workspace package; keep domain operations free of NestJS and database imports. Add a TypeScript worker application and a checker package with both worker and CLI adapters. Judge execution runs in a dedicated Linux execution boundary.
+The user approved the Go migration on November 5, 2026 to pursue performance and simpler deployment. Introduce cohesive Go packages for identity, classes, labs, submissions, review, grades, and appeals, with HTTP handlers based on the standard `net/http` package. Inject repositories, clocks, identity verification, and transaction boundaries through small interfaces. Domain packages own policy and value types. Next.js server components and TanStack Query consume explicit API contracts.
+
+Use one backend Go module under `apps/backend`, with `cmd/api`, `cmd/worker`, and `cmd/checker` entry points and implementation packages under `internal`. The worker and checker CLI share one pure checker engine. Pin the supported Go toolchain and approved dependency versions during phase 0. This directory layout is an implementation default chosen for shared packages and separately runnable processes. Go's server-module guidance supports this structure. [Go module organization](https://go.dev/doc/modules/layout).
+
+Document the HTTP schema in OpenAPI with explicit RFC 9457 errors, time/decimal representations, authorization, and revision semantics. Produce frontend TypeScript contract types from the reviewed schema using approved tooling, with a drift check. Keep judge/checker envelopes language-neutral and versioned. Judge execution runs in a dedicated Linux execution boundary.
 
 ```text
-Next.js views --> NestJS API --> PostgreSQL
+Next.js views --> Go HTTP API --> PostgreSQL
                      |          state + jobs + outbox
                      |                  |
                      |           leased worker jobs
@@ -58,7 +62,17 @@ Use PostgreSQL for relational state, bounded source/test objects, durable jobs, 
 
 Alternatives considered: the upstream Node/Java/Python + RabbitMQ/Redis/MongoDB/Garage deployment creates more operational boundaries than the current repository needs. A database-backed queue and bounded object tables reduce partial-commit failure modes. Storage and job ports allow later replacement if measured workload warrants it.
 
-Proposed runtime additions include a PostgreSQL driver, standards-based JWT verification, a syntax parser/C++ grammar, and telemetry support. Exact versions and licenses are selected against the existing Node baseline before installation, with repository-required dependency approval. This proposal adds no dependencies.
+The dependency inventory covers Go PostgreSQL access, standards-based JWT verification, memory-hard password hashing, syntax parser/C++ grammar bindings, and telemetry. Record versions, licenses, supported toolchain/OS/architecture, CGO and native-library requirements, and build/runtime implications. Record Node compatibility for frontend/schema tooling. Select parser bindings and deployment packaging together, since native bindings can require a runtime library. Build API, worker, and checker artifacts for the documented target and record their actual dependencies.
+
+### 1a. Prove compatibility and measure the backend cutover
+
+Port the existing publication domain and transport behavior as the first complete Go slice. Its reference is the checked-in v1.1 contract and established PA#2 suites. The current contract tests import the NestJS application factory, in-memory repositories, and token helper. Add reusable HTTP scenarios and a test-only seeded/fixed-clock launcher for each backend. Exercise both processes with equivalent fixtures, including authentication, concealed ownership, error media types and bodies, input limits, deadline boundaries, idempotent replay, and concurrent publication. Keep the established assertions and original suites as independent regression evidence. Fixture injection belongs in test composition roots.
+
+Add Go formatting verification, `go vet ./...`, `go build ./...`, `go test ./...`, race-enabled tests on a supported Linux CI runner, and vulnerability scanning with a pinned `govulncheck`. The documented root lint, format, typecheck, test, build, and security commands dispatch to the applicable Go and Node checks and fail on either toolchain's failure. Verify coverage includes every backend command and package. Required check names retain their existing enforcement through the transition. Update README setup, `AGENTS.md`, developer launch scripts, and runtime/container configuration together when implementation switches the default backend. Go documents the race and vulnerability tools used here. [Race detector](https://go.dev/doc/articles/race_detector), [vulnerability management](https://go.dev/doc/security/vuln/).
+
+Capture comparable NestJS and Go measurements using the same publication behavior, fixtures, hardware, resource limits, request corpus, and concurrency. Record source/toolchain/dependency revisions, warmup, run counts, error rates, p50/p95 latency, throughput, CPU, idle/peak memory, cold start, build time, and packaged artifact size. Exercise each backend's documented build/start/shutdown procedure from a clean supported environment. Establish a reproducible baseline before evaluating the Go result. The later durable 80-submission workload remains a separate release acceptance exercise.
+
+Make the default-backend switch only after parity, complete quality-command coverage, and a reviewed comparison report. The report records regressions and the performance/deployment tradeoff that supports cutover, including any accepted regression. Record measured outcomes and reviewer acceptance before marking the cutover task complete. Keep the previous tested artifact and startup configuration as the pre-production rollback checkpoint. Judge and model-call durations receive separate stage measurements as those capabilities arrive.
 
 ### 2. Model identity and ownership as current database facts
 
@@ -177,7 +191,7 @@ Public demonstration mode continues using synthetic data. Live evidence never ap
 
 ### 11. Gate evaluator changes without exposing credentials to candidate code
 
-Proposed CLI: `npm run checker -- --data <dataset-dir> --predictions <output.jsonl>`. The worker and CLI call the same pure checker core. Keep the lecturer's dataset/scorer pinned and unmodified, the team set separate, and source digests in each evaluation manifest. The scorer command remains `node eval.mjs --data <dir> --predictions <file> --json <report>` and fails on both exit 1 and 2. The prediction process has no access to labels; a separate trusted scoring step receives them.
+Proposed built CLI invocation is `checker --data <dataset-dir> --predictions <output.jsonl>`, built from `apps/backend/cmd/checker`. The Go worker and CLI call the same pure checker core. Keep the lecturer's dataset/scorer pinned and unmodified, the team set separate, and source digests in each evaluation manifest. The scorer command remains `node eval.mjs --data <dir> --predictions <file> --json <report>` and fails on both exit 1 and 2. The prediction process has no access to labels; a separate trusted scoring step receives them.
 
 Root unit/contract suites use fake model adapters. Live evaluation runs through an approved trusted broker with tightly bounded model requests, pricing, and spend. Candidate PR code runs without credentials, labels, deployment access, or unrestricted network; only a limited relay to the trusted broker is available. The broker never executes candidate code and binds its request log to the evaluated revision. Trusted scoring attests dataset/model/prompt/source hashes. CI accepts only evidence produced by the trusted workflow for the relevant current revision; a PR-provided JSON report cannot self-certify success.
 
@@ -191,7 +205,7 @@ Phases are dependency gates, not claims about current completion or a guarantee 
 
 | Phase | Deliverable and exit evidence |
 | --- | --- |
-| 0 | Approved dependency/contract inventory, pinned source/eval inputs, concrete acceptance matrix |
+| 0 | Approved dependency/contract inventory, pinned source/eval inputs, acceptance matrix, Go publication parity, complete checks, and reviewed backend comparison/cutover |
 | 1 | Durable foundation, account/session and class access with adversarial ownership tests |
 | 2 | Versioned lab authoring and constraint/test policies visible in TA/student screens |
 | 3 | Durable submissions, isolated judging, live private results, crash/deadline evidence |
@@ -251,6 +265,9 @@ The official milestone dates reported by the proposal are PA#3 November 25, PA#4
 
 ## Risks / Trade-offs
 
+- **Go migration consumes feature-delivery time** -> Complete the small publication compatibility slice and cutover evidence before durable feature work. Preserve the existing task IDs and feature traceability while recording migration prerequisites in GitHub.
+- **Workload bottlenecks may be outside HTTP handling** -> Measure comparable API behavior first, then separate database, judge, and model stages in later operational reports. Record observed benefits and accepted regressions in the cutover review.
+- **Native parser bindings complicate packaging** -> Record CGO, target-platform, and runtime-library needs in the dependency inventory and verify clean-environment artifacts for every affected command.
 - **Umbrella scope exceeds a single sprint** -> Use the phase exits and one tracked issue checklist; keep PRs bounded by dependency and retain the full requirement map rather than declaring partial work complete.
 - **Native parser and sandbox behavior varies by host** -> Exercise the exact pinned parser and Linux execution backend against trap/attack cases before enabling it; unsupported analysis becomes unsure.
 - **PostgreSQL job/object workload may need separation** -> Measure the 80-submission workload and queue age; preserve ports so a later broker/object adapter can be introduced based on evidence.
@@ -263,8 +280,8 @@ The official milestone dates reported by the proposal are PA#3 November 25, PA#4
 
 ## Migration Plan
 
-1. Land this planning change through normal review. Before implementation actions requiring approval, present the concrete dependency list and new production contracts. Preserve the existing v1.1 contract/tests and PA#2 tag.
-2. Add production composition and additive schema migrations. In-memory fixtures remain available only to deterministic tests/compatibility mode. There is no real PA#2 student database to migrate; do not promote synthetic rows as real users or grades.
+1. Land this planning revision through normal review. Complete tasks 1.2 and 1.5-1.8 for the Go module, reusable publication parity harness, root/CI checks, comparison report, and reviewed default-backend cutover. Review the concrete dependency list and new production contracts before their implementation. Preserve the v1.1 contract/tests and PA#2 tag.
+2. Add Go production composition and additive schema migrations after the cutover prerequisite. In-memory fixtures remain available only to deterministic tests/compatibility mode. There is no real PA#2 student database to migrate; do not promote synthetic rows as real users or grades.
 3. Bring up an isolated staging environment with synthetic accounts. Verify acceptance, stale results, review, transactional publication, and appeal races before enabling live model use or any external deployment.
 4. Run explicitly authorized budgeted evaluation and enable the evaluation branch check only after its emitted context and fail-closed behavior are verified and owner-approved. Existing required checks remain enforced.
 5. Deploy the approved production build with versioned routes, provisioned configuration, execution isolation, monitoring, and a recorded migration/restore checkpoint. Perform authorized synthetic E2E/load/red-team exercises; never submit coursework automatically.

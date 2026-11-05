@@ -3,11 +3,32 @@
 ## ADDED Requirements
 
 ### Requirement: Worker and integration check coverage
-The documented root quality commands SHALL cover the API, web, and all added worker/checker packages. Deterministic tests SHALL include authorization isolation, deadline and revision races, job recovery, evidence validation, budget reservation, atomic publication, and appeal consistency without real model requests.
+The documented root quality commands SHALL cover the API, web, and all added worker/checker packages across both language toolchains. Deterministic tests SHALL include authorization isolation, deadline and revision races, job recovery, evidence validation, budget reservation, atomic publication, and appeal consistency without real model requests.
 
 #### Scenario: A worker package is added
 - **WHEN** a contributor runs the existing root lint, format, typecheck, and test commands after documented setup
 - **THEN** the worker participates in the corresponding checks and cannot silently escape CI coverage
+
+### Requirement: Backend migration compatibility
+A replacement backend SHALL pass reusable HTTP scenarios derived from the established publication contract using equivalent seeded state and time. Existing PA#2 suites SHALL remain regression evidence. Compatibility evidence SHALL precede the default backend switch.
+
+#### Scenario: Publication runs against either backend
+- **WHEN** the same authenticated requests and fixtures exercise the reference and replacement processes
+- **THEN** status, response semantics, errors, deadline boundaries, replay, ownership, and concurrent-publication outcomes satisfy the same v1.1 contract
+
+### Requirement: Complete backend toolchain checks
+Documented root checks SHALL cover formatting, static analysis, compilation, tests, and vulnerability scans for every supported toolchain. Supported CI SHALL also execute backend race detection. A failure SHALL fail its required result through the backend transition.
+
+#### Scenario: Replacement backend fails a check
+- **WHEN** a backend package has a compile error, test failure, detected race, or blocking vulnerability
+- **THEN** the corresponding root command or documented race check fails and the required CI result prevents merging
+
+### Requirement: Frontend contract consistency
+Frontend contract types SHALL correspond to the reviewed language-neutral API schema. CI SHALL detect drift before merging a schema or generated-client change.
+
+#### Scenario: API schema changes without updating frontend types
+- **WHEN** a proposed change leaves the frontend contract representation out of sync with the reviewed API schema
+- **THEN** the contract consistency check fails
 
 ### Requirement: Contract-first production evolution
 New public endpoints and message contracts SHALL have reviewed request, response, error, authorization, retry, and revision semantics plus executable contract tests before their implementation changes. The existing PA#2 publication suite SHALL remain intact; changed production behavior SHALL use the documented versioned route.

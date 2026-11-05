@@ -6,6 +6,13 @@ Defines the operational evidence and recovery behavior needed to run LeeTKOB rel
 
 ## ADDED Requirements
 
+### Requirement: Measured backend cutover
+The default-backend switch SHALL require a reviewed comparison using equivalent behavior, fixtures, hardware, limits, and concurrency. Evidence SHALL report latency, throughput, errors, CPU, memory, startup, build time, artifact size, and clean-environment setup. The review SHALL record the cutover decision and accepted regressions.
+
+#### Scenario: Replacement backend is proposed as the default
+- **WHEN** publication compatibility and complete quality coverage pass
+- **THEN** the comparison report identifies both revisions and toolchains, reproducible commands, warmup and run counts, measured tradeoffs, and reviewer acceptance before the default changes
+
 ### Requirement: Correlated privacy-preserving telemetry
 The service SHALL emit structured logs, metrics, and traces correlating submission acceptance, queue processing, judging, checking, review, publication, and appeals. Operational telemetry SHALL exclude credentials, submitted source, hidden test data, and raw model prompts or responses.
 
