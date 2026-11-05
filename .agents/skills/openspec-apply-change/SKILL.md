@@ -37,6 +37,13 @@ In both branches, never create the root as a side effect: do not run `openspec i
 
 **Input**: Optionally specify a change name (e.g., `$openspec-apply-change (Codex) or /openspec-apply-change (other agents) add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
 
+**Branch and pull request conventions:**
+- Before implementation, inspect the branch and working tree. Reuse the branch for this change or create `codex/<change-name>` from the appropriate base. Respect an explicitly requested branch or base, and preserve unrelated work.
+- Keep each change on its own branch. Commit only the requested work with a concise imperative message.
+- Once implementation and relevant checks are complete, push the branch and create or update one PR against the chosen base. Reuse any existing PR. Describe the problem, change, and validation, and link the tracking issue without closing it automatically.
+- If work is incomplete or blocked, report the status; create a draft PR only when requested. Never merge or bypass required checks. Follow repository permissions and explicit user instructions for publishing.
+- If push or PR creation fails, retain the local work and report the failure and next step.
+
 **Steps**
 
 1. **Select the change**
