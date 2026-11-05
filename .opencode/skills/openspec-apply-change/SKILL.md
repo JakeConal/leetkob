@@ -26,6 +26,7 @@ Otherwise, with no root, what happens next depends on how this workflow was reac
 In both branches, never create the root as a side effect: do not run `openspec init` until the user asks for it, do not hand-create `openspec/` files, and do not let a command create it.
 
 **GitHub issue task tracking:** This project replaces the `tasks.md` artifact with one GitHub issue per change.
+
 - Resolve the target GitHub repository from the implementation repository remote, not a standalone spec store. Add `--repo <owner/repo>` to every `gh issue` command below.
 - Reuse the recorded issue. After interrupted creation, search the target repository for the exact `[<change-name>]` title prefix and confirm the matching change before creating another issue. If lookup or creation fails, report the blocker without falling back to a task file.
 - A recorded number satisfies the task artifact only after verifying the issue exists in the target repository and contains a nonempty numbered task checklist. Preserve unrelated metadata and issue body content. A closed issue alone never proves task completion.
@@ -38,6 +39,7 @@ In both branches, never create the root as a side effect: do not run `openspec i
 **Input**: Optionally specify a change name (e.g., `/opsx-apply add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
 
 **Branch and pull request conventions:**
+
 - Before implementation, inspect the branch and working tree. Reuse the branch for this change or create `codex/<change-name>` from the appropriate base. Respect an explicitly requested branch or base, and preserve unrelated work.
 - Keep each change on its own branch. Commit only the requested work in focused, coherent commits. Use Conventional Commits: `<type>(<optional-scope>): <imperative summary>` (for example, `feat(api): enforce submission deadline`); choose a fitting type such as `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`. Use the body when context is needed and follow any explicit repository or user convention.
 - Once implementation and relevant checks are complete, push the branch and create or update one PR against the chosen base. Reuse any existing PR. Describe the problem, change, and validation, and link the tracking issue without closing it automatically.
@@ -56,9 +58,11 @@ In both branches, never create the root as a side effect: do not run `openspec i
    Always announce: "Using change: <name>" and how to override (e.g., `/opsx-apply <other>`).
 
 2. **Check status to understand the schema**
+
    ```bash
    openspec status --change "<name>" --json
    ```
+
    Parse the JSON to understand:
    - `schemaName`: The workflow being used (e.g., "spec-driven")
    - `planningHome`, `changeRoot`, and `actionContext`: planning scope and edit constraints
@@ -205,6 +209,7 @@ What would you like to do?
 ```
 
 **Guardrails**
+
 - Keep going through tasks until done or blocked
 - Always read context files before starting (from the apply instructions output)
 - If task is ambiguous, pause and ask before implementing

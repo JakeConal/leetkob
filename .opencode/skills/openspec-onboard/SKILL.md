@@ -26,6 +26,7 @@ Otherwise, with no root, what happens next depends on how this workflow was reac
 In both branches, never create the root as a side effect: do not run `openspec init` until the user asks for it, do not hand-create `openspec/` files, and do not let a command create it.
 
 **GitHub issue task tracking:** This project replaces the `tasks.md` artifact with one GitHub issue per change.
+
 - Resolve the target GitHub repository from the implementation repository remote, not a standalone spec store. Add `--repo <owner/repo>` to every `gh issue` command below.
 - Reuse the recorded issue. After interrupted creation, search the target repository for the exact `[<change-name>]` title prefix and confirm the matching change before creating another issue. If lookup or creation fails, report the blocker without falling back to a task file.
 - A recorded number satisfies the task artifact only after verifying the issue exists in the target repository and contains a nonempty numbered task checklist. Preserve unrelated metadata and issue body content. A closed issue alone never proves task completion.
@@ -49,6 +50,7 @@ openspec --version 2>&1 || echo "CLI_NOT_INSTALLED"
 ```
 
 **If CLI not installed:**
+
 > OpenSpec CLI is not installed. Install it first, then come back to `/opsx-onboard`.
 
 Stop here if not installed.
@@ -93,6 +95,7 @@ Scan the codebase for small improvement opportunities. Look for:
 6. **Missing validation** - User input handlers without validation
 
 Also check recent git activity:
+
 ```bash
 # Unix/macOS
 git log --oneline -10 2>/dev/null || echo "No git history"
@@ -131,6 +134,7 @@ Which task interests you? (Pick a number or describe your own)
 ```
 
 **If nothing found:** Fall back to asking what the user wants to build:
+
 > I didn't find obvious quick wins in your codebase. What's something small you've been meaning to add or fix?
 
 ### Scope Guardrail
@@ -163,6 +167,7 @@ Before we create a change, let me quickly show you **explore mode**—it's how y
 ```
 
 Spend 1-2 minutes investigating the relevant code:
+
 - Read the file(s) involved
 - Draw a quick ASCII diagram if it helps
 - Note any considerations
@@ -188,6 +193,7 @@ Now let's create a change to hold our work.
 ## Phase 4: Create the Change
 
 **EXPLAIN:**
+
 ```
 ## Creating a Change
 
@@ -197,21 +203,25 @@ Let me create one for our task.
 ```
 
 **DO:** Create the change with a derived kebab-case name:
+
 ```bash
 openspec new change "<derived-name>"
 ```
 
 **SHOW:**
+
 ```
 Created: <changeRoot from status JSON>
 
 The folder structure:
 ```
+
 <changeRoot>/
 ├── .openspec.yaml ← Change metadata; will also record x-github-issue
-├── proposal.md    ← Why we're doing this (empty, we'll fill it)
-├── design.md      ← How we'll build it (empty)
-└── specs/         ← Detailed requirements (empty)
+├── proposal.md ← Why we're doing this (empty, we'll fill it)
+├── design.md ← How we'll build it (empty)
+└── specs/ ← Detailed requirements (empty)
+
 ```
 
 Tasks do not live in this folder. We'll track them in one GitHub issue per change.
@@ -224,6 +234,7 @@ Now let's fill in the first artifact—the proposal.
 ## Phase 5: Proposal
 
 **EXPLAIN:**
+
 ```
 ## The Proposal
 
@@ -276,9 +287,11 @@ Does this capture the intent? I can adjust before we save it.
 **PAUSE** - Wait for user approval/feedback.
 
 After approval, save the proposal:
+
 ```bash
 openspec instructions proposal --change "<name>" --json
 ```
+
 Then write the content to the `resolvedOutputPath` from `openspec instructions proposal --change "<name>" --json`.
 
 ```
@@ -292,6 +305,7 @@ Next up: specs.
 ## Phase 6: Specs
 
 **EXPLAIN:**
+
 ```
 ## Specs
 
@@ -301,6 +315,7 @@ For a small task like this, we might only need one spec file.
 ```
 
 **DO:** Resolve where the spec file should be created:
+
 ```bash
 openspec instructions specs --change "<name>" --json
 # Use resolvedOutputPath from the JSON. If it is a glob, choose the concrete file path using the schema instruction and the change's context.
@@ -339,6 +354,7 @@ Save to the concrete file path chosen from `resolvedOutputPath`.
 ## Phase 7: Design
 
 **EXPLAIN:**
+
 ```
 ## Design
 
@@ -386,6 +402,7 @@ Save to the `resolvedOutputPath` from `openspec instructions design --change "<n
 ## Phase 8: Tasks
 
 **EXPLAIN:**
+
 ```
 ## Tasks
 
@@ -420,12 +437,15 @@ Each checkbox becomes a unit of work in the apply phase. Does this task breakdow
 **PAUSE** - Wait for user approval/feedback.
 
 After approval, run `openspec instructions tasks --change "<name>" --json` for the checklist guidance, but do not write `tasks.md`. Create the GitHub issue with the approved checklist as its body:
+
 ```bash
 gh issue create --title "[<change-name>] <summary>" --body-file <file>
 ```
+
 Record the returned issue number in `.openspec.yaml` as `x-github-issue: <number>`.
 
 Then ask:
+
 > "The task checklist is in issue #<number>. Ready to implement?"
 
 **PAUSE** - Wait for user to confirm before implementation.
@@ -435,6 +455,7 @@ Then ask:
 ## Phase 9: Apply (Implementation)
 
 **EXPLAIN:**
+
 ```
 ## Implementation
 
@@ -469,6 +490,7 @@ The change is implemented! One more step—let's archive it.
 ## Phase 10: Archive
 
 **EXPLAIN:**
+
 ```
 ## Archiving
 
@@ -478,16 +500,20 @@ Archived changes become your project's decision history—you can always find th
 ```
 
 **DO:** Archive the change (`--yes` answers the confirmation prompts, which you cannot answer from a tool call):
+
 ```bash
 openspec archive "<name>" --yes
 ```
+
 Then close the task issue, which records its number in `.openspec.yaml` as `x-github-issue`:
+
 ```bash
 gh issue comment <number> --body "Archived as <target-name>."
 gh issue close <number> --reason completed
 ```
 
 **SHOW:**
+
 ```
 Archived to: `<planningHome.changesDir>/archive/<target-name>/` (the target name prepends today's date, unless the name already starts with a `YYYY-MM-DD-` prefix — then it is kept as-is, no second date)
 
