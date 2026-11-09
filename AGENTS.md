@@ -8,7 +8,7 @@
 
 ## Commands
 
-- Install: `npm ci`
+- Install: `npm ci --ignore-scripts` (the same command CI runs)
 - Lint: `npm run lint`
 - Format check: `npm run format:check`
 - Type check: `npm run typecheck`

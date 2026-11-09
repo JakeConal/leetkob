@@ -15,5 +15,39 @@
   "enforceAdmins": true,
   "requiredConversationResolution": true,
   "allowForcePushes": false,
-  "allowDeletions": false
+  "allowDeletions": false,
+  "recapture": {
+    "capturedAt": "2026-11-09",
+    "sources": [
+      "https://api.github.com/repos/JakeConal/leetkob/branches/main",
+      "https://api.github.com/repos/JakeConal/leetkob/rules/branches/main",
+      "https://api.github.com/repos/JakeConal/leetkob/rulesets/26580713"
+    ],
+    "repositoryVisibility": "public",
+    "branchProtected": true,
+    "classicRequiredStatusChecks": {
+      "enforcementLevel": "everyone",
+      "contexts": ["Lint", "Format", "Typecheck", "Test"]
+    },
+    "ruleset": {
+      "id": 26580713,
+      "name": "protec-main-branch",
+      "enforcement": "active",
+      "target": "~DEFAULT_BRANCH",
+      "bypassActors": [],
+      "rules": {
+        "deletion": true,
+        "nonFastForward": true,
+        "pullRequest": {
+          "requiredApprovingReviewCount": 1,
+          "dismissStaleReviewsOnPush": true,
+          "allowedMergeMethods": ["merge", "squash", "rebase"]
+        },
+        "requiredStatusChecks": {
+          "strict": true
+        }
+      }
+    },
+    "note": "The current requiredApprovingReviewCount is 1 (ruleset), superseding the 0 recorded in the 2026-10-25 classic capture. The classic protection endpoint requires admin access, so the 2026-11-09 recapture used the public branch and rules endpoints."
+  }
 }
