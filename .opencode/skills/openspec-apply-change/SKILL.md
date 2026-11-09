@@ -42,9 +42,35 @@ In both branches, never create the root as a side effect: do not run `openspec i
 
 - Before implementation, inspect the branch and working tree. Reuse the branch for this change or create `codex/<change-name>` from the appropriate base. Respect an explicitly requested branch or base, and preserve unrelated work.
 - Keep each change on its own branch. Commit only the requested work in focused, coherent commits. Use Conventional Commits: `<type>(<optional-scope>): <imperative summary>` (for example, `feat(api): enforce submission deadline`); choose a fitting type such as `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`. Use the body when context is needed and follow any explicit repository or user convention.
-- Once implementation and relevant checks are complete, push the branch and create or update one PR against the chosen base. Reuse any existing PR. Describe the problem, change, and validation, and link the tracking issue without closing it automatically.
+- Once implementation and relevant checks are complete, push the branch and create or update one PR against the chosen base. Reuse an open PR for the same branch and scope. Describe the problem, change, and validation, then complete the required issue links and reviewer requests below.
 - If work is incomplete or blocked, report the status; create a draft PR only when requested. Never merge or bypass required checks. Follow repository permissions and explicit user instructions for publishing.
 - If push or PR creation fails, retain the local work and report the failure and next step.
+
+**Required issue links and reviewers**
+
+- Resolve the parent from `x-github-issue` and each selected task's sub-issue from its parent checklist link. Verify the sub-issue matches the change and task ID. Include the parent URL, selected task IDs, and task issue URLs in the PR description.
+- For a fully implemented task with a dedicated issue, establish a native GitHub issue–PR link. When the PR targets the repository's default branch, use `Closes #<task-issue>` in its description or retain an existing native Development link. Reference the umbrella parent with `Refs #<parent>` so archive controls its closure. Read the repository's default branch before using closing keywords. GitHub processes those keywords for default-branch PRs. [GitHub issue links](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
+- For partial task work or an integration PR targeting another branch, use issue references and backlinks, keep the issue open, and state the remaining work or final integration needed. If the change has only the parent checklist issue, link it with a reference and backlink. Reserve closing links for fully delivered dedicated task issues.
+- Add the PR URL to each affected task issue body and the parent issue's implementation-PR references. Preserve the task checklist, existing evidence, metadata, and other PR links. Re-read before editing and reconcile concurrent changes. Reuse an existing matching reference on retries.
+- Request at least one eligible reviewer other than the PR author. Follow explicit reviewer choices, applicable CODEOWNERS, and the confirmed project roster. For a small team, request the other eligible members. Verify repository access and exclude the author. If those sources identify no candidates, inspect eligible collaborators and relevant review history, select an appropriate reviewer, and disclose the selection. Ask only when eligibility or ownership remains unresolved.
+- Use GitHub review requests, such as `gh pr edit <pr> --repo <owner/repo> --add-reviewer <login>`. Preserve existing requests and add missing reviewers. A PR assignee alone does not fulfill the review-request requirement. [GitHub CLI reviewer requests](https://cli.github.com/manual/gh_pr_edit).
+- Read back `gh pr view <pr> --repo <owner/repo> --json url,body,author,baseRefName,closingIssuesReferences,reviewRequests,reviews`. Confirm the expected dedicated task issues appear in `closingIssuesReferences` when native closing links apply, and intended reviewers appear in pending requests or submitted reviews. Verify the issue-body backlinks separately. Record reference-only exceptions from the partial/integration/parent-only cases above.
+- Treat failed linking or reviewer requests as an incomplete PR handoff. Preserve the published PR, retry only after checking current state, and report the specific missing operation. Report the verified PR, linked issues, and requested reviewers in the final response.
+
+**Test design and evidence**
+
+When writing or changing tests, design cases to expose plausible defects in the requested behavior. Apply the following proportionally to the change and reuse meaningful existing coverage.
+
+- Before changing business logic, derive a compact test design from the OpenSpec requirements, reviewed contract, and known failure modes. Record the requirement, risk, input/state, expected observable outcome, and defect each case should detect in the existing task or PR. Derive the expected result independently from the implementation under test.
+- Choose techniques that fit the behavior. Partition valid and invalid inputs, test immediately below/at/above limits, use decision tables for interacting conditions, and model allowed and forbidden state transitions. Prioritize by failure impact and likelihood. [ISTQB CTFL v4.0.1, sections 4.2 and 5.2](https://istqb.org/wp-content/uploads/2024/11/ISTQB_CTFL_Syllabus_v4.0.1.pdf).
+- For each rejection case, satisfy the other prerequisites so execution reaches the specific rule being tested. Then exercise relevant combinations and evaluation order separately. For example, a pending-review test needs an authorized owner and a passed deadline, or the deadline guard could hide a broken review guard.
+- Assert contractual outputs, durable state, and relevant side effects, including their absence after rejection or failure. Compare with independently justified values or invariants. Exclude expected values computed through the production helper being tested and assertions that only repeat mock return values. Use call-count assertions when the interaction is itself a stated requirement, and also check its domain outcome.
+- Exercise normal entry points at the level where the risk exists. Pure domain tests suit policy calculations, HTTP contracts suit authorization and response semantics, and real adapter/integration tests suit transactions and constraints. Keep the behavior under test real. Use deterministic substitutes at external boundaries such as clocks and model providers, while ensuring those substitutes cannot bypass the rule being verified.
+- For affected stateful work, consider malformed and historical data, cross-user/class access, revoked access, stale revisions, duplicate/reordered requests, changed-payload retries, simultaneous operations, partial writes, and restart recovery. Select applicable cases from the task's actual requirements. Coordinate races with barriers or controlled scheduling and verify committed outcomes and duplicate effects.
+- Use property-based or generated cases when input combinations justify them. State the invariant independently, record reproducible seeds, and reduce failures to understandable cases. Review snapshots against the contract before accepting them. Treat line/branch coverage and test counts as gap indicators.
+- Demonstrate that the tests detect the defect. A regression test must fail on the original bug for the intended assertion and pass after repair. For new critical rules, make a small valid behavioral fault in an isolated local copy or approved fault-injection harness and show the focused test fails, then restore the implementation and rerun it. Examples include bypassing ownership, changing a deadline comparison, or permitting duplicate effects. A compiler error, broken setup, or unrelated timeout is insufficient evidence of the intended assertion. Never commit the deliberate fault or modify contracts, eval cases, labels, or expected results to accommodate it.
+- Use existing mutation tooling when available, or a targeted reversible fault for the relevant rule. Inspect surviving mutations for genuine assertion gaps and behaviorally equivalent changes. Record the defect, failing assertion, restored passing command, and residual risks in PR validation. A green run or covered line alone does not demonstrate defect detection. [Stryker mutation outcomes](https://stryker-mutator.io/docs/mutation-testing-elements/mutant-states-and-metrics/).
+- Run the relevant tests and required repository checks before marking the task complete. Report missing environments, skipped critical cases, or unavailable independent expected results as verification gaps. Follow the repository's approval rules for extra tooling and paid runs. Unit and contract tests use deterministic model substitutes.
 
 **Steps**
 
@@ -132,8 +158,10 @@ In both branches, never create the root as a side effect: do not run `openspec i
 
    For each pending task:
    - Show which task is being worked on
+   - Design applicable tests using the test-design guidance above, including independent expected outcomes and the defects the cases should detect
    - Make the code changes required
    - Keep changes minimal and focused
+   - Run the relevant checks, demonstrate defect detection for regressions and new critical rules, and review any verification gaps before marking completion
    - Re-read the issue body with `gh issue view <number> --json body` and confirm the task's checkbox line still matches the task description; if it does not, use the refreshed line
    - Mark the task complete in the issue body: change that line from `- [ ]` to `- [x]`, save the full body to a temporary file, and run `gh issue edit <number> --body-file <file>`
    - Re-read the issue and confirm that checkbox is checked and the progress count changed
@@ -146,11 +174,16 @@ In both branches, never create the root as a side effect: do not run `openspec i
    - Error or blocker encountered → report and wait for guidance
    - User interrupts
 
-7. **On completion or pause, show status**
+7. **Publish and verify the PR handoff**
+
+   After implementing the requested task scope and running its relevant checks, follow the branch conventions above to push and create or update the PR. Include the applicable requirement/risk-to-test mapping and defect-detection evidence in PR validation. Complete and verify the required issue links, backlinks, and reviewer requests before reporting the handoff complete. Apply these requirements to an existing PR as well as a new one.
+
+8. **On completion or pause, show status**
 
    Display:
    - Tasks completed this session
    - Overall progress: "N/M tasks complete"
+   - PR URL, linked parent/task issues, requested reviewers, and any incomplete handoff operation
    - If all done: report that tracked tasks are complete and suggest review or verification as appropriate before archiving
    - If paused: explain why and wait for guidance
 
@@ -176,6 +209,8 @@ Working on task 4/7: <task description>
 **Change:** <change-name>
 **Schema:** <schema-name>
 **Issue:** #<number> (<url>)
+**PR:** #<number> (<url>)
+**Reviewers:** @<reviewer>
 **Progress:** 7/7 tasks complete ✓
 
 ### Completed This Session
@@ -219,10 +254,12 @@ What would you like to do?
 - Pause on errors, blockers, or unclear requirements - don't guess
 - When a task needs work beyond what the spec describes, surface the added scope and pause - never silently narrow, defer, or simplify away specified behavior
 - Only mark a task `- [x]` when its specified behavior is fully implemented, not when it is partially done or deferred
+- Ground test expectations in requirements and demonstrate that relevant defects fail the tests. Resolve missing critical verification before claiming the task complete.
 - Use contextFiles from CLI output, don't assume specific file names
 - Never create `tasks.md`; the GitHub issue body is the only task checklist
 - Update the exact checkbox line in the issue body; never post task state only as a comment
-- Do not close the issue during apply; the archive workflow closes it after archiving
+- Keep the parent tracking issue open until archive. Fully delivered dedicated task issues may close when their linked PR merges into the default branch.
+- Verify issue–PR links, issue-body backlinks, and non-author review requests before reporting a completed PR handoff
 - Do not use context or operation guidance as proof that a task is complete
 - Apply relevant project context; report conflicts with controlling workflow inputs
 - Consider every guidance entry; explain any inapplicable or conflicting advice
