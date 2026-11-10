@@ -15,13 +15,16 @@ Observed in the checkout on 2026-11-05:
 
 ### Source authority and scope accounting
 
-Authority is class brief, then FAQ, then the upstream team's proposal. The brief was referenced by repository history but its full contents were not available in this session. Requirements below are grounded in the supplied FAQ/proposal and official evaluation README, not a claim to have independently verified every course rubric. Retrieve the exact brief and checkpoint rubrics for release evidence; discrepancies require explicit review rather than silently weakening these specifications.
+Authority is the lecturer's class brief and assessment instructions, then the product-owner FAQ, then the upstream team's proposal. Task 1.1 retrieved the exact class brief, published PA#2 rubric, official checkpoint calendar, FAQ, proposal, and evaluation contract on November 5, 2026. The cited acceptance matrix records source versions, capability coverage, sandbox proof obligations, and decisions requiring explicit review. PA#3–PA#6 detailed rubrics remain pending their assignment publication. [Source reconciliation and acceptance matrix](../../../docs/requirements/acceptance-matrix.md).
 
 Sources read:
 
-- [FAQ](https://github.com/tkob-team/LeeTKOB-FAQ/blob/main/FAQ.md), content blob `4522687ccdab0bd5d7f6e3c0060410d7bc05bd44`.
-- [Detailed proposal](https://github.com/tkob-team/proposal-AWAD/blob/main/docs/proposal-detail.md), content blob `202864d7dd52cd05172738eadecbfee5f78b516e`.
-- [Evaluation README](https://github.com/fithcmus/awad-leetkob-eval/blob/main/README.md), content blob `36388cfb4120d429ae3abe03006c8bdafb200edd`.
+- [Class brief](https://drive.google.com/file/d/1VK58AnV3_LWNWVX6jKxj1baPMDIA8QFm/view), modified `2026-10-22T05:13:48.187Z`.
+- [PA#2 rubric](https://drive.google.com/file/d/1wWH6xtNdzngJdGl7t4Qxe6VBarwl8lH9/view), modified `2026-10-22T05:13:50.125Z`.
+- [Official checkpoint calendar](https://classroom.google.com/c/ODg2MTU1OTQ4NDc0/m/ODkzMjIwMTk1NDM0/details), updated `2026-10-22T01:21:07.883Z`.
+- [FAQ](https://github.com/tkob-team/LeeTKOB-FAQ/blob/2b82b90ca3696fa81c68464f8a51ceb86406fef6/FAQ.md), content blob `4522687ccdab0bd5d7f6e3c0060410d7bc05bd44`.
+- [Detailed proposal](https://github.com/tkob-team/proposal-AWAD/blob/dbd689f9bb9828a721937cdd892d01e0b4e99a52/docs/proposal-detail.md), content blob `202864d7dd52cd05172738eadecbfee5f78b516e`.
+- [Evaluation README](https://github.com/fithcmus/awad-leetkob-eval/blob/552c811db2d35a23d641bc4fdffc1ac120be1a28/README.md), content blob `36388cfb4120d429ae3abe03006c8bdafb200edd`.
 
 The hashes above identify file blobs, not commit refs. Implementation must pin the actual dataset/scorer commit when vendoring or fetching evaluation inputs. Source model names and pricing estimates are not adopted as verified current provider facts.
 
@@ -261,7 +264,7 @@ FAQ traceability:
 | 12 | lab-publishing, grading-and-appeals; transaction and corrections (8, 9) |
 | 13, 14 | grading-and-appeals; unique deduction appeal and seven-day window (9) |
 
-The official milestone dates reported by the proposal are PA#3 November 25, PA#4 December 2, and PA#5 December 16, 2026 at 22:00 Asia/Saigon. They are reference checkpoints, not new user-imposed deadlines for this change.
+The class brief and official Classroom calendar set PA#2 November 11, PA#3 November 25, PA#4 December 2, and PA#5 December 16, 2026 at 22:00 Asia/Saigon. Reconciliation D05 identifies the current phase/task gap for PA#4's assigned-team red-team report and reachable deployment. D06 records the later detailed rubrics pending publication. Milestone acceptance must address those entries. [Checkpoint acceptance matrix](../../../docs/requirements/acceptance-matrix.md#checkpoint-acceptance-and-evidence).
 
 ## Risks / Trade-offs
 
@@ -275,7 +278,7 @@ The official milestone dates reported by the proposal are PA#3 November 25, PA#4
 - **Sanitization cannot infer every personal identifier perfectly** -> Use known identity data plus reviewed detection cases and fail closed when transformation cannot be trusted; never claim a comment-only stripper anonymizes all data.
 - **Grade changes, new findings, and publication can race** -> Shared lab/generation locking and revision checks; fault injection at commit boundaries and two-process tests.
 - **Live evaluation is expensive and untrusted code is dangerous** -> Trusted broker and evidence verifier, explicit paid-run cap, no live secrets in candidate execution.
-- **Source hierarchy contains gaps** -> The baseline decisions on KiB/MiB units, exact deadline exclusion, immutable post-opening deadlines, manual-adjustment composition, and no post-publication bulk rejudge are explicit here. Reconcile the class brief before release; source changes require reviewed deltas rather than unnoticed interpretation changes.
+- **Source interpretations and milestone scheduling require review** -> Task 1.1 records D01–D09 for units, time boundaries, compilation policy, PA#4 red-team timing, pending rubrics, and additional team policies. Record the responsible review before accepting the affected contract or milestone. [Decision register](../../../docs/requirements/acceptance-matrix.md#units-boundaries-and-decisions-requiring-explicit-review).
 - **Current evidence is PA#2-specific** -> Preserve its tag and artifacts; do not reuse its self-assessment as proof of PA#3-PA#5 functionality.
 
 ## Migration Plan

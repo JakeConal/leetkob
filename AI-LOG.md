@@ -131,6 +131,14 @@
 - Pushed annotated tag `pa2`, waited for green tag run 40152904321, and created `23120124_100.zip` from that tag with complete Git metadata.
 - Extracted the zip into a clean directory and verified `.git`, `PA2.md`, `AI-LOG.md`, `SELF_ASSESSMENT_REPORT.md`, `README.md`, the lockfile, a clean Git status, and matching `HEAD`/`pa2` commit IDs.
 
+### 2026-11-05 — Reconcile class requirements for task 1.1
+
+- Tool used was Codex with OpenSpec, authenticated Classroom/Drive readers, and GitHub source reads.
+- Requested work was the cited acceptance matrix for the class brief and published checkpoint rubrics against the product-owner FAQ and proposal.
+- Kept the brief's fixed thresholds, sandbox minimums, stack freedom, and milestone outcomes, with source versions and implementation-evidence obligations.
+- Changed the source register after retrieving the original brief and PA#2 rubric. Identified PA#4's assigned-team red-team report as an earlier requirement than the current operations-phase schedule captures.
+- Rejected treating binary units, precise time boundaries, conditional compilation timeout, or unpublished later rubrics as lecturer-confirmed details. Recorded those distinctions and the responsible follow-up reviews in `docs/requirements/acceptance-matrix.md`.
+
 ## Changed
 
 - Replaced generic agent guidance with LeeTKOB-specific prohibitions and approval tiers.
