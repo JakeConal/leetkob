@@ -153,3 +153,11 @@
 - Initially rejected a web framework before it was requested; the later user-approved migration is recorded in D5 and keeps the same domain and contract boundaries.
 - Rejected adding TanStack Router alongside Next.js App Router.
 - Rejected logging unexpected exception details; the `internal-error` response is fixed and generic.
+
+### 2026-11-09 — Evidence refresh before final hand-in
+
+- Re-graded the repository against the PA#2 rubric with Claude Code and found an estimate of about 94–96. The team claim stays at **96**, which supersedes the 100/100 independent-agent estimate recorded on 2026-10-25.
+- The submission archive is named `23120045-23120124-23120175_96.zip` (all three student IDs in ascending order and the claimed total). It replaces the earlier `23120124_100.zip` draft, which listed one ID and the outdated total.
+- `PA2.md` and `SELF_ASSESSMENT_REPORT.md` linked tag runs from earlier tag positions (40152904321, 40177068435). They now link the filtered `pa2` run list, because a commit cannot contain the ID of the run its own tag push triggers.
+- Re-captured `main` protection: the active ruleset now requires one approving review (previously 0) and has no bypass actors. The four required checks are unchanged.
+- Aligned the install command in `AGENTS.md` with README and CI (`npm ci --ignore-scripts`).

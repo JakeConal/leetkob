@@ -7,9 +7,9 @@ This file is the evidence map for the `pa2` submission of LeeTKOB. The submitted
 - Repository: <https://github.com/JakeConal/leetkob>
 - Protected branch: `main`
 - Protection API: <https://api.github.com/repos/JakeConal/leetkob/branches/main/protection>
-- Captured settings: [`docs/evidence/main-branch-protection.json`](docs/evidence/main-branch-protection.json)
+- Captured settings: [`docs/evidence/main-branch-protection.json`](docs/evidence/main-branch-protection.json) (classic protection captured 2026-10-25, ruleset `protec-main-branch` re-captured 2026-11-09)
 - Required checks: `Lint`, `Format`, `Typecheck`, and `Test`, with strict up-to-date enforcement
-- Additional protections: pull-request flow, administrator enforcement, stale-review dismissal, conversation resolution, and disabled force pushes/deletions
+- Additional protections: pull-request flow with one required approval, stale-review dismissal, no bypass actors, administrator enforcement, conversation resolution, and disabled force pushes/deletions
 
 ## Gate-bites demonstration
 
@@ -38,7 +38,6 @@ The same protected pull request contains the deliberate regression and its repai
 ## Submitted tag and CI
 
 - Tag: [`pa2`](https://github.com/JakeConal/leetkob/tree/pa2)
-- Verified tag run: [Quality Gate run 40152904321](https://github.com/JakeConal/leetkob/actions/runs/40152904321)
-- Tag-triggered workflow: [Quality Gate runs filtered to `pa2`](https://github.com/JakeConal/leetkob/actions/workflows/quality.yml?query=branch%3Apa2)
+- CI run for the tag: [Quality Gate runs filtered to `pa2`](https://github.com/JakeConal/leetkob/actions/workflows/quality.yml?query=branch%3Apa2). The **most recent** run in that list is the run for the submitted tag commit; its head SHA equals `git rev-parse pa2^{commit}`.
 
-The workflow listens to pushes of the exact `pa2` tag. The immutable run above records the first verified tag push; the filtered link remains stable and exposes the current tag run and its individual jobs after final evidence updates.
+The workflow listens to pushes of the exact `pa2` tag. A commit cannot contain the ID of the run that its own tag push triggers, so this file links the filtered list rather than a single run ID. Earlier entries in the list ([40152904321](https://github.com/JakeConal/leetkob/actions/runs/40152904321), [40177068435](https://github.com/JakeConal/leetkob/actions/runs/40177068435), [42639706025](https://github.com/JakeConal/leetkob/actions/runs/42639706025)) belong to earlier positions of the tag and are kept only as history.
