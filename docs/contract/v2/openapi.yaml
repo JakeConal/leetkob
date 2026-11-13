@@ -1,0 +1,3547 @@
+openapi: 3.1.0
+info:
+  title: LeeTKOB production API
+  version: 2.0.0-draft.1
+  summary: Language-neutral contract for the /v2 production resource families.
+  description: |
+    Draft for contract review (OpenSpec task 1.3). `docs/contract/v2/README.md` is the normative
+    companion: it defines conventions, evaluation order, idempotency, revision vocabulary, time and
+    decimal representations, and the separation from the unversioned v1.1 publication contract.
+    If an implementation and this contract disagree, the implementation is wrong.
+  license:
+    name: Coursework repository for CSC13114
+    identifier: LicenseRef-CSC13114-coursework
+servers:
+  - url: https://leetkob.example
+    description: Placeholder origin. Paths are served from the same origin as the web application.
+tags:
+  - name: auth
+    description: Accounts, sessions, and administrator role provisioning.
+  - name: classes
+    description: Classes, teaching-assistant assignment, enrollment, and rosters.
+  - name: labs
+    description: Lab authoring, tests, constraints, revisions, and readiness.
+  - name: submissions
+    description: Durable submission acceptance, results, and source.
+  - name: reviews
+    description: Review queue, evidence, and TA decisions.
+  - name: publication
+    description: Whole-lab publication.
+  - name: grades
+    description: Published grades, gradebook, and individual adjustments.
+  - name: appeals
+    description: Deduction appeals and their resolution.
+  - name: events
+    description: Authenticated server-sent event hints.
+security:
+  - sessionCookie: []
+
+# Catalog of every problem type. `type` is `https://leetkob.example/problems/<key>`.
+# `universal` problems may be returned by any operation and are not repeated per operation.
+x-leetkob-problems:
+  invalid-request:
+    { status: 400, title: Invalid request, schema: InvalidRequestProblem, sharedWithV1: true }
+  evidence-invalid: { status: 400, title: Evidence invalid, schema: EvidenceInvalidProblem }
+  test-bundle-invalid: { status: 400, title: Test bundle invalid, schema: TestBundleInvalidProblem }
+  authentication-required:
+    { status: 401, title: Authentication required, schema: Problem, sharedWithV1: true }
+  invalid-credentials: { status: 401, title: Invalid credentials, schema: Problem }
+  csrf-rejected: { status: 403, title: Cross-site request rejected, schema: Problem }
+  admin-role-required: { status: 403, title: Administrator role required, schema: Problem }
+  ta-role-required: { status: 403, title: TA role required, schema: Problem, sharedWithV1: true }
+  student-role-required: { status: 403, title: Student role required, schema: Problem }
+  route-not-found:
+    { status: 404, title: Route not found, schema: Problem, universal: true, sharedWithV1: true }
+  user-not-found: { status: 404, title: User not found, schema: Problem }
+  class-not-found: { status: 404, title: Class not found, schema: Problem }
+  invitation-not-found: { status: 404, title: Invitation not found, schema: Problem }
+  lab-not-found: { status: 404, title: Lab not found, schema: Problem, sharedWithV1: true }
+  constraint-not-found: { status: 404, title: Constraint not found, schema: Problem }
+  submission-not-found: { status: 404, title: Submission not found, schema: Problem }
+  finding-not-found: { status: 404, title: Finding not found, schema: Problem }
+  grade-not-found: { status: 404, title: Grade not found, schema: Problem }
+  deduction-not-found: { status: 404, title: Deduction not found, schema: Problem }
+  appeal-not-found: { status: 404, title: Appeal not found, schema: Problem }
+  registration-rejected: { status: 409, title: Registration rejected, schema: Problem }
+  role-change-not-allowed: { status: 409, title: Role change not allowed, schema: Problem }
+  class-capacity-reached:
+    { status: 409, title: Class capacity reached, schema: ClassCapacityReachedProblem }
+  revision-conflict: { status: 409, title: Revision conflict, schema: RevisionConflictProblem }
+  idempotency-key-reused: { status: 409, title: Idempotency key reused, schema: Problem }
+  lab-configuration-locked:
+    { status: 409, title: Lab configuration locked, schema: LabConfigurationLockedProblem }
+  constraint-change-not-allowed:
+    { status: 409, title: Constraint change not allowed, schema: ConstraintChangeNotAllowedProblem }
+  submission-deadline-passed:
+    { status: 409, title: Submission deadline passed, schema: SubmissionDeadlinePassedProblem }
+  group-decision-not-allowed:
+    { status: 409, title: Group decision not allowed, schema: GroupDecisionNotAllowedProblem }
+  lab-still-open:
+    { status: 409, title: Submissions still open, schema: LabStillOpenProblem, sharedWithV1: true }
+  lab-processing-incomplete:
+    { status: 409, title: Lab processing incomplete, schema: LabProcessingIncompleteProblem }
+  reviews-pending:
+    { status: 409, title: Reviews pending, schema: ReviewsPendingProblem, sharedWithV1: true }
+  lab-already-published:
+    {
+      status: 409,
+      title: Lab already published,
+      schema: LabAlreadyPublishedProblem,
+      sharedWithV1: true,
+    }
+  grades-not-published: { status: 409, title: Grades not published, schema: Problem }
+  appeal-already-exists:
+    { status: 409, title: Appeal already exists, schema: AppealAlreadyExistsProblem }
+  appeal-window-closed:
+    { status: 409, title: Appeal window closed, schema: AppealWindowClosedProblem }
+  appeal-already-resolved: { status: 409, title: Appeal already resolved, schema: Problem }
+  payload-too-large: { status: 413, title: Payload too large, schema: PayloadTooLargeProblem }
+  unsupported-media-type: { status: 415, title: Unsupported media type, schema: Problem }
+  rate-limited: { status: 429, title: Too many requests, schema: RateLimitedProblem }
+  internal-error:
+    {
+      status: 500,
+      title: Internal server error,
+      schema: Problem,
+      universal: true,
+      sharedWithV1: true,
+    }
+  service-unavailable: { status: 503, title: Service unavailable, schema: Problem, universal: true }
+
+paths:
+  /v2/auth/register:
+    post:
+      tags: [auth]
+      operationId: registerAccount
+      summary: Create a student account and start a session.
+      security: []
+      x-leetkob:
+        phase: 1
+        actors: [public]
+        scope: none
+        csrf: origin
+        idempotency: none
+        problems: [invalid-request, registration-rejected, unsupported-media-type, rate-limited]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201": { $ref: "#/components/responses/SessionStarted" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/auth/login:
+    post:
+      tags: [auth]
+      operationId: logIn
+      summary: Verify email and password and start a session.
+      security: []
+      x-leetkob:
+        phase: 1
+        actors: [public]
+        scope: none
+        csrf: origin
+        idempotency: none
+        problems: [invalid-request, invalid-credentials, unsupported-media-type, rate-limited]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/SessionStarted" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refreshSession
+      summary: Rotate the refresh token and issue a new access token.
+      description: |
+        Reads only the refresh cookie; the body is empty. A consumed, unknown, expired, or revoked
+        refresh token returns `authentication-required`. Presenting a previously consumed token
+        additionally revokes its whole session family.
+      security:
+        - refreshCookie: []
+      x-leetkob:
+        phase: 1
+        actors: [admin, ta, student]
+        scope: own
+        csrf: origin
+        idempotency: none
+        problems: [invalid-request, authentication-required, rate-limited]
+      responses:
+        "200": { $ref: "#/components/responses/SessionStarted" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logOut
+      summary: Revoke the current session family and clear both cookies.
+      x-leetkob:
+        phase: 1
+        actors: [admin, ta, student]
+        scope: own
+        csrf: token
+        idempotency: none
+        problems: [invalid-request, authentication-required, csrf-rejected]
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "204":
+          description: Session revoked. Both cookies are cleared.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/auth/session:
+    get:
+      tags: [auth]
+      operationId: getSession
+      summary: Read the current identity, current role, and CSRF token.
+      x-leetkob:
+        phase: 1
+        actors: [admin, ta, student]
+        scope: own
+        csrf: none
+        idempotency: none
+        problems: [authentication-required]
+      responses:
+        "200":
+          description: Current session.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+        "401": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/auth/users:
+    get:
+      tags: [auth]
+      operationId: findUserByEmail
+      summary: Look up one account by exact email for role provisioning.
+      x-leetkob:
+        phase: 1
+        actors: [admin]
+        scope: any
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, admin-role-required, user-not-found]
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/Email" }
+      responses:
+        "200":
+          description: The matching account.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/auth/users/{userId}/role:
+    put:
+      tags: [auth]
+      operationId: setUserRole
+      summary: Provision or withdraw an elevated role. Audited.
+      description: |
+        Only an administrator changes roles. Withdrawing the TA role while the account is still
+        assigned to a class, or changing a student who still has enrollments to a TA, returns
+        `role-change-not-allowed`. An administrator cannot change their own role.
+      x-leetkob:
+        phase: 1
+        actors: [admin]
+        scope: any
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - admin-role-required
+          - user-not-found
+          - revision-conflict
+          - role-change-not-allowed
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetRoleRequest" }
+      responses:
+        "200":
+          description: The account with its new role and revision.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/classes:
+    get:
+      tags: [classes]
+      operationId: listClasses
+      summary: List the classes visible to the caller.
+      description: Administrators see every class, TAs their assigned classes, students their enrolled classes.
+      x-leetkob:
+        phase: 1
+        actors: [admin, ta, student]
+        scope: own
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page of classes ordered by name, then id.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [classes]
+      operationId: createClass
+      summary: Create a class.
+      x-leetkob:
+        phase: 1
+        actors: [admin]
+        scope: any
+        csrf: token
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - admin-role-required
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateClassRequest" }
+      responses:
+        "201":
+          description: The created class.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+            Location: { $ref: "#/components/headers/Location" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Class" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/enrollments:
+    post:
+      tags: [classes]
+      operationId: redeemInvitation
+      summary: Join a class with an invitation code.
+      description: |
+        Redeeming a code for a class the student already belongs to returns the existing membership
+        with `200` and creates nothing. Unknown, expired, and revoked codes are indistinguishable.
+      x-leetkob:
+        phase: 1
+        actors: [student]
+        scope: own
+        csrf: token
+        idempotency: natural
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - student-role-required
+          - invitation-not-found
+          - class-capacity-reached
+          - unsupported-media-type
+          - rate-limited
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RedeemInvitationRequest" }
+      responses:
+        "200":
+          description: The caller's membership, new or existing.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassMember" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/{classId}:
+    get:
+      tags: [classes]
+      operationId: getClass
+      summary: Read one class the caller administers, teaches, or is enrolled in.
+      x-leetkob:
+        phase: 1
+        actors: [admin, ta, student]
+        scope: member-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, class-not-found]
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+      responses:
+        "200":
+          description: The class.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Class" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/{classId}/teaching-assistants/{userId}:
+    put:
+      tags: [classes]
+      operationId: assignTeachingAssistant
+      summary: Assign a TA account to a class. Repeating the assignment changes nothing.
+      x-leetkob:
+        phase: 1
+        actors: [admin]
+        scope: any
+        csrf: token
+        idempotency: natural
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - admin-role-required
+          - class-not-found
+          - user-not-found
+          - role-change-not-allowed
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "200":
+          description: The TA membership.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassMember" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [classes]
+      operationId: unassignTeachingAssistant
+      summary: Remove a TA assignment. Access through unexpired tokens ends immediately.
+      x-leetkob:
+        phase: 1
+        actors: [admin]
+        scope: any
+        csrf: token
+        idempotency: natural
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - admin-role-required
+          - class-not-found
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "204": { $ref: "#/components/responses/NoContent" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/{classId}/members:
+    get:
+      tags: [classes]
+      operationId: listClassMembers
+      summary: List the roster of an assigned class.
+      x-leetkob:
+        phase: 1
+        actors: [admin, ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, ta-role-required, class-not-found]
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - name: role
+          in: query
+          schema: { $ref: "#/components/schemas/MemberRole" }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page of members ordered by display name, then user id.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassMemberPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [classes]
+      operationId: addClassMember
+      summary: Enroll one existing student account by email.
+      description: Returns `200` with the existing membership when the student is already enrolled.
+      x-leetkob:
+        phase: 1
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: natural
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - class-not-found
+          - user-not-found
+          - role-change-not-allowed
+          - class-capacity-reached
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddMemberRequest" }
+      responses:
+        "200":
+          description: The student was already enrolled; nothing changed.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassMember" }
+        "201":
+          description: The new membership.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassMember" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/{classId}/members/{userId}:
+    delete:
+      tags: [classes]
+      operationId: removeClassMember
+      summary: Remove a student from the class roster.
+      description: |
+        Removing a member never rewrites a lab roster frozen at an earlier submission deadline.
+      x-leetkob:
+        phase: 1
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: natural
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - class-not-found
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "204": { $ref: "#/components/responses/NoContent" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/{classId}/roster-imports:
+    post:
+      tags: [classes]
+      operationId: importRoster
+      summary: Enroll students from a CSV roster and report every row.
+      description: |
+        The body is UTF-8 CSV with the header row `email,studentCode` and at most 500 data rows.
+        Rows are applied independently in file order; an accepted row stays accepted when a later
+        row is rejected, and re-importing the same file changes nothing. The class never exceeds
+        100 enrolled students.
+      x-leetkob:
+        phase: 1
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: natural
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - class-not-found
+          - payload-too-large
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema: { type: string, maxLength: 65536 }
+      responses:
+        "200":
+          description: Per-row outcome. A file whose rows are all rejected still returns 200.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RosterImportResult" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "413": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/{classId}/invitations:
+    get:
+      tags: [classes]
+      operationId: listInvitations
+      summary: List the invitation codes of an assigned class.
+      x-leetkob:
+        phase: 1
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, ta-role-required, class-not-found]
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page of invitations, newest first.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [classes]
+      operationId: createInvitation
+      summary: Create an expiring invitation code.
+      x-leetkob:
+        phase: 1
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - class-not-found
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInvitationRequest" }
+      responses:
+        "201":
+          description: The invitation, including its code.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invitation" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/classes/{classId}/invitations/{invitationId}:
+    delete:
+      tags: [classes]
+      operationId: revokeInvitation
+      summary: Revoke an invitation code. Existing memberships are unaffected.
+      x-leetkob:
+        phase: 1
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: natural
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - class-not-found
+          - invitation-not-found
+      parameters:
+        - $ref: "#/components/parameters/ClassId"
+        - $ref: "#/components/parameters/InvitationId"
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "204": { $ref: "#/components/responses/NoContent" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/labs:
+    get:
+      tags: [labs]
+      operationId: listLabs
+      summary: List the labs of one class.
+      description: Students receive only labs whose opening time has been reached.
+      x-leetkob:
+        phase: 2
+        actors: [ta, student]
+        scope: member-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, class-not-found]
+      parameters:
+        - name: classId
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/Uuid" }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page of labs ordered by opening time, then id.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LabPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [labs]
+      operationId: createLab
+      summary: Create a lab in an assigned class.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - class-not-found
+          - payload-too-large
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateLabRequest" }
+      responses:
+        "201":
+          description: The created lab in the TA view.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+            Location: { $ref: "#/components/headers/Location" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaLab" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "413": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}:
+    get:
+      tags: [labs]
+      operationId: getLab
+      summary: Read one lab in the caller's projection.
+      description: |
+        An assigned TA receives `TaLab`. An enrolled student receives `StudentLab` from the opening
+        time onward and `lab-not-found` before it.
+      x-leetkob:
+        phase: 2
+        actors: [ta, student]
+        scope: member-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+      responses:
+        "200":
+          description: The lab.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lab" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    patch:
+      tags: [labs]
+      operationId: updateLab
+      summary: Change authoring fields of a lab.
+      description: |
+        From the opening time, `opensAt`, `submissionDeadline`, and `executionPolicy` are locked.
+        Title and statement stay editable until publication. Every member except `expectedRevision`
+        is optional; at least one must be present.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - revision-conflict
+          - lab-configuration-locked
+          - lab-already-published
+          - payload-too-large
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateLabRequest" }
+      responses:
+        "200":
+          description: The lab with its new revision.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaLab" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "413": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/sample-tests:
+    get:
+      tags: [labs]
+      operationId: listSampleTests
+      summary: Read the sample tests of the active test revision.
+      description: Hidden tests never appear here or in any student projection.
+      x-leetkob:
+        phase: 2
+        actors: [ta, student]
+        scope: member-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+      responses:
+        "200":
+          description: Sample tests in stable ordinal order.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SampleTestList" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/test-revisions:
+    get:
+      tags: [labs]
+      operationId: listTestRevisions
+      summary: List the immutable test revisions of a lab.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, ta-role-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+      responses:
+        "200":
+          description: Every test revision, newest first.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TestRevisionList" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [labs]
+      operationId: uploadTestBundle
+      summary: Validate a ZIP test bundle and activate it as the next test revision.
+      description: |
+        The body is one ZIP archive of at most 10,485,760 bytes. Entries are
+        `sample/<name>.in` with `sample/<name>.out` and `hidden/<name>.in` with
+        `hidden/<name>.out`. The whole bundle is validated before anything is activated. The
+        `expectedRevision` query parameter is the lab revision the TA saw. In phases 2-8 a bundle
+        can be uploaded only before the lab opens.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - test-bundle-invalid
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - revision-conflict
+          - lab-configuration-locked
+          - lab-already-published
+          - payload-too-large
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/CsrfToken"
+        - name: expectedRevision
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/Revision" }
+      requestBody:
+        required: true
+        content:
+          application/zip:
+            schema: { type: string, contentMediaType: application/zip }
+      responses:
+        "201":
+          description: The activated test revision.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TestRevision" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "413": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/constraints:
+    get:
+      tags: [labs]
+      operationId: listConstraints
+      summary: List the active constraints and deductions of a lab.
+      x-leetkob:
+        phase: 2
+        actors: [ta, student]
+        scope: member-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+      responses:
+        "200":
+          description: Active constraints ordered by key.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConstraintList" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [labs]
+      operationId: createConstraint
+      summary: Add a constraint. Allowed only before the lab opens.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - constraint-change-not-allowed
+          - lab-already-published
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateConstraintRequest" }
+      responses:
+        "201":
+          description: The constraint at revision 1.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Constraint" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/constraints/{constraintId}:
+    patch:
+      tags: [labs]
+      operationId: reviseConstraint
+      summary: Append a new revision of a constraint.
+      description: |
+        Before opening any change is allowed. From opening until publication the deduction may
+        only decrease, and a text change requires `preservesMeaning: true`; both require a
+        non-empty `reason`. Every accepted revision supersedes the constraint's findings and
+        decisions and advances the lab's grading generation.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - constraint-not-found
+          - revision-conflict
+          - constraint-change-not-allowed
+          - lab-already-published
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/ConstraintId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReviseConstraintRequest" }
+      responses:
+        "200":
+          description: The constraint at its new revision.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Constraint" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/constraints/{constraintId}/delete:
+    post:
+      tags: [labs]
+      operationId: deleteConstraint
+      summary: Retire a constraint while preserving its revision history.
+      description: |
+        Allowed until publication. After opening a non-empty `reason` is required. Deletion removes
+        the constraint from active deductions and review obligations.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - constraint-not-found
+          - revision-conflict
+          - lab-already-published
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/ConstraintId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeleteConstraintRequest" }
+      responses:
+        "204": { $ref: "#/components/responses/NoContent" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/constraints/{constraintId}/revisions:
+    get:
+      tags: [labs]
+      operationId: listConstraintRevisions
+      summary: Read the append-only revision history of a constraint, including a deleted one.
+      x-leetkob:
+        phase: 2
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - ta-role-required
+          - lab-not-found
+          - constraint-not-found
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/ConstraintId"
+      responses:
+        "200":
+          description: Every revision, oldest first.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConstraintRevisionList" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/readiness:
+    get:
+      tags: [labs]
+      operationId: getLabReadiness
+      summary: Read publication readiness derived from authoritative lab state.
+      x-leetkob:
+        phase: 5
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, ta-role-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+      responses:
+        "200":
+          description: Readiness counts. Never contains per-student records.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Readiness" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/appeals:
+    get:
+      tags: [appeals]
+      operationId: listLabAppeals
+      summary: List the appeals of a published lab for its assigned TAs.
+      x-leetkob:
+        phase: 7
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, ta-role-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/AppealStatus" }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page of appeals, oldest pending first.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppealPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/labs/{labId}/submissions:
+    get:
+      tags: [submissions]
+      operationId: listSubmissions
+      summary: List submissions of a lab.
+      description: |
+        A student always receives only their own submissions. An assigned TA receives the lab's
+        submissions and may filter by student or counted state.
+      x-leetkob:
+        phase: 3
+        actors: [ta, student]
+        scope: member-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - name: studentId
+          in: query
+          description: TA only. A student supplying this parameter receives `invalid-request`.
+          schema: { $ref: "#/components/schemas/Uuid" }
+        - name: counted
+          in: query
+          schema: { type: boolean }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page ordered by `(receivedAt, acceptanceSequence)` descending.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubmissionPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [submissions]
+      operationId: createSubmission
+      summary: Durably accept one C++17 source and schedule judging.
+      description: |
+        The body is the raw source: 1 to 65,536 bytes of valid UTF-8. `201` means the source and the
+        judge intent are durable. Accepted while `opensAt <= receivedAt < submissionDeadline`,
+        where `receivedAt` is stamped by the server when the complete bounded body has arrived.
+        See README section 6.4 for the evaluation order and replay rules.
+      x-leetkob:
+        phase: 3
+        actors: [student]
+        scope: enrolled-class
+        csrf: token
+        idempotency: required
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - student-role-required
+          - lab-not-found
+          - idempotency-key-reused
+          - submission-deadline-passed
+          - payload-too-large
+          - unsupported-media-type
+          - rate-limited
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: { type: string, minLength: 1 }
+      responses:
+        "201":
+          description: The accepted submission. A same-key replay returns this stored response.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+            Location: { $ref: "#/components/headers/Location" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Submission" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "413": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/submissions/{submissionId}:
+    get:
+      tags: [submissions]
+      operationId: getSubmission
+      summary: Read one submission with its aggregate and per-test judge results.
+      description: |
+        Visible to its author and to TAs assigned to its class. Hidden test inputs, expected
+        outputs, actual outputs, and review findings are never included.
+      x-leetkob:
+        phase: 3
+        actors: [ta, student]
+        scope: own-or-assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, submission-not-found]
+      parameters:
+        - $ref: "#/components/parameters/SubmissionId"
+      responses:
+        "200":
+          description: The submission.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Submission" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/submissions/{submissionId}/source:
+    get:
+      tags: [submissions]
+      operationId: getSubmissionSource
+      summary: Download the original submitted bytes.
+      x-leetkob:
+        phase: 3
+        actors: [ta, student]
+        scope: own-or-assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, submission-not-found]
+      parameters:
+        - $ref: "#/components/parameters/SubmissionId"
+      responses:
+        "200":
+          description: The exact accepted bytes.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+            X-Content-Type-Options:
+              description: Always `nosniff`.
+              schema: { type: string, const: nosniff }
+          content:
+            text/plain:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/labs/{labId}/reviews:
+    get:
+      tags: [reviews]
+      operationId: listReviewQueue
+      summary: List findings of the current grading generation.
+      description: |
+        `scope=required` (default) returns every current violation, every current unsure, and the
+        persisted pass sample. `scope=all` returns every current finding so a TA can override an
+        unsampled pass. Reloading never redraws the sample.
+      x-leetkob:
+        phase: 5
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, ta-role-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - name: scope
+          in: query
+          schema: { type: string, enum: [required, all], default: required }
+        - name: state
+          in: query
+          schema: { type: string, enum: [pending, decided, all], default: all }
+        - name: source
+          in: query
+          schema: { $ref: "#/components/schemas/FindingSource" }
+        - name: constraintId
+          in: query
+          schema: { $ref: "#/components/schemas/Uuid" }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page ordered by source, constraint key, then finding id.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReviewQueuePage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/reviews/group-decisions:
+    post:
+      tags: [reviews]
+      operationId: decideFindingGroup
+      summary: Confirm a group of current deterministic violations of one constraint.
+      description: |
+        All-or-nothing. Every item must be a current, undecided-or-decided deterministic violation
+        of `constraintId` at the stated revision. Any stale item rejects the whole request with
+        `revision-conflict`; any model or unsure finding rejects it with
+        `group-decision-not-allowed`. Each finding receives its own audited decision.
+      x-leetkob:
+        phase: 5
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - revision-conflict
+          - group-decision-not-allowed
+          - lab-already-published
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GroupDecisionRequest" }
+      responses:
+        "200":
+          description: The new revision of every decided finding.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GroupDecisionResult" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/reviews/{findingId}:
+    get:
+      tags: [reviews]
+      operationId: getFinding
+      summary: Read one finding with reason, evidence, provenance, and decision history.
+      x-leetkob:
+        phase: 5
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - ta-role-required
+          - lab-not-found
+          - finding-not-found
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/FindingId"
+      responses:
+        "200":
+          description: The finding.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FindingDetail" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/reviews/{findingId}/decisions:
+    post:
+      tags: [reviews]
+      operationId: decideFinding
+      summary: Record an explicit pass or violation decision for one finding.
+      description: |
+        `violation` requires at least one evidence line whose text equals the original source line
+        after trimming leading and trailing whitespace only. `reason` is required when the decision
+        differs from the checker verdict or the checker verdict is `unsure`.
+      x-leetkob:
+        phase: 5
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - evidence-invalid
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - finding-not-found
+          - revision-conflict
+          - lab-already-published
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/FindingId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DecisionRequest" }
+      responses:
+        "200":
+          description: The finding at its new revision.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FindingDetail" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/labs/{labId}/publish:
+    post:
+      tags: [publication]
+      operationId: publishLab
+      summary: Publish the grades of a whole lab atomically and irreversibly.
+      description: |
+        The body is empty. Current TA role and class ownership are verified before any stored
+        idempotent result is read. See README section 6.6 for the evaluation order.
+      x-leetkob:
+        phase: 6
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: required
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - lab-already-published
+          - lab-still-open
+          - lab-processing-incomplete
+          - reviews-pending
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "200":
+          description: Publication metadata only.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/labs/{labId}/grades:
+    get:
+      tags: [grades]
+      operationId: listLabGrades
+      summary: Read the lab gradebook for its assigned TAs.
+      description: Rows are labelled `provisional` before publication and `published` afterwards.
+      x-leetkob:
+        phase: 5
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, ta-role-required, lab-not-found]
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: One page of grade rows ordered by display name, then student id.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GradeRowPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/grades/me:
+    get:
+      tags: [grades]
+      operationId: getMyGrade
+      summary: Read the caller's own published grade and confirmed deductions.
+      description: |
+        Before publication, and for a student outside the frozen roster, the response is
+        `grade-not-found`. Rejected proposals, unsure verdicts, sample membership, and review
+        history never appear.
+      x-leetkob:
+        phase: 7
+        actors: [student]
+        scope: own
+        csrf: none
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - student-role-required
+          - lab-not-found
+          - grade-not-found
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+      responses:
+        "200":
+          description: The caller's published grade.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentGrade" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/grades/{studentId}:
+    get:
+      tags: [grades]
+      operationId: getStudentGrade
+      summary: Read one student's grade breakdown and version history.
+      x-leetkob:
+        phase: 5
+        actors: [ta]
+        scope: assigned-class
+        csrf: none
+        idempotency: none
+        problems:
+          - invalid-request
+          - authentication-required
+          - ta-role-required
+          - lab-not-found
+          - grade-not-found
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/StudentId"
+      responses:
+        "200":
+          description: The grade with its append-only versions.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaGrade" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/labs/{labId}/grades/{studentId}/adjustment:
+    put:
+      tags: [grades]
+      operationId: adjustStudentGrade
+      summary: Set one student's published grade to a reasoned target value.
+      description: |
+        The server stores `manualAdjustment = targetGrade - formulaGrade` together with the
+        requested target and the previous effective grade, and appends a grade version. A new
+        adjustment replaces the current one. Publication metadata and other students are
+        unchanged. Before publication the response is `grades-not-published`.
+      x-leetkob:
+        phase: 7
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - lab-not-found
+          - grade-not-found
+          - revision-conflict
+          - grades-not-published
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/LabId"
+        - $ref: "#/components/parameters/StudentId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdjustGradeRequest" }
+      responses:
+        "200":
+          description: The grade at its new version.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaGrade" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/deductions/{deductionId}/appeals:
+    post:
+      tags: [appeals]
+      operationId: createAppeal
+      summary: Appeal one confirmed deduction on the caller's own published submission.
+      description: |
+        Allowed once per deduction while `publishedAt <= serverTime < publishedAt + 7 days`. An
+        individual correction never restarts the window. Judge verdicts and manual adjustments are
+        not deductions and cannot be appealed.
+      x-leetkob:
+        phase: 7
+        actors: [student]
+        scope: own
+        csrf: token
+        idempotency: required
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - student-role-required
+          - deduction-not-found
+          - idempotency-key-reused
+          - appeal-already-exists
+          - appeal-window-closed
+          - unsupported-media-type
+          - rate-limited
+      parameters:
+        - $ref: "#/components/parameters/DeductionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateAppealRequest" }
+      responses:
+        "201":
+          description: The pending appeal. A same-key replay returns this stored response.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+            Location: { $ref: "#/components/headers/Location" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Appeal" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/deductions/{deductionId}/appeals/{appealId}:
+    get:
+      tags: [appeals]
+      operationId: getAppeal
+      summary: Read one appeal with its outcome and reason.
+      x-leetkob:
+        phase: 7
+        actors: [ta, student]
+        scope: own-or-assigned-class
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required, deduction-not-found, appeal-not-found]
+      parameters:
+        - $ref: "#/components/parameters/DeductionId"
+        - $ref: "#/components/parameters/AppealId"
+      responses:
+        "200":
+          description: The appeal.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Appeal" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+  /v2/deductions/{deductionId}/appeals/{appealId}/resolution:
+    post:
+      tags: [appeals]
+      operationId: resolveAppeal
+      summary: Accept or reject a pending appeal with a reason.
+      description: |
+        Acceptance removes the deduction and recomputes the grade in the same transaction, keeping
+        any manual adjustment. Rejection leaves the grade unchanged. Neither outcome can be
+        reopened.
+      x-leetkob:
+        phase: 7
+        actors: [ta]
+        scope: assigned-class
+        csrf: token
+        idempotency: revision
+        problems:
+          - invalid-request
+          - authentication-required
+          - csrf-rejected
+          - ta-role-required
+          - deduction-not-found
+          - appeal-not-found
+          - revision-conflict
+          - appeal-already-resolved
+          - unsupported-media-type
+      parameters:
+        - $ref: "#/components/parameters/DeductionId"
+        - $ref: "#/components/parameters/AppealId"
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResolveAppealRequest" }
+      responses:
+        "200":
+          description: The resolved appeal.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Appeal" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+  /v2/events:
+    get:
+      tags: [events]
+      operationId: streamEvents
+      summary: Subscribe to server-sent hints about resources the caller may currently read.
+      description: |
+        Each event has an `id`, an `event` name equal to `EventData.type`, and one `data` line
+        holding an `EventData` JSON object. Events carry identifiers and revisions only; the client
+        always refetches the authoritative resource. Delivery is at-least-once. See README
+        section 6.9.
+      x-leetkob:
+        phase: 3
+        actors: [admin, ta, student]
+        scope: own
+        csrf: none
+        idempotency: none
+        problems: [invalid-request, authentication-required]
+      parameters:
+        - name: Last-Event-ID
+          in: header
+          description: The last event id the client processed.
+          schema: { $ref: "#/components/schemas/Uuid" }
+      responses:
+        "200":
+          description: An open event stream.
+          headers:
+            Cache-Control: { $ref: "#/components/headers/NoStore" }
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        default: { $ref: "#/components/responses/Problem" }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-lk_access
+      description: Signed access token, 15 minutes. Secure, HttpOnly, SameSite=Lax, Path=/.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: __Secure-lk_refresh
+      description: |
+        Opaque one-time refresh token, 7 days. Secure, HttpOnly, SameSite=Strict, Path=/v2/auth.
+        Stored by the server only as a hash.
+
+  headers:
+    NoStore:
+      description: Always `no-store`.
+      schema: { type: string, const: no-store }
+    Location:
+      description: Path of the created resource.
+      schema: { type: string }
+    RetryAfter:
+      description: Whole seconds to wait before retrying.
+      schema: { type: integer, minimum: 1 }
+
+  parameters:
+    ClassId:
+      { name: classId, in: path, required: true, schema: { $ref: "#/components/schemas/Uuid" } }
+    UserId:
+      { name: userId, in: path, required: true, schema: { $ref: "#/components/schemas/Uuid" } }
+    InvitationId:
+      {
+        name: invitationId,
+        in: path,
+        required: true,
+        schema: { $ref: "#/components/schemas/Uuid" },
+      }
+    LabId: { name: labId, in: path, required: true, schema: { $ref: "#/components/schemas/Uuid" } }
+    ConstraintId:
+      {
+        name: constraintId,
+        in: path,
+        required: true,
+        schema: { $ref: "#/components/schemas/Uuid" },
+      }
+    SubmissionId:
+      {
+        name: submissionId,
+        in: path,
+        required: true,
+        schema: { $ref: "#/components/schemas/Uuid" },
+      }
+    FindingId:
+      { name: findingId, in: path, required: true, schema: { $ref: "#/components/schemas/Uuid" } }
+    StudentId:
+      { name: studentId, in: path, required: true, schema: { $ref: "#/components/schemas/Uuid" } }
+    DeductionId:
+      { name: deductionId, in: path, required: true, schema: { $ref: "#/components/schemas/Uuid" } }
+    AppealId:
+      { name: appealId, in: path, required: true, schema: { $ref: "#/components/schemas/Uuid" } }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Exactly one value of 8 to 128 visible ASCII characters.
+      schema: { $ref: "#/components/schemas/IdempotencyKey" }
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: The `csrfToken` of the current session.
+      schema: { type: string, minLength: 32, maxLength: 128 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque `nextCursor` of the previous page.
+      schema: { $ref: "#/components/schemas/Cursor" }
+
+  responses:
+    Problem:
+      description: RFC 9457 problem details. The operation's `x-leetkob.problems` lists the types.
+      headers:
+        Cache-Control: { $ref: "#/components/headers/NoStore" }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    RateLimited:
+      description: The documented attempt limit was exceeded.
+      headers:
+        Cache-Control: { $ref: "#/components/headers/NoStore" }
+        Retry-After: { $ref: "#/components/headers/RetryAfter" }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/RateLimitedProblem" }
+    NoContent:
+      description: Completed. No body.
+      headers:
+        Cache-Control: { $ref: "#/components/headers/NoStore" }
+    SessionStarted:
+      description: |
+        The session. `Set-Cookie` replaces both the access and the refresh cookie. Tokens never
+        appear in a response body.
+      headers:
+        Cache-Control: { $ref: "#/components/headers/NoStore" }
+        Set-Cookie:
+          description: Sent twice, once per cookie.
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Session" }
+
+  schemas:
+    # ---- Scalars -------------------------------------------------------------------------------
+    Uuid:
+      description: Canonical lowercase UUID in responses; accepted case-insensitively in requests.
+      type: string
+      format: uuid
+      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    Timestamp:
+      description: RFC 3339 UTC instant with exactly three fractional digits and the `Z` suffix.
+      type: string
+      format: date-time
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+      examples: ["2026-11-25T15:00:00.000Z"]
+    Points:
+      description: Decimal string from 0.00 through 10.00 with exactly two fractional digits.
+      type: string
+      pattern: "^(?:10\\.00|[0-9]\\.[0-9]{2})$"
+      examples: ["3.00", "0.25", "10.00"]
+    SignedPoints:
+      description: |
+        Decimal string from -10.00 through 10.00 with exactly two fractional digits. Zero is
+        written `0.00`; there is no `+` sign and no negative zero.
+      type: string
+      pattern: "^-?(?:10\\.00|[0-9]\\.[0-9]{2})$"
+      not: { const: "-0.00" }
+      examples: ["-2.50", "0.00", "4.00"]
+    MicroUsd:
+      description: Whole millionths of one US dollar. 250000 is USD 0.25.
+      type: integer
+      minimum: 0
+    Revision:
+      description: Positive integer that increases by one on every committed change of its resource.
+      type: integer
+      minimum: 1
+    Sha256:
+      type: string
+      pattern: "^[0-9a-f]{64}$"
+    Cursor:
+      type: string
+      minLength: 1
+      maxLength: 512
+      pattern: "^[A-Za-z0-9_-]+$"
+    IdempotencyKey:
+      type: string
+      pattern: "^[!-~]{8,128}$"
+    Email:
+      description: At most 254 characters. Compared case-insensitively and returned lowercased.
+      type: string
+      format: email
+      minLength: 3
+      maxLength: 254
+    Role:
+      type: string
+      enum: [admin, ta, student]
+    MemberRole:
+      type: string
+      enum: [ta, student]
+    JudgeVerdict:
+      type: string
+      enum: [AC, WA, TLE, MLE, RE, CE]
+    CheckVerdict:
+      type: string
+      enum: [pass, violation, unsure]
+    DecisionVerdict:
+      type: string
+      enum: [pass, violation]
+    FindingSource:
+      type: string
+      enum: [deterministic, model]
+    UnsureCause:
+      type: string
+      enum:
+        - preparation-failed
+        - unsupported-resolution
+        - schema-invalid
+        - evidence-mismatch
+        - provider-timeout
+        - provider-failure
+        - budget-exhausted
+        - pricing-unknown
+    AppealStatus:
+      type: string
+      enum: [pending, accepted, rejected]
+
+    # ---- Problems ------------------------------------------------------------------------------
+    Problem:
+      description: |
+        RFC 9457 problem details. Clients branch on `type`. Extension members are defined by the
+        schema named for that type in `x-leetkob-problems`.
+      type: object
+      required: [type, title, status, detail, instance]
+      properties:
+        type:
+          type: string
+          format: uri
+          pattern: "^https://leetkob\\.example/problems/[a-z][a-z0-9-]*$"
+        title: { type: string, minLength: 1 }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail:
+          description: |
+            Safe sentence. Never contains source code, test data, student identity, credentials,
+            stack traces, storage details, or another class's identifiers.
+          type: string
+          minLength: 1
+        instance:
+          description: The request path without its query string.
+          type: string
+          pattern: "^/"
+    InvalidRequestProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          properties:
+            errors:
+              description: Optional locations of rejected input. Values are never echoed.
+              type: array
+              minItems: 1
+              maxItems: 50
+              items:
+                type: object
+                additionalProperties: false
+                required: [in, name, code]
+                properties:
+                  in: { type: string, enum: [path, query, header, body] }
+                  name:
+                    description: Parameter or header name, or a JSON Pointer into the body.
+                    type: string
+                    maxLength: 256
+                  code:
+                    type: string
+                    enum:
+                      - missing
+                      - malformed
+                      - out-of-range
+                      - too-long
+                      - unknown-member
+                      - duplicate
+                      - not-allowed
+                      - inconsistent
+    EvidenceInvalidProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [invalidLines]
+          properties:
+            invalidLines:
+              description: Line numbers from the request whose text does not match the original source.
+              type: array
+              items: { type: integer, minimum: 1 }
+    TestBundleInvalidProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [violations]
+          properties:
+            violations:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: string
+                enum:
+                  - not-a-zip
+                  - absolute-path
+                  - parent-traversal
+                  - symbolic-link
+                  - unsupported-entry
+                  - duplicate-entry
+                  - unmatched-pair
+                  - no-tests
+                  - entry-limit-exceeded
+                  - expanded-size-exceeded
+    ClassCapacityReachedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [capacity]
+          properties:
+            capacity: { type: integer, const: 100 }
+    RevisionConflictProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [conflicts]
+          properties:
+            conflicts:
+              description: Every stale resource named by the request, with its current revision.
+              type: array
+              minItems: 1
+              items:
+                type: object
+                additionalProperties: false
+                required: [resource, id, currentRevision]
+                properties:
+                  resource:
+                    type: string
+                    enum: [user, lab, constraint, finding, grade, appeal]
+                  id: { $ref: "#/components/schemas/Uuid" }
+                  currentRevision:
+                    description: Null when the resource was superseded and is no longer current.
+                    oneOf:
+                      - $ref: "#/components/schemas/Revision"
+                      - type: "null"
+    LabConfigurationLockedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [lockedFields, opensAt]
+          properties:
+            lockedFields:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: string
+                enum: [opensAt, submissionDeadline, executionPolicy, testBundle]
+            opensAt: { $ref: "#/components/schemas/Timestamp" }
+    ConstraintChangeNotAllowedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [rule]
+          properties:
+            rule:
+              type: string
+              enum:
+                - addition-after-opening
+                - deduction-increase-after-opening
+                - meaning-not-confirmed
+    SubmissionDeadlinePassedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [submissionDeadline]
+          properties:
+            submissionDeadline: { $ref: "#/components/schemas/Timestamp" }
+    GroupDecisionNotAllowedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [findingIds]
+          properties:
+            findingIds:
+              description: Requested findings that are not current deterministic violations of the constraint.
+              type: array
+              minItems: 1
+              items: { $ref: "#/components/schemas/Uuid" }
+    LabStillOpenProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [submissionDeadline]
+          properties:
+            submissionDeadline: { $ref: "#/components/schemas/Timestamp" }
+    LabProcessingIncompleteProblem:
+      description: Readiness counts only; never per-student processing records.
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required:
+            - admissionsInFlight
+            - judgingIncomplete
+            - judgingFailed
+            - checkingIncomplete
+            - checkingFailed
+            - samplingFinalized
+          properties:
+            admissionsInFlight: { type: integer, minimum: 0 }
+            judgingIncomplete: { type: integer, minimum: 0 }
+            judgingFailed: { type: integer, minimum: 0 }
+            checkingIncomplete: { type: integer, minimum: 0 }
+            checkingFailed: { type: integer, minimum: 0 }
+            samplingFinalized: { type: boolean }
+    ReviewsPendingProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [pendingReviews]
+          properties:
+            pendingReviews: { type: integer, minimum: 1 }
+    LabAlreadyPublishedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [labId, publishedAt, publishedBy]
+          properties:
+            labId: { $ref: "#/components/schemas/Uuid" }
+            publishedAt: { $ref: "#/components/schemas/Timestamp" }
+            publishedBy: { $ref: "#/components/schemas/Uuid" }
+    AppealAlreadyExistsProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [appealId]
+          properties:
+            appealId: { $ref: "#/components/schemas/Uuid" }
+    AppealWindowClosedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [appealDeadline]
+          properties:
+            appealDeadline: { $ref: "#/components/schemas/Timestamp" }
+    PayloadTooLargeProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [maximumBytes]
+          properties:
+            maximumBytes: { type: integer, minimum: 1 }
+    RateLimitedProblem:
+      allOf:
+        - $ref: "#/components/schemas/Problem"
+        - type: object
+          required: [retryAfterSeconds]
+          properties:
+            retryAfterSeconds: { type: integer, minimum: 1 }
+
+    # ---- Identity ------------------------------------------------------------------------------
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, email, displayName, role, revision]
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        email: { $ref: "#/components/schemas/Email" }
+        displayName: { type: string, minLength: 1, maxLength: 100 }
+        role: { $ref: "#/components/schemas/Role" }
+        revision: { $ref: "#/components/schemas/Revision" }
+    Session:
+      type: object
+      additionalProperties: false
+      required: [user, csrfToken, accessExpiresAt, sessionExpiresAt]
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        csrfToken:
+          description: Sent back in `X-CSRF-Token` on every cookie-authenticated mutation.
+          type: string
+          minLength: 32
+          maxLength: 128
+        accessExpiresAt: { $ref: "#/components/schemas/Timestamp" }
+        sessionExpiresAt: { $ref: "#/components/schemas/Timestamp" }
+    RegisterRequest:
+      description: There is no role member; registration always creates a student.
+      type: object
+      additionalProperties: false
+      required: [email, password, displayName]
+      properties:
+        email: { $ref: "#/components/schemas/Email" }
+        password: { type: string, minLength: 12, maxLength: 128 }
+        displayName: { type: string, minLength: 1, maxLength: 100 }
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { $ref: "#/components/schemas/Email" }
+        password: { type: string, minLength: 1, maxLength: 128 }
+    SetRoleRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision, role]
+      properties:
+        expectedRevision: { $ref: "#/components/schemas/Revision" }
+        role: { $ref: "#/components/schemas/Role" }
+
+    # ---- Classes -------------------------------------------------------------------------------
+    Class:
+      type: object
+      additionalProperties: false
+      required: [id, name, studentCount, studentCapacity, createdAt]
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        studentCount: { type: integer, minimum: 0, maximum: 100 }
+        studentCapacity: { type: integer, const: 100 }
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+    ClassPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Class" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    NextCursor:
+      description: Null on the last page.
+      oneOf:
+        - $ref: "#/components/schemas/Cursor"
+        - type: "null"
+    CreateClassRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+    ClassMember:
+      type: object
+      additionalProperties: false
+      required: [classId, userId, role, displayName, email, studentCode, joinedAt]
+      properties:
+        classId: { $ref: "#/components/schemas/Uuid" }
+        userId: { $ref: "#/components/schemas/Uuid" }
+        role: { $ref: "#/components/schemas/MemberRole" }
+        displayName: { type: string }
+        email: { $ref: "#/components/schemas/Email" }
+        studentCode:
+          description: Institutional student identifier. Null for TAs and when not recorded.
+          oneOf:
+            - $ref: "#/components/schemas/StudentCode"
+            - type: "null"
+        joinedAt: { $ref: "#/components/schemas/Timestamp" }
+    StudentCode:
+      type: string
+      pattern: "^[A-Za-z0-9._-]{1,32}$"
+    ClassMemberPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ClassMember" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    AddMemberRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { $ref: "#/components/schemas/Email" }
+        studentCode: { $ref: "#/components/schemas/StudentCode" }
+    RosterImportResult:
+      type: object
+      additionalProperties: false
+      required: [rows, enrolledCount, unchangedCount, rejectedCount, studentCount]
+      properties:
+        rows:
+          type: array
+          maxItems: 500
+          items:
+            type: object
+            additionalProperties: false
+            required: [line, status, code]
+            properties:
+              line:
+                description: 1-based line number in the uploaded file; the header is line 1.
+                type: integer
+                minimum: 2
+              status: { type: string, enum: [enrolled, unchanged, rejected] }
+              code:
+                description: Null unless `status` is `rejected`.
+                oneOf:
+                  - type: string
+                    enum:
+                      - malformed-row
+                      - invalid-email
+                      - invalid-student-code
+                      - duplicate-row
+                      - account-not-found
+                      - not-a-student
+                      - class-capacity-reached
+                  - type: "null"
+        enrolledCount: { type: integer, minimum: 0 }
+        unchangedCount: { type: integer, minimum: 0 }
+        rejectedCount: { type: integer, minimum: 0 }
+        studentCount:
+          description: Enrolled students after the import.
+          type: integer
+          minimum: 0
+          maximum: 100
+    Invitation:
+      type: object
+      additionalProperties: false
+      required: [id, classId, code, expiresAt, revokedAt, createdAt]
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        classId: { $ref: "#/components/schemas/Uuid" }
+        code: { $ref: "#/components/schemas/InvitationCode" }
+        expiresAt: { $ref: "#/components/schemas/Timestamp" }
+        revokedAt:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+    InvitationCode:
+      description: Server-generated, at least 128 bits of entropy.
+      type: string
+      pattern: "^[A-Za-z0-9_-]{22,64}$"
+    InvitationPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Invitation" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    CreateInvitationRequest:
+      type: object
+      additionalProperties: false
+      required: [expiresAt]
+      properties:
+        expiresAt:
+          description: Later than server time and at most 180 days ahead.
+          $ref: "#/components/schemas/Timestamp"
+    RedeemInvitationRequest:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { $ref: "#/components/schemas/InvitationCode" }
+
+    # ---- Labs ----------------------------------------------------------------------------------
+    ExecutionPolicy:
+      description: |
+        Limits applied to compilation and to every test. All values use base units. Only
+        `cpuTimeLimitMs` and `memoryLimitBytes` are configurable; `wallTimeLimitMs` is always three
+        times `cpuTimeLimitMs`.
+      type: object
+      additionalProperties: false
+      required:
+        - language
+        - compileProfile
+        - sourceLimitBytes
+        - compileTimeLimitMs
+        - cpuTimeLimitMs
+        - wallTimeLimitMs
+        - memoryLimitBytes
+        - processLimit
+        - outputLimitBytes
+      properties:
+        language: { type: string, const: cpp17 }
+        compileProfile:
+          description: The fixed command `g++ -std=c++17 -O2`.
+          type: string
+          const: gxx-std-cpp17-o2
+        sourceLimitBytes: { type: integer, const: 65536 }
+        compileTimeLimitMs: { type: integer, const: 10000 }
+        cpuTimeLimitMs: { $ref: "#/components/schemas/CpuTimeLimitMs" }
+        wallTimeLimitMs:
+          type: integer
+          enum: [3000, 6000, 9000, 12000, 15000]
+        memoryLimitBytes: { $ref: "#/components/schemas/MemoryLimitBytes" }
+        processLimit:
+          description: Processes including threads.
+          type: integer
+          const: 16
+        outputLimitBytes: { type: integer, const: 1048576 }
+    CpuTimeLimitMs:
+      description: Whole seconds from 1 through 5, expressed in milliseconds. Default 1000.
+      type: integer
+      minimum: 1000
+      maximum: 5000
+      multipleOf: 1000
+    MemoryLimitBytes:
+      description: Whole mebibytes from 64 MiB through 512 MiB, expressed in bytes. Default 268435456.
+      type: integer
+      minimum: 67108864
+      maximum: 536870912
+      multipleOf: 1048576
+    ExecutionPolicyInput:
+      description: The compiler command and the fixed limits cannot be supplied.
+      type: object
+      additionalProperties: false
+      properties:
+        cpuTimeLimitMs: { $ref: "#/components/schemas/CpuTimeLimitMs" }
+        memoryLimitBytes: { $ref: "#/components/schemas/MemoryLimitBytes" }
+    LabStatus:
+      description: |
+        Derived from server time and publication: `scheduled` before `opensAt`, `open` while
+        `opensAt <= now < submissionDeadline`, `closed` from the deadline, `published` after
+        publication.
+      type: string
+      enum: [scheduled, open, closed, published]
+    Publication:
+      description: The complete success body of publication. Nothing else is ever added to it.
+      type: object
+      additionalProperties: false
+      required: [labId, status, publishedAt, publishedBy]
+      properties:
+        labId: { $ref: "#/components/schemas/Uuid" }
+        status: { type: string, const: published }
+        publishedAt: { $ref: "#/components/schemas/Timestamp" }
+        publishedBy:
+          description: User id of the TA who performed the first successful publication.
+          $ref: "#/components/schemas/Uuid"
+    Lab:
+      oneOf:
+        - $ref: "#/components/schemas/TaLab"
+        - $ref: "#/components/schemas/StudentLab"
+    TaLab:
+      type: object
+      additionalProperties: false
+      required:
+        - view
+        - id
+        - classId
+        - title
+        - statementMarkdown
+        - opensAt
+        - submissionDeadline
+        - status
+        - revision
+        - executionPolicy
+        - activeTestRevision
+        - gradingGeneration
+        - constraintsRevisedAt
+        - modelBudget
+        - publication
+        - createdAt
+        - updatedAt
+      properties:
+        view: { type: string, const: ta }
+        id: { $ref: "#/components/schemas/Uuid" }
+        classId: { $ref: "#/components/schemas/Uuid" }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        statementMarkdown: { type: string, maxLength: 262144 }
+        opensAt: { $ref: "#/components/schemas/Timestamp" }
+        submissionDeadline: { $ref: "#/components/schemas/Timestamp" }
+        status: { $ref: "#/components/schemas/LabStatus" }
+        revision: { $ref: "#/components/schemas/Revision" }
+        executionPolicy: { $ref: "#/components/schemas/ExecutionPolicy" }
+        activeTestRevision:
+          description: Null until a test bundle is activated.
+          oneOf:
+            - $ref: "#/components/schemas/Revision"
+            - type: "null"
+        gradingGeneration:
+          description: Increases whenever counted inputs or active revisions change.
+          $ref: "#/components/schemas/Revision"
+        constraintsRevisedAt:
+          description: Time of the latest constraint revision; null when there are no constraints.
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        modelBudget:
+          type: object
+          additionalProperties: false
+          required: [capMicroUsd, reservedMicroUsd, settledMicroUsd]
+          properties:
+            capMicroUsd: { $ref: "#/components/schemas/MicroUsd" }
+            reservedMicroUsd: { $ref: "#/components/schemas/MicroUsd" }
+            settledMicroUsd: { $ref: "#/components/schemas/MicroUsd" }
+        publication:
+          oneOf:
+            - $ref: "#/components/schemas/Publication"
+            - type: "null"
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+        updatedAt: { $ref: "#/components/schemas/Timestamp" }
+    StudentLab:
+      description: Returned only from the opening time. Contains no hidden-test or review data.
+      type: object
+      additionalProperties: false
+      required:
+        - view
+        - id
+        - classId
+        - title
+        - statementMarkdown
+        - opensAt
+        - submissionDeadline
+        - status
+        - executionPolicy
+        - constraintsRevisedAt
+        - publishedAt
+      properties:
+        view: { type: string, const: student }
+        id: { $ref: "#/components/schemas/Uuid" }
+        classId: { $ref: "#/components/schemas/Uuid" }
+        title: { type: string }
+        statementMarkdown: { type: string }
+        opensAt: { $ref: "#/components/schemas/Timestamp" }
+        submissionDeadline: { $ref: "#/components/schemas/Timestamp" }
+        status: { type: string, enum: [open, closed, published] }
+        executionPolicy: { $ref: "#/components/schemas/ExecutionPolicy" }
+        constraintsRevisedAt:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        publishedAt:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+    LabPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Lab" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    CreateLabRequest:
+      description: "`opensAt` must be earlier than `submissionDeadline`."
+      type: object
+      additionalProperties: false
+      required: [classId, title, statementMarkdown, opensAt, submissionDeadline]
+      properties:
+        classId: { $ref: "#/components/schemas/Uuid" }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        statementMarkdown: { type: string, maxLength: 262144 }
+        opensAt: { $ref: "#/components/schemas/Timestamp" }
+        submissionDeadline: { $ref: "#/components/schemas/Timestamp" }
+        executionPolicy: { $ref: "#/components/schemas/ExecutionPolicyInput" }
+    UpdateLabRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      minProperties: 2
+      properties:
+        expectedRevision: { $ref: "#/components/schemas/Revision" }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        statementMarkdown: { type: string, maxLength: 262144 }
+        opensAt: { $ref: "#/components/schemas/Timestamp" }
+        submissionDeadline: { $ref: "#/components/schemas/Timestamp" }
+        executionPolicy: { $ref: "#/components/schemas/ExecutionPolicyInput" }
+    SampleTestList:
+      type: object
+      additionalProperties: false
+      required: [testRevision, items]
+      properties:
+        testRevision:
+          oneOf:
+            - $ref: "#/components/schemas/Revision"
+            - type: "null"
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [ordinal, name, input, expectedOutput]
+            properties:
+              ordinal: { type: integer, minimum: 1 }
+              name: { type: string }
+              input: { type: string }
+              expectedOutput: { type: string }
+    TestRevision:
+      description: Immutable. Contains counts and digests only, never test contents.
+      type: object
+      additionalProperties: false
+      required:
+        - labId
+        - testRevision
+        - active
+        - sampleCount
+        - hiddenCount
+        - bundleSha256
+        - compressedBytes
+        - expandedBytes
+        - labRevision
+        - createdAt
+        - createdBy
+      properties:
+        labId: { $ref: "#/components/schemas/Uuid" }
+        testRevision: { $ref: "#/components/schemas/Revision" }
+        active: { type: boolean }
+        sampleCount: { type: integer, minimum: 0 }
+        hiddenCount: { type: integer, minimum: 0 }
+        bundleSha256: { $ref: "#/components/schemas/Sha256" }
+        compressedBytes: { type: integer, minimum: 1, maximum: 10485760 }
+        expandedBytes: { type: integer, minimum: 0, maximum: 104857600 }
+        labRevision:
+          description: The lab revision produced by activating this bundle.
+          $ref: "#/components/schemas/Revision"
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+        createdBy: { $ref: "#/components/schemas/Uuid" }
+    TestRevisionList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/TestRevision" }
+    ConstraintKey:
+      description: Stable identifier shown to people and used in evaluation datasets, for example `C1`.
+      type: string
+      pattern: "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+    Constraint:
+      description: |
+        `revision` is both the concurrency token and the immutable content revision that findings
+        and deductions cite as `constraintRevision`.
+      type: object
+      additionalProperties: false
+      required: [id, labId, key, text, deduction, revision, revisedAt]
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        labId: { $ref: "#/components/schemas/Uuid" }
+        key: { $ref: "#/components/schemas/ConstraintKey" }
+        text: { type: string, minLength: 1, maxLength: 2000 }
+        deduction: { $ref: "#/components/schemas/Points" }
+        revision: { $ref: "#/components/schemas/Revision" }
+        revisedAt: { $ref: "#/components/schemas/Timestamp" }
+    ConstraintList:
+      type: object
+      additionalProperties: false
+      required: [items, constraintsRevisedAt]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Constraint" }
+        constraintsRevisedAt:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+    CreateConstraintRequest:
+      type: object
+      additionalProperties: false
+      required: [key, text, deduction]
+      properties:
+        key: { $ref: "#/components/schemas/ConstraintKey" }
+        text: { type: string, minLength: 1, maxLength: 2000 }
+        deduction: { $ref: "#/components/schemas/Points" }
+    ReviseConstraintRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      anyOf:
+        - required: [text]
+        - required: [deduction]
+      properties:
+        expectedRevision: { $ref: "#/components/schemas/Revision" }
+        text: { type: string, minLength: 1, maxLength: 2000 }
+        deduction: { $ref: "#/components/schemas/Points" }
+        preservesMeaning:
+          description: The TA's confirmation that a text change after opening only clarifies.
+          type: boolean
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+    DeleteConstraintRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      properties:
+        expectedRevision: { $ref: "#/components/schemas/Revision" }
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+    ConstraintRevisionList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [revision, change, text, deduction, reason, revisedAt, revisedBy]
+            properties:
+              revision: { $ref: "#/components/schemas/Revision" }
+              change: { type: string, enum: [created, revised, deleted] }
+              text: { type: string }
+              deduction: { $ref: "#/components/schemas/Points" }
+              reason:
+                oneOf:
+                  - type: string
+                  - type: "null"
+              revisedAt: { $ref: "#/components/schemas/Timestamp" }
+              revisedBy: { $ref: "#/components/schemas/Uuid" }
+    Readiness:
+      type: object
+      additionalProperties: false
+      required:
+        - labId
+        - gradingGeneration
+        - publishable
+        - blockers
+        - deadlinePassed
+        - admissionsInFlight
+        - rosterFrozen
+        - judgingIncomplete
+        - judgingFailed
+        - checkingIncomplete
+        - checkingFailed
+        - samplingFinalized
+        - pendingReviews
+        - computedAt
+      properties:
+        labId: { $ref: "#/components/schemas/Uuid" }
+        gradingGeneration: { $ref: "#/components/schemas/Revision" }
+        publishable: { type: boolean }
+        blockers:
+          description: Empty exactly when `publishable` is true.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - already-published
+              - deadline-open
+              - admissions-in-flight
+              - roster-not-frozen
+              - judging-incomplete
+              - judging-failed
+              - checking-incomplete
+              - checking-failed
+              - sampling-not-finalized
+              - reviews-pending
+        deadlinePassed: { type: boolean }
+        admissionsInFlight: { type: integer, minimum: 0 }
+        rosterFrozen: { type: boolean }
+        judgingIncomplete: { type: integer, minimum: 0 }
+        judgingFailed: { type: integer, minimum: 0 }
+        checkingIncomplete: { type: integer, minimum: 0 }
+        checkingFailed: { type: integer, minimum: 0 }
+        samplingFinalized: { type: boolean }
+        pendingReviews: { type: integer, minimum: 0 }
+        computedAt: { $ref: "#/components/schemas/Timestamp" }
+
+    # ---- Submissions ---------------------------------------------------------------------------
+    Submission:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - labId
+        - studentId
+        - receivedAt
+        - acceptanceSequence
+        - sourceSha256
+        - sourceBytes
+        - counted
+        - judge
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        labId: { $ref: "#/components/schemas/Uuid" }
+        studentId: { $ref: "#/components/schemas/Uuid" }
+        receivedAt:
+          description: Server receipt time, truncated (never rounded) to milliseconds.
+          $ref: "#/components/schemas/Timestamp"
+        acceptanceSequence:
+          description: Durable server-assigned order within the lab; breaks ties in `receivedAt`.
+          type: integer
+          minimum: 1
+        sourceSha256: { $ref: "#/components/schemas/Sha256" }
+        sourceBytes: { type: integer, minimum: 1, maximum: 65536 }
+        counted:
+          description: |
+            True for the student's latest accepted submission by `(receivedAt, acceptanceSequence)`.
+            Provisional before the deadline and final afterwards.
+          type: boolean
+        judge: { $ref: "#/components/schemas/JudgeResult" }
+    SubmissionPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Submission" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    JudgeResult:
+      description: |
+        `verdict`, `testRevision`, and `completedAt` are null until `status` is `completed`.
+        `infrastructure-failed` is an operational failure, never a student verdict.
+      type: object
+      additionalProperties: false
+      required: [status, verdict, testRevision, compilerMessage, tests, completedAt]
+      properties:
+        status:
+          type: string
+          enum: [queued, running, completed, infrastructure-failed]
+        verdict:
+          oneOf:
+            - $ref: "#/components/schemas/JudgeVerdict"
+            - type: "null"
+        testRevision:
+          oneOf:
+            - $ref: "#/components/schemas/Revision"
+            - type: "null"
+        compilerMessage:
+          description: Compiler diagnostics for `CE`, truncated to 8,192 bytes; otherwise null.
+          oneOf:
+            - type: string
+              maxLength: 8192
+            - type: "null"
+        tests:
+          description: Per-test results in stable test order. Empty until completed and for `CE`.
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [ordinal, kind, verdict, cpuTimeMs, peakMemoryBytes]
+            properties:
+              ordinal: { type: integer, minimum: 1 }
+              kind: { type: string, enum: [sample, hidden] }
+              verdict:
+                type: string
+                enum: [AC, WA, TLE, MLE, RE]
+              cpuTimeMs: { type: integer, minimum: 0 }
+              peakMemoryBytes: { type: integer, minimum: 0 }
+        completedAt:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+
+    # ---- Reviews -------------------------------------------------------------------------------
+    EvidenceLine:
+      description: One original source line. `text` is compared after trimming outer whitespace only.
+      type: object
+      additionalProperties: false
+      required: [line, text]
+      properties:
+        line: { type: integer, minimum: 1 }
+        text: { type: string, maxLength: 4096 }
+    Decision:
+      type: object
+      additionalProperties: false
+      required: [verdict, reason, evidence, decidedBy, decidedAt]
+      properties:
+        verdict: { $ref: "#/components/schemas/DecisionVerdict" }
+        reason:
+          oneOf:
+            - type: string
+            - type: "null"
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceLine" }
+        decidedBy: { $ref: "#/components/schemas/Uuid" }
+        decidedAt: { $ref: "#/components/schemas/Timestamp" }
+    FindingSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - labId
+        - revision
+        - gradingGeneration
+        - submissionId
+        - constraintId
+        - constraintKey
+        - constraintRevision
+        - testRevision
+        - source
+        - checkerVerdict
+        - unsureCause
+        - requirement
+        - decision
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        labId: { $ref: "#/components/schemas/Uuid" }
+        revision:
+          description: Changes whenever the checker result or the decision of this finding changes.
+          $ref: "#/components/schemas/Revision"
+        gradingGeneration: { $ref: "#/components/schemas/Revision" }
+        submissionId: { $ref: "#/components/schemas/Uuid" }
+        constraintId: { $ref: "#/components/schemas/Uuid" }
+        constraintKey: { $ref: "#/components/schemas/ConstraintKey" }
+        constraintRevision: { $ref: "#/components/schemas/Revision" }
+        testRevision: { $ref: "#/components/schemas/Revision" }
+        source: { $ref: "#/components/schemas/FindingSource" }
+        checkerVerdict: { $ref: "#/components/schemas/CheckVerdict" }
+        unsureCause:
+          description: Non-null exactly when `checkerVerdict` is `unsure`.
+          oneOf:
+            - $ref: "#/components/schemas/UnsureCause"
+            - type: "null"
+        requirement:
+          description: Why a TA decision is mandatory; `none` for an unsampled pass.
+          type: string
+          enum: [violation, unsure, sampled-pass, none]
+        decision:
+          oneOf:
+            - $ref: "#/components/schemas/Decision"
+            - type: "null"
+    FindingDetail:
+      type: object
+      additionalProperties: false
+      required: [finding, reason, evidence, provenance, history]
+      properties:
+        finding: { $ref: "#/components/schemas/FindingSummary" }
+        reason:
+          description: Checker reason; null when the checker produced none.
+          oneOf:
+            - type: string
+            - type: "null"
+        evidence:
+          description: Checker evidence validated against the original source.
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceLine" }
+        provenance:
+          type: object
+          additionalProperties: false
+          required: [checkerVersion, promptVersion, modelId]
+          properties:
+            checkerVersion: { type: string }
+            promptVersion:
+              oneOf:
+                - type: string
+                - type: "null"
+            modelId:
+              oneOf:
+                - type: string
+                - type: "null"
+        history:
+          description: Append-only decisions, oldest first.
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [findingRevision, previousVerdict, decision]
+            properties:
+              findingRevision: { $ref: "#/components/schemas/Revision" }
+              previousVerdict: { $ref: "#/components/schemas/CheckVerdict" }
+              decision: { $ref: "#/components/schemas/Decision" }
+    ReviewQueuePage:
+      type: object
+      additionalProperties: false
+      required: [gradingGeneration, samplingFinalized, pendingReviews, items, nextCursor]
+      properties:
+        gradingGeneration: { $ref: "#/components/schemas/Revision" }
+        samplingFinalized: { type: boolean }
+        pendingReviews: { type: integer, minimum: 0 }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/FindingSummary" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    DecisionRequest:
+      description: There is no default verdict and no grade or deduction amount.
+      type: object
+      additionalProperties: false
+      required: [expectedRevision, verdict]
+      properties:
+        expectedRevision: { $ref: "#/components/schemas/Revision" }
+        verdict: { $ref: "#/components/schemas/DecisionVerdict" }
+        reason: { type: string, minLength: 1, maxLength: 2000 }
+        evidence:
+          type: array
+          maxItems: 50
+          items: { $ref: "#/components/schemas/EvidenceLine" }
+      allOf:
+        - if:
+            properties:
+              verdict: { const: violation }
+          then:
+            required: [evidence]
+            properties:
+              evidence: { minItems: 1 }
+    GroupDecisionRequest:
+      description: The only group action. It confirms deterministic violations; there is no approve-all.
+      type: object
+      additionalProperties: false
+      required: [constraintId, items]
+      properties:
+        constraintId: { $ref: "#/components/schemas/Uuid" }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            type: object
+            additionalProperties: false
+            required: [findingId, expectedRevision]
+            properties:
+              findingId: { $ref: "#/components/schemas/Uuid" }
+              expectedRevision: { $ref: "#/components/schemas/Revision" }
+    GroupDecisionResult:
+      type: object
+      additionalProperties: false
+      required: [decided, pendingReviews]
+      properties:
+        decided:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [findingId, revision]
+            properties:
+              findingId: { $ref: "#/components/schemas/Uuid" }
+              revision: { $ref: "#/components/schemas/Revision" }
+        pendingReviews: { type: integer, minimum: 0 }
+
+    # ---- Grades --------------------------------------------------------------------------------
+    ManualAdjustment:
+      type: object
+      additionalProperties: false
+      required: [amount, targetGrade, previousGrade, reason, adjustedAt]
+      properties:
+        amount:
+          description: "`targetGrade - formulaGrade` at the time of the adjustment."
+          $ref: "#/components/schemas/SignedPoints"
+        targetGrade: { $ref: "#/components/schemas/Points" }
+        previousGrade: { $ref: "#/components/schemas/Points" }
+        reason: { type: string, minLength: 1 }
+        adjustedAt: { $ref: "#/components/schemas/Timestamp" }
+    Deduction:
+      description: One confirmed deduction per violated constraint, regardless of evidence count.
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - constraintId
+        - constraintKey
+        - constraintText
+        - constraintRevision
+        - amount
+        - reason
+        - evidence
+        - status
+        - appeal
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        constraintId: { $ref: "#/components/schemas/Uuid" }
+        constraintKey: { $ref: "#/components/schemas/ConstraintKey" }
+        constraintText: { type: string }
+        constraintRevision: { $ref: "#/components/schemas/Revision" }
+        amount: { $ref: "#/components/schemas/Points" }
+        reason: { type: string }
+        evidence:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/EvidenceLine" }
+        status:
+          description: "`removed` after an accepted appeal; a removed deduction no longer counts."
+          type: string
+          enum: [confirmed, removed]
+        appeal:
+          description: The single appeal of this deduction, when one exists.
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [id, status]
+              properties:
+                id: { $ref: "#/components/schemas/Uuid" }
+                status: { $ref: "#/components/schemas/AppealStatus" }
+            - type: "null"
+    StudentGrade:
+      description: |
+        `grade = clamp(formulaGrade + manualAdjustment.amount, 0, 10)` and
+        `formulaGrade = max(0, 10 - sum(confirmed deduction amounts))` for counted Accepted work,
+        otherwise 0.
+      type: object
+      additionalProperties: false
+      required:
+        - labId
+        - studentId
+        - gradeVersion
+        - grade
+        - formulaGrade
+        - manualAdjustment
+        - countedSubmissionId
+        - judgeVerdict
+        - deductions
+        - publishedAt
+        - appealDeadline
+        - updatedAt
+      properties:
+        labId: { $ref: "#/components/schemas/Uuid" }
+        studentId: { $ref: "#/components/schemas/Uuid" }
+        gradeVersion: { $ref: "#/components/schemas/Revision" }
+        grade: { $ref: "#/components/schemas/Points" }
+        formulaGrade: { $ref: "#/components/schemas/Points" }
+        manualAdjustment:
+          oneOf:
+            - $ref: "#/components/schemas/ManualAdjustment"
+            - type: "null"
+        countedSubmissionId:
+          description: Null when the student made no submission.
+          oneOf:
+            - $ref: "#/components/schemas/Uuid"
+            - type: "null"
+        judgeVerdict:
+          oneOf:
+            - $ref: "#/components/schemas/JudgeVerdict"
+            - type: "null"
+        deductions:
+          type: array
+          items: { $ref: "#/components/schemas/Deduction" }
+        publishedAt: { $ref: "#/components/schemas/Timestamp" }
+        appealDeadline:
+          description: "`publishedAt` plus exactly seven days. An appeal at this instant is late."
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt: { $ref: "#/components/schemas/Timestamp" }
+    GradeRow:
+      type: object
+      additionalProperties: false
+      required:
+        - studentId
+        - displayName
+        - studentCode
+        - state
+        - gradeVersion
+        - grade
+        - formulaGrade
+        - manualAdjustmentAmount
+        - countedSubmissionId
+        - judgeVerdict
+      properties:
+        studentId: { $ref: "#/components/schemas/Uuid" }
+        displayName: { type: string }
+        studentCode:
+          oneOf:
+            - $ref: "#/components/schemas/StudentCode"
+            - type: "null"
+        state: { type: string, enum: [provisional, published] }
+        gradeVersion:
+          description: Null while provisional.
+          oneOf:
+            - $ref: "#/components/schemas/Revision"
+            - type: "null"
+        grade: { $ref: "#/components/schemas/Points" }
+        formulaGrade: { $ref: "#/components/schemas/Points" }
+        manualAdjustmentAmount:
+          oneOf:
+            - $ref: "#/components/schemas/SignedPoints"
+            - type: "null"
+        countedSubmissionId:
+          oneOf:
+            - $ref: "#/components/schemas/Uuid"
+            - type: "null"
+        judgeVerdict:
+          oneOf:
+            - $ref: "#/components/schemas/JudgeVerdict"
+            - type: "null"
+    GradeRowPage:
+      type: object
+      additionalProperties: false
+      required: [state, items, nextCursor]
+      properties:
+        state: { type: string, enum: [provisional, published] }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/GradeRow" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    TaGrade:
+      type: object
+      additionalProperties: false
+      required: [row, deductions, manualAdjustment, versions]
+      properties:
+        row: { $ref: "#/components/schemas/GradeRow" }
+        deductions:
+          type: array
+          items: { $ref: "#/components/schemas/Deduction" }
+        manualAdjustment:
+          oneOf:
+            - $ref: "#/components/schemas/ManualAdjustment"
+            - type: "null"
+        versions:
+          description: Append-only, oldest first. Version 1 is the publication snapshot.
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [gradeVersion, grade, formulaGrade, cause, actorId, reason, createdAt]
+            properties:
+              gradeVersion: { $ref: "#/components/schemas/Revision" }
+              grade: { $ref: "#/components/schemas/Points" }
+              formulaGrade: { $ref: "#/components/schemas/Points" }
+              cause:
+                type: string
+                enum: [publication, manual-adjustment, appeal-accepted]
+              actorId: { $ref: "#/components/schemas/Uuid" }
+              reason:
+                oneOf:
+                  - type: string
+                  - type: "null"
+              createdAt: { $ref: "#/components/schemas/Timestamp" }
+    AdjustGradeRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedGradeVersion, targetGrade, reason]
+      properties:
+        expectedGradeVersion: { $ref: "#/components/schemas/Revision" }
+        targetGrade: { $ref: "#/components/schemas/Points" }
+        reason: { type: string, minLength: 1, maxLength: 2000, pattern: "\\S" }
+
+    # ---- Appeals -------------------------------------------------------------------------------
+    Appeal:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - deductionId
+        - labId
+        - studentId
+        - status
+        - explanation
+        - revision
+        - createdAt
+        - resolution
+      properties:
+        id: { $ref: "#/components/schemas/Uuid" }
+        deductionId: { $ref: "#/components/schemas/Uuid" }
+        labId: { $ref: "#/components/schemas/Uuid" }
+        studentId: { $ref: "#/components/schemas/Uuid" }
+        status: { $ref: "#/components/schemas/AppealStatus" }
+        explanation: { type: string, minLength: 1 }
+        revision: { $ref: "#/components/schemas/Revision" }
+        createdAt: { $ref: "#/components/schemas/Timestamp" }
+        resolution:
+          description: Null while pending.
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [outcome, reason, resolvedAt, gradeVersion]
+              properties:
+                outcome: { type: string, enum: [accepted, rejected] }
+                reason: { type: string, minLength: 1 }
+                resolvedAt: { $ref: "#/components/schemas/Timestamp" }
+                gradeVersion:
+                  description: The grade version in effect after resolution.
+                  $ref: "#/components/schemas/Revision"
+            - type: "null"
+    AppealPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Appeal" }
+        nextCursor: { $ref: "#/components/schemas/NextCursor" }
+    CreateAppealRequest:
+      type: object
+      additionalProperties: false
+      required: [explanation]
+      properties:
+        explanation: { type: string, minLength: 1, maxLength: 2000, pattern: "\\S" }
+    ResolveAppealRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision, outcome, reason]
+      properties:
+        expectedRevision: { $ref: "#/components/schemas/Revision" }
+        outcome: { type: string, enum: [accepted, rejected] }
+        reason: { type: string, minLength: 1, maxLength: 2000, pattern: "\\S" }
+
+    # ---- Events --------------------------------------------------------------------------------
+    EventData:
+      description: |
+        The JSON of one `data` line. It names what changed and never carries source, test data,
+        evidence, grades, or identities other than opaque ids the recipient may already read.
+      type: object
+      additionalProperties: false
+      required: [eventId, type, occurredAt, resource]
+      properties:
+        eventId: { $ref: "#/components/schemas/Uuid" }
+        type:
+          type: string
+          enum:
+            - stream.reset
+            - submission.updated
+            - lab.updated
+            - review.queue-changed
+            - lab.readiness-changed
+            - lab.published
+            - grade.updated
+            - appeal.updated
+        occurredAt: { $ref: "#/components/schemas/Timestamp" }
+        resource:
+          description: Null only for `stream.reset`, after which the client refetches everything.
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [kind, id, labId, revision]
+              properties:
+                kind:
+                  type: string
+                  enum: [submission, lab, grade, appeal]
+                id: { $ref: "#/components/schemas/Uuid" }
+                labId: { $ref: "#/components/schemas/Uuid" }
+                revision:
+                  description: Resource revision for deduplication; null when the kind has none.
+                  oneOf:
+                    - $ref: "#/components/schemas/Revision"
+                    - type: "null"
+            - type: "null"

@@ -1,0 +1,516 @@
+{
+  "description": "Language-neutral boundary tables for the v2 contract. Every implementation reproduces each expected value. `decision` refers to docs/requirements/acceptance-matrix.md.",
+  "formats": {
+    "Timestamp": {
+      "valid": ["2026-11-25T15:00:00.000Z", "2026-12-03T02:59:59.999Z", "2028-02-29T00:00:00.000Z"],
+      "invalid": [
+        "2026-11-25T15:00:00Z",
+        "2026-11-25T15:00:00.0Z",
+        "2026-11-25T15:00:00.000000Z",
+        "2026-11-25T22:00:00.000+07:00",
+        "2026-11-25T15:00:00.000",
+        "2026-11-25 15:00:00.000Z",
+        "2026-11-25t15:00:00.000z",
+        "2026-02-30T00:00:00.000Z",
+        "2026-11-25T24:00:00.000Z",
+        "1764082800000"
+      ]
+    },
+    "Points": {
+      "valid": ["0.00", "0.25", "3.00", "9.99", "10.00"],
+      "invalid": [
+        "3",
+        "3.0",
+        "3.000",
+        "03.00",
+        "10.01",
+        "11.00",
+        "-1.00",
+        "+3.00",
+        "3,00",
+        ".50",
+        "1e1",
+        ""
+      ]
+    },
+    "SignedPoints": {
+      "valid": ["0.00", "5.50", "-1.00", "-10.00", "10.00"],
+      "invalid": ["-0.00", "+5.50", "-10.01", "5.5", "-5", "--1.00"]
+    },
+    "IdempotencyKey": {
+      "valid": ["12345678", "publish-request-0001", "~!@#$%^&*()_+-=[]{}|;:,.<>?"],
+      "invalid": ["1234567", "has space-in-key", "tab\tin-the-key", "khoá-không-ascii", ""]
+    },
+    "Uuid": {
+      "valid": ["0d0f366c-f9cf-45e8-bbf2-ab1b8e370ec8", "0D0F366C-F9CF-45E8-BBF2-AB1B8E370EC8"],
+      "invalid": [
+        "0d0f366cf9cf45e8bbf2ab1b8e370ec8",
+        "0d0f366c-f9cf-05e8-bbf2-ab1b8e370ec8",
+        "0d0f366c-f9cf-45e8-cbf2-ab1b8e370ec8",
+        "{0d0f366c-f9cf-45e8-bbf2-ab1b8e370ec8}",
+        "class-a"
+      ]
+    },
+    "ConstraintKey": {
+      "valid": ["C1", "no-library-sort", "c_10"],
+      "invalid": ["1C", "", "C 1", "C1/../C2", "Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+    }
+  },
+  "executionPolicy": {
+    "decision": ["D01", "D04"],
+    "rule": "cpuTimeLimitMs is 1000..5000 in whole seconds; wallTimeLimitMs = 3 * cpuTimeLimitMs; memoryLimitBytes is 64..512 MiB in whole mebibytes (1 MiB = 1,048,576 bytes); every other limit is fixed.",
+    "fixed": {
+      "sourceLimitBytes": 65536,
+      "compileTimeLimitMs": 10000,
+      "processLimit": 16,
+      "outputLimitBytes": 1048576
+    },
+    "defaults": { "cpuTimeLimitMs": 1000, "memoryLimitBytes": 268435456 },
+    "cases": [
+      {
+        "cpuTimeLimitMs": 1000,
+        "memoryLimitBytes": 268435456,
+        "valid": true,
+        "wallTimeLimitMs": 3000
+      },
+      {
+        "cpuTimeLimitMs": 2000,
+        "memoryLimitBytes": 536870912,
+        "valid": true,
+        "wallTimeLimitMs": 6000
+      },
+      {
+        "cpuTimeLimitMs": 5000,
+        "memoryLimitBytes": 67108864,
+        "valid": true,
+        "wallTimeLimitMs": 15000
+      },
+      { "cpuTimeLimitMs": 999, "memoryLimitBytes": 268435456, "valid": false },
+      { "cpuTimeLimitMs": 0, "memoryLimitBytes": 268435456, "valid": false },
+      { "cpuTimeLimitMs": 1500, "memoryLimitBytes": 268435456, "valid": false },
+      { "cpuTimeLimitMs": 5001, "memoryLimitBytes": 268435456, "valid": false },
+      { "cpuTimeLimitMs": 6000, "memoryLimitBytes": 268435456, "valid": false },
+      { "cpuTimeLimitMs": 1000, "memoryLimitBytes": 67108863, "valid": false },
+      { "cpuTimeLimitMs": 1000, "memoryLimitBytes": 66060288, "valid": false },
+      { "cpuTimeLimitMs": 1000, "memoryLimitBytes": 64000000, "valid": false },
+      { "cpuTimeLimitMs": 1000, "memoryLimitBytes": 536870913, "valid": false },
+      { "cpuTimeLimitMs": 1000, "memoryLimitBytes": 537919488, "valid": false },
+      { "cpuTimeLimitMs": 1000, "memoryLimitBytes": 512000000, "valid": false }
+    ]
+  },
+  "sourceSize": {
+    "decision": ["D01"],
+    "rule": "A source body has 1..65,536 bytes of valid UTF-8. The limit counts bytes, not characters.",
+    "limitBytes": 65536,
+    "cases": [
+      { "bytes": 0, "outcome": "invalid-request" },
+      { "bytes": 1, "outcome": "accepted" },
+      { "bytes": 64000, "outcome": "accepted" },
+      { "bytes": 65535, "outcome": "accepted" },
+      { "bytes": 65536, "outcome": "accepted" },
+      { "bytes": 65537, "outcome": "payload-too-large" },
+      { "bytes": 1048576, "outcome": "payload-too-large" }
+    ]
+  },
+  "outputSize": {
+    "decision": ["D01"],
+    "rule": "A test whose program writes more than 1,048,576 bytes to standard output is RE. Exactly 1,048,576 bytes is within the limit.",
+    "limitBytes": 1048576,
+    "cases": [
+      { "bytes": 1000000, "withinLimit": true },
+      { "bytes": 1048576, "withinLimit": true },
+      { "bytes": 1048577, "withinLimit": false }
+    ]
+  },
+  "submissionWindow": {
+    "decision": ["D02"],
+    "rule": "Accepted exactly when opensAt <= receivedAt < submissionDeadline. receivedAt is stamped when the complete bounded body has arrived. Before opensAt the lab is concealed from students.",
+    "opensAt": "2026-11-20T02:00:00.000Z",
+    "submissionDeadline": "2026-11-25T15:00:00.000Z",
+    "cases": [
+      { "receivedAt": "2026-11-20T01:59:59.999Z", "outcome": "lab-not-found" },
+      { "receivedAt": "2026-11-20T02:00:00.000Z", "outcome": "accepted" },
+      { "receivedAt": "2026-11-25T14:59:59.999Z", "outcome": "accepted" },
+      { "receivedAt": "2026-11-25T15:00:00.000Z", "outcome": "submission-deadline-passed" },
+      { "receivedAt": "2026-11-25T15:00:00.001Z", "outcome": "submission-deadline-passed" }
+    ]
+  },
+  "countedSelection": {
+    "decision": ["D02"],
+    "rule": "The counted submission is the accepted one with the greatest (receivedAt, acceptanceSequence). Judge verdict, client time, and worker completion order never matter.",
+    "cases": [
+      {
+        "id": "later-wrong-answer-counts",
+        "submissions": [
+          {
+            "id": "A",
+            "receivedAt": "2026-11-25T10:00:00.000Z",
+            "acceptanceSequence": 10,
+            "verdict": "AC",
+            "judgedAt": "2026-11-25T10:00:05.000Z"
+          },
+          {
+            "id": "B",
+            "receivedAt": "2026-11-25T11:00:00.000Z",
+            "acceptanceSequence": 11,
+            "verdict": "WA",
+            "judgedAt": "2026-11-25T11:00:05.000Z"
+          }
+        ],
+        "counted": "B"
+      },
+      {
+        "id": "receipt-tie-uses-sequence",
+        "submissions": [
+          {
+            "id": "A",
+            "receivedAt": "2026-11-25T14:59:59.999Z",
+            "acceptanceSequence": 41,
+            "verdict": "AC",
+            "judgedAt": "2026-11-25T15:00:09.000Z"
+          },
+          {
+            "id": "B",
+            "receivedAt": "2026-11-25T14:59:59.999Z",
+            "acceptanceSequence": 42,
+            "verdict": "CE",
+            "judgedAt": "2026-11-25T15:00:02.000Z"
+          }
+        ],
+        "counted": "B"
+      },
+      {
+        "id": "older-worker-finishes-last",
+        "submissions": [
+          {
+            "id": "A",
+            "receivedAt": "2026-11-25T12:00:00.000Z",
+            "acceptanceSequence": 20,
+            "verdict": "AC",
+            "judgedAt": "2026-11-25T12:30:00.000Z"
+          },
+          {
+            "id": "B",
+            "receivedAt": "2026-11-25T12:05:00.000Z",
+            "acceptanceSequence": 21,
+            "verdict": "TLE",
+            "judgedAt": "2026-11-25T12:05:10.000Z"
+          }
+        ],
+        "counted": "B"
+      }
+    ]
+  },
+  "publicationDeadline": {
+    "decision": ["D02"],
+    "rule": "Publication passes the deadline check exactly when serverTime >= submissionDeadline.",
+    "submissionDeadline": "2026-11-25T15:00:00.000Z",
+    "cases": [
+      { "serverTime": "2026-11-25T14:59:59.999Z", "outcome": "lab-still-open" },
+      { "serverTime": "2026-11-25T15:00:00.000Z", "outcome": "deadline-passed" },
+      { "serverTime": "2026-11-25T15:00:00.001Z", "outcome": "deadline-passed" }
+    ]
+  },
+  "appealWindow": {
+    "decision": ["D03"],
+    "rule": "An appeal is eligible exactly when publishedAt <= serverTime < publishedAt + 7 days, where 7 days is 604,800,000 ms. An individual correction never moves publishedAt.",
+    "publishedAt": "2026-11-26T03:00:00.000Z",
+    "appealDeadline": "2026-12-03T03:00:00.000Z",
+    "cases": [
+      { "serverTime": "2026-11-26T03:00:00.000Z", "outcome": "eligible" },
+      { "serverTime": "2026-12-03T02:59:59.999Z", "outcome": "eligible" },
+      { "serverTime": "2026-12-03T03:00:00.000Z", "outcome": "appeal-window-closed" },
+      { "serverTime": "2026-12-03T03:00:00.001Z", "outcome": "appeal-window-closed" }
+    ]
+  },
+  "passSampling": {
+    "decision": [],
+    "rule": "requiredSample = ceil(passFindings / 10), selected without replacement, where a finding is one counted Accepted submission paired with one active constraint.",
+    "cases": [
+      { "passFindings": 0, "requiredSample": 0 },
+      { "passFindings": 1, "requiredSample": 1 },
+      { "passFindings": 9, "requiredSample": 1 },
+      { "passFindings": 10, "requiredSample": 1 },
+      { "passFindings": 11, "requiredSample": 2 },
+      { "passFindings": 20, "requiredSample": 2 },
+      { "passFindings": 21, "requiredSample": 3 },
+      { "passFindings": 100, "requiredSample": 10 },
+      { "passFindings": 101, "requiredSample": 11 }
+    ]
+  },
+  "grades": {
+    "decision": ["D08"],
+    "rule": "formulaGrade = max(0, 10 - sum(amount of each confirmed deduction)) for counted Accepted work and 0 otherwise; each constraint deducts once. An adjustment stores amount = targetGrade - formulaGrade and replaces any earlier adjustment. grade = clamp(formulaGrade + amount, 0, 10). An accepted appeal removes one deduction and keeps the stored amount.",
+    "cases": [
+      {
+        "id": "one-deduction-per-constraint",
+        "judgeVerdict": "AC",
+        "deductions": [
+          { "key": "C1", "amount": "3.00", "evidenceLines": 2 },
+          { "key": "C2", "amount": "4.00", "evidenceLines": 1 }
+        ],
+        "steps": [],
+        "expected": [{ "formulaGrade": "3.00", "manualAdjustmentAmount": null, "grade": "3.00" }]
+      },
+      {
+        "id": "deductions-above-ten-clamp-to-zero",
+        "judgeVerdict": "AC",
+        "deductions": [
+          { "key": "C1", "amount": "4.00", "evidenceLines": 1 },
+          { "key": "C2", "amount": "4.00", "evidenceLines": 1 },
+          { "key": "C3", "amount": "3.00", "evidenceLines": 3 }
+        ],
+        "steps": [],
+        "expected": [{ "formulaGrade": "0.00", "manualAdjustmentAmount": null, "grade": "0.00" }]
+      },
+      {
+        "id": "fractional-deductions",
+        "judgeVerdict": "AC",
+        "deductions": [
+          { "key": "C1", "amount": "0.25", "evidenceLines": 1 },
+          { "key": "C2", "amount": "0.50", "evidenceLines": 1 }
+        ],
+        "steps": [],
+        "expected": [{ "formulaGrade": "9.25", "manualAdjustmentAmount": null, "grade": "9.25" }]
+      },
+      {
+        "id": "accepted-without-violation",
+        "judgeVerdict": "AC",
+        "deductions": [],
+        "steps": [],
+        "expected": [{ "formulaGrade": "10.00", "manualAdjustmentAmount": null, "grade": "10.00" }]
+      },
+      {
+        "id": "counted-wrong-answer-is-zero",
+        "judgeVerdict": "WA",
+        "deductions": [],
+        "steps": [],
+        "expected": [{ "formulaGrade": "0.00", "manualAdjustmentAmount": null, "grade": "0.00" }]
+      },
+      {
+        "id": "no-submission-is-zero",
+        "judgeVerdict": null,
+        "deductions": [],
+        "steps": [],
+        "expected": [{ "formulaGrade": "0.00", "manualAdjustmentAmount": null, "grade": "0.00" }]
+      },
+      {
+        "id": "positive-adjustment-then-accepted-appeal-clamps-at-ten",
+        "judgeVerdict": "AC",
+        "deductions": [
+          { "key": "C1", "amount": "3.00", "evidenceLines": 2 },
+          { "key": "C2", "amount": "4.00", "evidenceLines": 1 }
+        ],
+        "steps": [
+          { "op": "adjust", "targetGrade": "8.50" },
+          { "op": "appeal-accepted", "key": "C1" }
+        ],
+        "expected": [
+          { "formulaGrade": "3.00", "manualAdjustmentAmount": null, "grade": "3.00" },
+          { "formulaGrade": "3.00", "manualAdjustmentAmount": "5.50", "grade": "8.50" },
+          { "formulaGrade": "6.00", "manualAdjustmentAmount": "5.50", "grade": "10.00" }
+        ]
+      },
+      {
+        "id": "negative-adjustment-kept-after-accepted-appeal-then-replaced",
+        "judgeVerdict": "AC",
+        "deductions": [
+          { "key": "C1", "amount": "3.00", "evidenceLines": 1 },
+          { "key": "C2", "amount": "4.00", "evidenceLines": 1 }
+        ],
+        "steps": [
+          { "op": "adjust", "targetGrade": "2.00" },
+          { "op": "appeal-accepted", "key": "C1" },
+          { "op": "adjust", "targetGrade": "4.00" }
+        ],
+        "expected": [
+          { "formulaGrade": "3.00", "manualAdjustmentAmount": null, "grade": "3.00" },
+          { "formulaGrade": "3.00", "manualAdjustmentAmount": "-1.00", "grade": "2.00" },
+          { "formulaGrade": "6.00", "manualAdjustmentAmount": "-1.00", "grade": "5.00" },
+          { "formulaGrade": "6.00", "manualAdjustmentAmount": "-2.00", "grade": "4.00" }
+        ]
+      },
+      {
+        "id": "adjustment-to-zero-then-accepted-appeal",
+        "judgeVerdict": "AC",
+        "deductions": [
+          { "key": "C1", "amount": "3.00", "evidenceLines": 1 },
+          { "key": "C2", "amount": "4.00", "evidenceLines": 1 }
+        ],
+        "steps": [
+          { "op": "adjust", "targetGrade": "0.00" },
+          { "op": "appeal-accepted", "key": "C2" }
+        ],
+        "expected": [
+          { "formulaGrade": "3.00", "manualAdjustmentAmount": null, "grade": "3.00" },
+          { "formulaGrade": "3.00", "manualAdjustmentAmount": "-3.00", "grade": "0.00" },
+          { "formulaGrade": "7.00", "manualAdjustmentAmount": "-3.00", "grade": "4.00" }
+        ]
+      },
+      {
+        "id": "rejected-appeal-changes-nothing",
+        "judgeVerdict": "AC",
+        "deductions": [{ "key": "C1", "amount": "3.00", "evidenceLines": 1 }],
+        "steps": [{ "op": "appeal-rejected", "key": "C1" }],
+        "expected": [
+          { "formulaGrade": "7.00", "manualAdjustmentAmount": null, "grade": "7.00" },
+          { "formulaGrade": "7.00", "manualAdjustmentAmount": null, "grade": "7.00" }
+        ]
+      },
+      {
+        "id": "manual-score-for-non-accepted-work",
+        "judgeVerdict": "RE",
+        "deductions": [],
+        "steps": [{ "op": "adjust", "targetGrade": "4.00" }],
+        "expected": [
+          { "formulaGrade": "0.00", "manualAdjustmentAmount": null, "grade": "0.00" },
+          { "formulaGrade": "0.00", "manualAdjustmentAmount": "4.00", "grade": "4.00" }
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "decision": ["D09"],
+    "rule": "Cited text matches the original line exactly after removing leading and trailing whitespace from both. Nothing else is normalized.",
+    "cases": [
+      {
+        "originalLine": "    stable_sort(a.begin() + lo, a.begin() + hi);",
+        "citedText": "stable_sort(a.begin() + lo, a.begin() + hi);",
+        "matches": true
+      },
+      {
+        "originalLine": "\tstd::sort(v.begin(), v.end());\r",
+        "citedText": "  std::sort(v.begin(), v.end());  ",
+        "matches": true
+      },
+      {
+        "originalLine": "stable_sort(a.begin() + lo, a.begin() + hi);",
+        "citedText": "stable_sort(a.begin()+lo, a.begin() + hi);",
+        "matches": false
+      },
+      {
+        "originalLine": "std::sort(v.begin(), v.end());",
+        "citedText": "std::sort(v.begin(), v.end())",
+        "matches": false
+      },
+      {
+        "originalLine": "std::sort(v.begin(), v.end());",
+        "citedText": "STD::SORT(v.begin(), v.end());",
+        "matches": false
+      },
+      {
+        "originalLine": "sort(a, a + n); // quick",
+        "citedText": "sort(a, a + n);",
+        "matches": false
+      },
+      { "originalLine": "x  =  1;", "citedText": "x = 1;", "matches": false },
+      { "originalLine": "", "citedText": "   ", "matches": true }
+    ]
+  },
+  "testBundleLimits": {
+    "decision": ["D07"],
+    "rule": "A bundle has at most 10,485,760 compressed bytes, 104,857,600 expanded bytes, and 1,000 entries. The compressed limit is a request-size limit; the other two are bundle-content limits.",
+    "limits": { "compressedBytes": 10485760, "expandedBytes": 104857600, "entries": 1000 },
+    "cases": [
+      {
+        "compressedBytes": 10485760,
+        "expandedBytes": 104857600,
+        "entries": 1000,
+        "outcome": "accepted"
+      },
+      {
+        "compressedBytes": 10485761,
+        "expandedBytes": 1024,
+        "entries": 2,
+        "outcome": "payload-too-large"
+      },
+      {
+        "compressedBytes": 2048,
+        "expandedBytes": 104857601,
+        "entries": 2,
+        "outcome": "test-bundle-invalid",
+        "violations": ["expanded-size-exceeded"]
+      },
+      {
+        "compressedBytes": 2048,
+        "expandedBytes": 4096,
+        "entries": 1001,
+        "outcome": "test-bundle-invalid",
+        "violations": ["entry-limit-exceeded"]
+      },
+      {
+        "compressedBytes": 2048,
+        "expandedBytes": 104857601,
+        "entries": 1001,
+        "outcome": "test-bundle-invalid",
+        "violations": ["entry-limit-exceeded", "expanded-size-exceeded"]
+      }
+    ]
+  },
+  "classCapacity": {
+    "decision": ["D07"],
+    "rule": "A class holds at most 100 students. TAs do not count toward the limit.",
+    "capacity": 100,
+    "cases": [
+      { "studentsBefore": 0, "outcome": "enrolled", "studentsAfter": 1 },
+      { "studentsBefore": 99, "outcome": "enrolled", "studentsAfter": 100 },
+      { "studentsBefore": 100, "outcome": "class-capacity-reached", "studentsAfter": 100 }
+    ]
+  },
+  "aggregateVerdict": {
+    "decision": ["D04"],
+    "rule": "CE when compilation fails or exceeds 10,000 ms; otherwise the first non-AC test in stable order; otherwise AC.",
+    "cases": [
+      { "compile": "ok", "tests": ["AC", "AC", "AC"], "verdict": "AC" },
+      { "compile": "ok", "tests": ["AC", "WA", "TLE"], "verdict": "WA" },
+      { "compile": "ok", "tests": ["TLE", "WA", "AC"], "verdict": "TLE" },
+      { "compile": "ok", "tests": ["AC", "AC", "MLE"], "verdict": "MLE" },
+      { "compile": "ok", "tests": ["RE"], "verdict": "RE" },
+      { "compile": "error", "tests": [], "verdict": "CE" },
+      { "compile": "timeout", "tests": [], "verdict": "CE" }
+    ]
+  },
+  "constraintEdits": {
+    "decision": [],
+    "rule": "Before opening every change is allowed. From opening until publication: no addition, no deduction increase, text change only with preservesMeaning. After publication nothing changes.",
+    "cases": [
+      { "phase": "before-opening", "change": "add", "outcome": "allowed" },
+      { "phase": "before-opening", "change": "increase-deduction", "outcome": "allowed" },
+      { "phase": "before-opening", "change": "change-text", "outcome": "allowed" },
+      { "phase": "before-opening", "change": "delete", "outcome": "allowed" },
+      {
+        "phase": "open",
+        "change": "add",
+        "outcome": "constraint-change-not-allowed",
+        "rule": "addition-after-opening"
+      },
+      {
+        "phase": "open",
+        "change": "increase-deduction",
+        "outcome": "constraint-change-not-allowed",
+        "rule": "deduction-increase-after-opening"
+      },
+      { "phase": "open", "change": "decrease-deduction", "outcome": "allowed" },
+      {
+        "phase": "open",
+        "change": "change-text",
+        "outcome": "constraint-change-not-allowed",
+        "rule": "meaning-not-confirmed"
+      },
+      { "phase": "open", "change": "clarify-text", "outcome": "allowed" },
+      { "phase": "open", "change": "delete", "outcome": "allowed" },
+      {
+        "phase": "closed",
+        "change": "add",
+        "outcome": "constraint-change-not-allowed",
+        "rule": "addition-after-opening"
+      },
+      { "phase": "closed", "change": "decrease-deduction", "outcome": "allowed" },
+      { "phase": "closed", "change": "delete", "outcome": "allowed" },
+      { "phase": "published", "change": "decrease-deduction", "outcome": "lab-already-published" },
+      { "phase": "published", "change": "clarify-text", "outcome": "lab-already-published" },
+      { "phase": "published", "change": "delete", "outcome": "lab-already-published" },
+      { "phase": "published", "change": "add", "outcome": "lab-already-published" }
+    ]
+  }
+}

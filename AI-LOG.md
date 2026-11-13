@@ -161,3 +161,14 @@
 - `PA2.md` and `SELF_ASSESSMENT_REPORT.md` linked tag runs from earlier tag positions (40152904321, 40177068435). They now link the filtered `pa2` run list, because a commit cannot contain the ID of the run its own tag push triggers.
 - Re-captured `main` protection: the active ruleset now requires one approving review (previously 0) and has no bypass actors. The four required checks are unchanged.
 - Aligned the install command in `AGENTS.md` with README and CI (`npm ci --ignore-scripts`).
+
+### 2026-11-13 — Draft production contracts for task 1.3
+
+- Tool used was Claude Code, reading the OpenSpec change, the acceptance matrix, and the pinned official evaluation README.
+- Requested work was the language-neutral `/v2` OpenAPI schema, the versioned judge/checker envelopes, and contract fixtures before any implementation.
+- Kept the v1.1 contract and its suite untouched. The nine shared problem types keep their URI, status, and title, and a test compares them with `docs/contract/publish-lab.md`.
+- Rejected separate seconds and mebibyte members for execution limits. Both contracts use base units (`cpuTimeLimitMs`, `memoryLimitBytes`) so they share one representation and the binary-unit choice (D01) is explicit in the numbers.
+- Changed the first test run's metadata after it failed: `setUserRole` takes `expectedRevision` but was annotated as not revision-checked, and `createSubmission` and `createAppeal` had no `invalid-request` scenario.
+- Rejected a hand-written JSON Schema checker; added `yaml`, `ajv`, and `ajv-formats` as development-only dependencies of the API workspace instead. `ajv` and `ajv-formats` were already installed transitively.
+- Rejected marking the task complete: contract review and the product-owner answer on D01 are still pending and are recorded as pending in the contract.
+- Injected ten faults into the contract, fixtures, and envelope schema in turn (a shared problem status, a missing CSRF problem, a role member on registration, acceptance at the deadline, a dropped adjustment, inner-whitespace evidence, a changed replay, a leaking concealed 404, an open finding schema, a drifting table). Each failed the intended assertion and the files were restored byte for byte.

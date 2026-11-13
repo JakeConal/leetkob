@@ -1,0 +1,2141 @@
+{
+  "valid": [
+    {
+      "id": "judge-request",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "judge-result-accepted",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000002",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "AC",
+          "compile": {
+            "status": "ok",
+            "message": null
+          },
+          "tests": [
+            {
+              "ordinal": 1,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            },
+            {
+              "ordinal": 2,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            },
+            {
+              "ordinal": 3,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            }
+          ],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-first-non-ac-is-aggregate",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000003",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "WA",
+          "compile": {
+            "status": "ok",
+            "message": null
+          },
+          "tests": [
+            {
+              "ordinal": 1,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            },
+            {
+              "ordinal": 2,
+              "verdict": "WA",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            },
+            {
+              "ordinal": 3,
+              "verdict": "TLE",
+              "cpuTimeMs": 1000,
+              "wallTimeMs": 1002,
+              "peakMemoryBytes": 3485696
+            }
+          ],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-compile-error",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000004",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "CE",
+          "compile": {
+            "status": "error",
+            "message": "main.cpp:3:1: error: expected ';'"
+          },
+          "tests": [],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-compile-timeout",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000005",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "CE",
+          "compile": {
+            "status": "timeout",
+            "message": "Compilation exceeded 10000 ms."
+          },
+          "tests": [],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-infrastructure-failure",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000006",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 2,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "infrastructure-failure",
+          "failure": {
+            "code": "sandbox-unavailable",
+            "retryable": true
+          }
+        }
+      }
+    },
+    {
+      "id": "check-request",
+      "message": {
+        "type": "leetkob.check.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000010",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "constraints": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "key": "C1",
+              "revision": 1,
+              "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`."
+            },
+            {
+              "id": "c0000000-0000-4000-8000-000000000002",
+              "key": "C2",
+              "revision": 2,
+              "text": "Sort with a merge sort you wrote yourself."
+            },
+            {
+              "id": "c0000000-0000-4000-8000-000000000003",
+              "key": "C3",
+              "revision": 1,
+              "text": "Free every block you allocate."
+            }
+          ],
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "redactionTerms": ["Student One", "23120001"]
+        }
+      }
+    },
+    {
+      "id": "check-result-pass-violation-unsure",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-budget-exhausted-without-model-call",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000012",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "pass",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "budget-exhausted"
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "budget-exhausted"
+            }
+          ],
+          "usage": {
+            "modelCalls": 0,
+            "reservedMicroUsd": 0,
+            "settledMicroUsd": 0,
+            "inputTokens": null,
+            "outputTokens": null
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-timeout-keeps-reservation",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000013",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "pass",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "provider-timeout"
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "provider-timeout"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": null,
+            "inputTokens": null,
+            "outputTokens": null
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-infrastructure-failure",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000014",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "infrastructure-failure",
+          "failure": {
+            "code": "input-digest-mismatch",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "id": "minor-version-accepted",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "1.7",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "id": "unsupported-major-version",
+      "reason": "A consumer of major version 1 rejects version 2.0 with failure code unsupported-version.",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "2.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-message-type",
+      "reason": "Only the four documented types exist.",
+      "message": {
+        "type": "leetkob.judge.cancel",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "judge-request-with-credential-member",
+      "reason": "The execution boundary receives no environment, credential, or identity member.",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ],
+          "environment": {
+            "DATABASE_URL": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-request-with-student-identity",
+      "reason": "A judge request carries no student or class identity.",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "studentId": "57000000-0000-4000-8000-000000000001"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "judge-request-changes-compiler",
+      "reason": "The compile profile is fixed.",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp20-o3",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "judge-request-wall-time-not-triple",
+      "reason": "wallTimeLimitMs is always one of 3x the allowed CPU limits; 2000 is not.",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 2000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "judge-result-compile-error-with-tests",
+      "reason": "No test runs after a failed compilation.",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000020",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "CE",
+          "compile": {
+            "status": "error",
+            "message": "error"
+          },
+          "tests": [
+            {
+              "ordinal": 1,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            }
+          ],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-compile-error-reported-as-wrong-answer",
+      "reason": "A failed compilation is always CE.",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000021",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "WA",
+          "compile": {
+            "status": "error",
+            "message": "error"
+          },
+          "tests": [],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-ce-after-successful-compile",
+      "reason": "CE requires a failed or timed-out compilation.",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000022",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "CE",
+          "compile": {
+            "status": "ok",
+            "message": null
+          },
+          "tests": [
+            {
+              "ordinal": 1,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            }
+          ],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-missing-fencing-token",
+      "reason": "Every message names its job attempt.",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000002",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "verdict": "AC",
+          "compile": {
+            "status": "ok",
+            "message": null
+          },
+          "tests": [
+            {
+              "ordinal": 1,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            },
+            {
+              "ordinal": 2,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            },
+            {
+              "ordinal": 3,
+              "verdict": "AC",
+              "cpuTimeMs": 3,
+              "wallTimeMs": 5,
+              "peakMemoryBytes": 3485696
+            }
+          ],
+          "executor": {
+            "backend": "qualified-linux-sandbox",
+            "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        }
+      }
+    },
+    {
+      "id": "judge-result-failure-as-student-verdict",
+      "reason": "An infrastructure failure never carries a student verdict.",
+      "message": {
+        "type": "leetkob.judge.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000023",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "infrastructure-failure",
+          "verdict": "RE",
+          "failure": {
+            "code": "sandbox-unavailable",
+            "retryable": true
+          }
+        }
+      }
+    },
+    {
+      "id": "check-request-with-deduction",
+      "reason": "The checker never receives deduction amounts.",
+      "message": {
+        "type": "leetkob.check.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000010",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "constraints": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "key": "C1",
+              "revision": 1,
+              "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+              "deduction": "3.00"
+            },
+            {
+              "id": "c0000000-0000-4000-8000-000000000002",
+              "key": "C2",
+              "revision": 2,
+              "text": "Sort with a merge sort you wrote yourself."
+            },
+            {
+              "id": "c0000000-0000-4000-8000-000000000003",
+              "key": "C3",
+              "revision": 1,
+              "text": "Free every block you allocate."
+            }
+          ],
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "redactionTerms": ["Student One", "23120001"]
+        }
+      }
+    },
+    {
+      "id": "check-request-with-test-content",
+      "reason": "The checker never receives test content.",
+      "message": {
+        "type": "leetkob.check.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000010",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "constraints": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "key": "C1",
+              "revision": 1,
+              "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`."
+            },
+            {
+              "id": "c0000000-0000-4000-8000-000000000002",
+              "key": "C2",
+              "revision": 2,
+              "text": "Sort with a merge sort you wrote yourself."
+            },
+            {
+              "id": "c0000000-0000-4000-8000-000000000003",
+              "key": "C3",
+              "revision": 1,
+              "text": "Free every block you allocate."
+            }
+          ],
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "redactionTerms": ["Student One", "23120001"],
+          "tests": [
+            {
+              "input": "5\n"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "check-result-violation-without-evidence",
+      "reason": "A violation needs at least one evidence line.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-with-deduction",
+      "reason": "A finding has no grade, score, or deduction member.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null,
+              "deduction": "3.00"
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-with-grade",
+      "reason": "A check result has no grade member.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          },
+          "grade": "7.00"
+        }
+      }
+    },
+    {
+      "id": "check-result-unsure-without-cause",
+      "reason": "Every unsure finding names its specific cause.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": null
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-pass-with-cause",
+      "reason": "Only an unsure finding has a cause.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": "provider-timeout"
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-pass-with-evidence",
+      "reason": "A pass finding has no evidence.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-invalid-verdict",
+      "reason": "The verdict is pass, violation, or unsure.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "probably-fine",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-evidence-line-zero",
+      "reason": "Evidence lines are 1-based.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 0,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 1,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "check-result-three-model-calls",
+      "reason": "One schema retry is allowed, so at most two model calls.",
+      "message": {
+        "type": "leetkob.check.result",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000011",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T03:10:01.000Z",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000002",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "outcome": "completed",
+          "checker": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "findings": [
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "source": "deterministic",
+              "verdict": "violation",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 2,
+              "source": "model",
+              "verdict": "pass",
+              "reason": "Implements a top-down merge with its own merge routine.",
+              "evidence": [],
+              "unsureCause": null
+            },
+            {
+              "constraintId": "c0000000-0000-4000-8000-000000000003",
+              "constraintKey": "C3",
+              "constraintRevision": 1,
+              "source": "model",
+              "verdict": "unsure",
+              "reason": null,
+              "evidence": [],
+              "unsureCause": "evidence-mismatch"
+            }
+          ],
+          "usage": {
+            "modelCalls": 3,
+            "reservedMicroUsd": 1800,
+            "settledMicroUsd": 1210,
+            "inputTokens": 1432,
+            "outputTokens": 96
+          }
+        }
+      }
+    },
+    {
+      "id": "timestamp-with-offset",
+      "reason": "Timestamps are UTC with milliseconds and the Z suffix.",
+      "message": {
+        "type": "leetkob.judge.request",
+        "version": "1.0",
+        "messageId": "3e55a9e0-0000-4000-8000-000000000001",
+        "correlationId": "c0bbe1a7-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-24T10:10:01.000+07:00",
+        "job": {
+          "id": "10b00000-0000-4000-8000-000000000001",
+          "attempt": 1,
+          "leaseExpiresAt": "2026-11-24T03:12:01.000Z"
+        },
+        "subject": {
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "submissionId": "5b000000-0000-4000-8000-000000000001",
+          "gradingGeneration": 7,
+          "testRevision": 1,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "payload": {
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "source": {
+            "encoding": "base64",
+            "data": "I2luY2x1ZGUgPGlvc3RyZWFtPgppbnQgbWFpbigpIHsgcmV0dXJuIDA7IH0K",
+            "bytes": 45
+          },
+          "testBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "ordinal": 1,
+              "kind": "sample",
+              "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+              "expectedOutputSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+            },
+            {
+              "ordinal": 2,
+              "kind": "hidden",
+              "inputSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "expectedOutputSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+            },
+            {
+              "ordinal": 3,
+              "kind": "hidden",
+              "inputSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+              "expectedOutputSha256": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "predictions": {
+    "description": "Lines of the evaluation prediction file in the official format.",
+    "valid": [
+      {
+        "solution": "sort-merge/s03",
+        "constraint": "C1",
+        "verdict": "pass",
+        "evidence": []
+      },
+      {
+        "solution": "sort-merge/s05",
+        "constraint": "C1",
+        "verdict": "violation",
+        "evidence": [
+          {
+            "line": 12,
+            "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+          }
+        ]
+      },
+      {
+        "solution": "sort-merge/s07",
+        "constraint": "C2",
+        "verdict": "unsure",
+        "evidence": []
+      }
+    ],
+    "invalid": [
+      {
+        "reason": "The verdict is lower case.",
+        "line": {
+          "solution": "sort-merge/s03",
+          "constraint": "C1",
+          "verdict": "PASS",
+          "evidence": []
+        }
+      },
+      {
+        "reason": "Evidence entries are objects with line and text.",
+        "line": {
+          "solution": "sort-merge/s05",
+          "constraint": "C1",
+          "verdict": "violation",
+          "evidence": [12]
+        }
+      },
+      {
+        "reason": "Labels and scores are never written by the checker.",
+        "line": {
+          "solution": "sort-merge/s05",
+          "constraint": "C1",
+          "verdict": "violation",
+          "evidence": [
+            {
+              "line": 12,
+              "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+            }
+          ],
+          "label": "violation"
+        }
+      },
+      {
+        "reason": "Evidence is required even when empty.",
+        "line": {
+          "solution": "sort-merge/s03",
+          "constraint": "C1",
+          "verdict": "pass"
+        }
+      }
+    ]
+  }
+}

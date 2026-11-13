@@ -75,6 +75,16 @@ The PA#2 HMAC claim verifier is an isolated boundary for deterministic testing. 
 
 `GET /health` returns the safe API status used by the dashboard. It does not expose configuration, credentials, student data, or storage details.
 
+## Production contract (draft, under review)
+
+The production API is specified before it is implemented. Nothing under `/v2` exists in any process yet.
+
+- [`docs/contract/v2/README.md`](docs/contract/v2/README.md) and [`docs/contract/v2/openapi.yaml`](docs/contract/v2/openapi.yaml) define the `/v2` resource families: errors, authorization, idempotency, revisions, time and decimal representations, frontend type generation, and the separation from the unversioned v1.1 route.
+- [`docs/contract/messages/README.md`](docs/contract/messages/README.md) defines the versioned judge and checker message envelopes.
+- `docs/contract/v2/fixtures/` and `docs/contract/messages/v1/fixtures/` hold language-neutral fixtures. `npm test` checks them against both contracts in `apps/api/test/contract/production-contract.test.ts`.
+
+The v1.1 publication contract above is unchanged.
+
 ## Model cost and secret policy
 
 PA#3 is intended to use the OpenAI provider with a small configurable model. The enforced policy is a maximum **USD 0.25 per lab**, configured by `MODEL_SPENDING_CAP_USD`; processing must stop or return `unsure` before exceeding it. The exact PA#3 model remains configurable through `MODEL_NAME`.

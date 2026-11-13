@@ -109,6 +109,10 @@ The rubric's seven rows total 100 points. The submission evidence includes the p
 
 Task 1.3 consumes D01–D04 and D07–D09 during contract review. The phase-6 owner must resolve D05 before scheduling PA#4 acceptance. Each milestone owner updates D06 when the lecturer publishes its rubric. Record the source response, date, affected spec/task IDs, and reviewed decision in this document. Task 1.1 delivers this cited source comparison and gap inventory as of November 5. Implementation evidence remains with the corresponding tasks. [Parent checklist][parent].
 
+### Task 1.3 contract proposals (November 13, 2026)
+
+The draft production contract states a proposed rule and boundary fixtures for D01–D04 and D07–D09. No source response or review decision has been recorded for them yet, so every row above keeps its disposition. D01 still needs the product-owner's answer on unit semantics; the draft proposes binary units and isolates them in four constants. Record each response and reviewed decision here and in the contract's status table when it arrives. [Contract decisions for review](../contract/v2/README.md#7-decisions-for-contract-review).
+
 [brief]: https://drive.google.com/file/d/1VK58AnV3_LWNWVX6jKxj1baPMDIA8QFm/view
 [rubric]: https://drive.google.com/file/d/1wWH6xtNdzngJdGl7t4Qxe6VBarwl8lH9/view
 [calendar]: https://classroom.google.com/c/ODg2MTU1OTQ4NDc0/m/ODkzMjIwMTk1NDM0/details
