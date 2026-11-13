@@ -10,7 +10,7 @@ export const officialSource = JSON.parse(
 
 function filesAt(root, prefix = "") {
   return readdirSync(join(root, prefix))
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .flatMap((name) => {
       if (!prefix && name === ".git") return [];
       const path = prefix ? `${prefix}/${name}` : name;
@@ -24,8 +24,8 @@ function filesAt(root, prefix = "") {
 
 export function verifyOfficial(root) {
   const actual = filesAt(root);
-  const expected = Object.keys(officialSource.sha256).sort();
-  if (JSON.stringify(actual.sort()) !== JSON.stringify(expected)) {
+  const expected = Object.keys(officialSource.sha256).sort((a, b) => a.localeCompare(b));
+  if (JSON.stringify(actual.sort((a, b) => a.localeCompare(b))) !== JSON.stringify(expected)) {
     throw new Error("Official source file inventory differs from the pinned manifest");
   }
   for (const path of expected) {
