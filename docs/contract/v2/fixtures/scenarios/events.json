@@ -1,0 +1,104 @@
+{
+  "family": "events",
+  "scenarios": [
+    {
+      "id": "events.stream",
+      "operationId": "streamEvents",
+      "covers": ["submission-judging/Private realtime results and history"],
+      "effects": [
+        "The event names the submission only; the client refetches GET /v2/submissions/{id}.",
+        "No other student's event is delivered."
+      ],
+      "given": {
+        "now": "2026-11-24T03:10:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The student's submission finishes judging while the stream is open."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/events",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "Accept": "text/event-stream"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "text/event-stream",
+        "bodyText": ": keep-alive\n\nid: e0000000-0000-4000-8000-000000000001\nevent: submission.updated\ndata: {\"eventId\":\"e0000000-0000-4000-8000-000000000001\",\"type\":\"submission.updated\",\"occurredAt\":\"2026-11-24T03:10:07.412Z\",\"resource\":{\"kind\":\"submission\",\"id\":\"5b000000-0000-4000-8000-000000000001\",\"labId\":\"1ab00000-0000-4000-8000-000000000001\",\"revision\":null}}\n\n",
+        "events": [
+          {
+            "eventId": "e0000000-0000-4000-8000-000000000001",
+            "type": "submission.updated",
+            "occurredAt": "2026-11-24T03:10:07.412Z",
+            "resource": {
+              "kind": "submission",
+              "id": "5b000000-0000-4000-8000-000000000001",
+              "labId": "1ab00000-0000-4000-8000-000000000001",
+              "revision": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "events.stream.unknown-last-event-id",
+      "operationId": "streamEvents",
+      "effects": ["The client refetches every resource it displays."],
+      "given": {
+        "now": "2026-11-24T03:20:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["Last-Event-ID is older than the retained outbox window."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/events",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "Accept": "text/event-stream",
+          "Last-Event-ID": "e0000000-0000-4000-8000-000000000000"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "text/event-stream",
+        "bodyText": "id: e0000000-0000-4000-8000-000000000002\nevent: stream.reset\ndata: {\"eventId\":\"e0000000-0000-4000-8000-000000000002\",\"type\":\"stream.reset\",\"occurredAt\":\"2026-11-24T03:20:00.000Z\",\"resource\":null}\n\n",
+        "events": [
+          {
+            "eventId": "e0000000-0000-4000-8000-000000000002",
+            "type": "stream.reset",
+            "occurredAt": "2026-11-24T03:20:00.000Z",
+            "resource": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "events.stream.unauthenticated",
+      "operationId": "streamEvents",
+      "given": {
+        "now": "2026-11-24T03:20:00.000Z",
+        "actor": "anonymous",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/events",
+        "headers": {
+          "Accept": "text/event-stream"
+        }
+      },
+      "response": {
+        "status": 401,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/authentication-required",
+          "title": "Authentication required",
+          "status": 401,
+          "detail": "A valid session is required.",
+          "instance": "/v2/events"
+        }
+      }
+    }
+  ]
+}
