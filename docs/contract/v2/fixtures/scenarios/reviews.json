@@ -1,0 +1,532 @@
+{
+  "family": "reviews",
+  "scenarios": [
+    {
+      "id": "reviews.queue",
+      "operationId": "listReviewQueue",
+      "covers": ["review-decisions/Complete current review queue"],
+      "effects": ["Reloading returns the same sampled finding; the sample is never redrawn."],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "Generation 7 has one violation, one unsure, and ten pass findings of which one is sampled."
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews?scope=required&state=pending",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "gradingGeneration": 7,
+          "samplingFinalized": true,
+          "pendingReviews": 3,
+          "items": [
+            {
+              "id": "f1000000-0000-4000-8000-000000000001",
+              "labId": "1ab00000-0000-4000-8000-000000000003",
+              "revision": 1,
+              "gradingGeneration": 7,
+              "submissionId": "5b000000-0000-4000-8000-000000000001",
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "testRevision": 1,
+              "source": "deterministic",
+              "checkerVerdict": "violation",
+              "unsureCause": null,
+              "requirement": "violation",
+              "decision": null
+            },
+            {
+              "id": "f1000000-0000-4000-8000-000000000003",
+              "labId": "1ab00000-0000-4000-8000-000000000003",
+              "revision": 1,
+              "gradingGeneration": 7,
+              "submissionId": "5b000000-0000-4000-8000-000000000002",
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintRevision": 1,
+              "testRevision": 1,
+              "source": "deterministic",
+              "checkerVerdict": "pass",
+              "unsureCause": null,
+              "requirement": "sampled-pass",
+              "decision": null
+            },
+            {
+              "id": "f1000000-0000-4000-8000-000000000002",
+              "labId": "1ab00000-0000-4000-8000-000000000003",
+              "revision": 1,
+              "gradingGeneration": 7,
+              "submissionId": "5b000000-0000-4000-8000-000000000001",
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintRevision": 1,
+              "testRevision": 1,
+              "source": "model",
+              "checkerVerdict": "unsure",
+              "unsureCause": "provider-timeout",
+              "requirement": "unsure",
+              "decision": null
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "reviews.finding.unsure",
+      "operationId": "getFinding",
+      "covers": ["review-decisions/Evidence-centered TA decisions"],
+      "effects": ["The specific unsure cause is exposed and no default decision exists."],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000002",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "finding": {
+            "id": "f1000000-0000-4000-8000-000000000002",
+            "labId": "1ab00000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "gradingGeneration": 7,
+            "submissionId": "5b000000-0000-4000-8000-000000000001",
+            "constraintId": "c0000000-0000-4000-8000-000000000002",
+            "constraintKey": "C2",
+            "constraintRevision": 1,
+            "testRevision": 1,
+            "source": "model",
+            "checkerVerdict": "unsure",
+            "unsureCause": "provider-timeout",
+            "requirement": "unsure",
+            "decision": null
+          },
+          "reason": null,
+          "evidence": [],
+          "provenance": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": "prompt-7",
+            "modelId": "configured-model-2026-10"
+          },
+          "history": []
+        }
+      }
+    },
+    {
+      "id": "reviews.finding.not-found",
+      "operationId": "getFinding",
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000099",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/finding-not-found",
+          "title": "Finding not found",
+          "status": 404,
+          "detail": "No such finding is available to you.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000099"
+        }
+      }
+    },
+    {
+      "id": "reviews.decide.violation",
+      "operationId": "decideFinding",
+      "decision": "D09",
+      "covers": ["review-decisions/Overrides and decision history"],
+      "effects": [
+        "Evidence matches although leading and trailing whitespace differ.",
+        "Stored evidence is the original line text restored from the submitted source."
+      ],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "Original line 12 is `    stable_sort(a.begin() + lo, a.begin() + hi);` with four leading spaces."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000001/decisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "verdict": "violation",
+          "evidence": [
+            {
+              "line": 12,
+              "text": "stable_sort(a.begin() + lo, a.begin() + hi);  "
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "finding": {
+            "id": "f1000000-0000-4000-8000-000000000001",
+            "labId": "1ab00000-0000-4000-8000-000000000003",
+            "revision": 2,
+            "gradingGeneration": 7,
+            "submissionId": "5b000000-0000-4000-8000-000000000001",
+            "constraintId": "c0000000-0000-4000-8000-000000000001",
+            "constraintKey": "C1",
+            "constraintRevision": 1,
+            "testRevision": 1,
+            "source": "deterministic",
+            "checkerVerdict": "violation",
+            "unsureCause": null,
+            "requirement": "violation",
+            "decision": {
+              "verdict": "violation",
+              "reason": null,
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "decidedBy": "7a000000-0000-4000-8000-000000000001",
+              "decidedAt": "2026-11-25T16:00:00.000Z"
+            }
+          },
+          "reason": "Calls std::stable_sort inside the merge step.",
+          "evidence": [
+            {
+              "line": 12,
+              "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+            }
+          ],
+          "provenance": {
+            "checkerVersion": "checker-1.4.0",
+            "promptVersion": null,
+            "modelId": null
+          },
+          "history": [
+            {
+              "findingRevision": 2,
+              "previousVerdict": "violation",
+              "decision": {
+                "verdict": "violation",
+                "reason": null,
+                "evidence": [
+                  {
+                    "line": 12,
+                    "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                  }
+                ],
+                "decidedBy": "7a000000-0000-4000-8000-000000000001",
+                "decidedAt": "2026-11-25T16:00:00.000Z"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reviews.decide.violation-without-evidence",
+      "operationId": "decideFinding",
+      "requestSchemaValid": false,
+      "covers": ["review-decisions/Evidence-centered TA decisions"],
+      "effects": ["The required item stays unresolved."],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000002/decisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "verdict": "violation",
+          "reason": "Looks like library sort."
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000002/decisions",
+          "errors": [
+            {
+              "in": "body",
+              "name": "/evidence",
+              "code": "missing"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reviews.decide.evidence-mismatch",
+      "operationId": "decideFinding",
+      "decision": "D09",
+      "covers": ["constraint-checking/Evidence and failure handling"],
+      "effects": [
+        "Only outer whitespace is ignored; an inner-whitespace difference is a mismatch."
+      ],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["Original line 12 calls stable_sort; the cited text changes an inner character."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000001/decisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "verdict": "violation",
+          "evidence": [
+            {
+              "line": 12,
+              "text": "stable_sort(a.begin()+lo, a.begin() + hi);"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/evidence-invalid",
+          "title": "Evidence invalid",
+          "status": 400,
+          "detail": "At least one evidence line does not match the original source.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000001/decisions",
+          "invalidLines": [12]
+        }
+      }
+    },
+    {
+      "id": "reviews.decide.stale",
+      "operationId": "decideFinding",
+      "covers": ["review-decisions/Concurrent review consistency"],
+      "effects": ["The first TA's decision is not overwritten."],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["Another TA already decided the finding; it is at revision 2."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000001/decisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "verdict": "pass",
+          "reason": "Own helper."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/revision-conflict",
+          "title": "Revision conflict",
+          "status": 409,
+          "detail": "The resource changed after it was read. Refresh and try again.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/f1000000-0000-4000-8000-000000000001/decisions",
+          "conflicts": [
+            {
+              "resource": "finding",
+              "id": "f1000000-0000-4000-8000-000000000001",
+              "currentRevision": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reviews.group.confirmed",
+      "operationId": "decideFindingGroup",
+      "covers": ["review-decisions/Deliberate grouped review"],
+      "effects": ["Each finding has its own audited decision."],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["Both findings are current deterministic violations of C1."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/group-decisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "constraintId": "c0000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "findingId": "f1000000-0000-4000-8000-000000000001",
+              "expectedRevision": 1
+            },
+            {
+              "findingId": "f1000000-0000-4000-8000-000000000003",
+              "expectedRevision": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "decided": [
+            {
+              "findingId": "f1000000-0000-4000-8000-000000000001",
+              "revision": 2
+            },
+            {
+              "findingId": "f1000000-0000-4000-8000-000000000003",
+              "revision": 2
+            }
+          ],
+          "pendingReviews": 1
+        }
+      }
+    },
+    {
+      "id": "reviews.group.stale",
+      "operationId": "decideFindingGroup",
+      "covers": ["review-decisions/Deliberate grouped review"],
+      "effects": ["No finding of the group is decided, including the one that was still current."],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["A newer submission superseded one finding of the group."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/group-decisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "constraintId": "c0000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "findingId": "f1000000-0000-4000-8000-000000000001",
+              "expectedRevision": 1
+            },
+            {
+              "findingId": "f1000000-0000-4000-8000-000000000003",
+              "expectedRevision": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/revision-conflict",
+          "title": "Revision conflict",
+          "status": 409,
+          "detail": "The resource changed after it was read. Refresh and try again.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/group-decisions",
+          "conflicts": [
+            {
+              "resource": "finding",
+              "id": "f1000000-0000-4000-8000-000000000003",
+              "currentRevision": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reviews.group.model-finding",
+      "operationId": "decideFindingGroup",
+      "covers": ["review-decisions/Deliberate grouped review"],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["One requested finding is a model unsure."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/group-decisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "constraintId": "c0000000-0000-4000-8000-000000000002",
+          "items": [
+            {
+              "findingId": "f1000000-0000-4000-8000-000000000002",
+              "expectedRevision": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/group-decision-not-allowed",
+          "title": "Group decision not allowed",
+          "status": 409,
+          "detail": "Only current deterministic violations can be decided as a group.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/reviews/group-decisions",
+          "findingIds": ["f1000000-0000-4000-8000-000000000002"]
+        }
+      }
+    }
+  ]
+}

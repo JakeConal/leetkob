@@ -1,0 +1,683 @@
+{
+  "family": "classes",
+  "scenarios": [
+    {
+      "id": "classes.list",
+      "operationId": "listClasses",
+      "covers": ["identity-and-classes/Resource and event isolation"],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The TA is assigned to class A only; class B also exists."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/classes?limit=50",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "c1a55000-0000-4000-8000-000000000001",
+              "name": "CSC13114 - Class A",
+              "studentCount": 42,
+              "studentCapacity": 100,
+              "createdAt": "2026-11-10T03:00:00.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "classes.create",
+      "operationId": "createClass",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "admin",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:admin>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "name": "CSC13114 - Class A"
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/v2/classes/c1a55000-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "c1a55000-0000-4000-8000-000000000001",
+          "name": "CSC13114 - Class A",
+          "studentCount": 0,
+          "studentCapacity": 100,
+          "createdAt": "2026-11-10T03:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "classes.get",
+      "operationId": "getClass",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "c1a55000-0000-4000-8000-000000000001",
+          "name": "CSC13114 - Class A",
+          "studentCount": 42,
+          "studentCapacity": 100,
+          "createdAt": "2026-11-10T03:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "classes.get.concealed",
+      "operationId": "getClass",
+      "covers": ["identity-and-classes/Resource and event isolation"],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-other-class",
+        "state": [
+          "Class B exists but the TA is assigned only to class A. An absent class returns this exact body."
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000002",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-other-class>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/class-not-found",
+          "title": "Class not found",
+          "status": 404,
+          "detail": "No such class is available to you.",
+          "instance": "/v2/classes/c1a55000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "id": "classes.ta.assign",
+      "operationId": "assignTeachingAssistant",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "admin",
+        "state": ["The account has the TA role."]
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/teaching-assistants/7a000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:admin>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "userId": "7a000000-0000-4000-8000-000000000001",
+          "role": "ta",
+          "displayName": "TA One",
+          "email": "ta.one@example.edu",
+          "studentCode": null,
+          "joinedAt": "2026-11-12T02:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "classes.ta.unassign",
+      "operationId": "unassignTeachingAssistant",
+      "covers": ["identity-and-classes/Verified and current authorization"],
+      "effects": [
+        "The TA's next request for this class returns the concealed not-found problem.",
+        "The TA's event stream stops delivering events for this class."
+      ],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "admin",
+        "state": ["The TA holds an access token that has not expired."]
+      },
+      "request": {
+        "method": "DELETE",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/teaching-assistants/7a000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:admin>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef"
+        }
+      },
+      "response": {
+        "status": 204,
+        "contentType": null,
+        "body": null
+      }
+    },
+    {
+      "id": "classes.members.list",
+      "operationId": "listClassMembers",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members?role=student",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "classId": "c1a55000-0000-4000-8000-000000000001",
+              "userId": "57000000-0000-4000-8000-000000000001",
+              "role": "student",
+              "displayName": "Student One",
+              "email": "student.one@example.edu",
+              "studentCode": "23120001",
+              "joinedAt": "2026-11-12T02:00:00.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "classes.members.list.student",
+      "operationId": "listClassMembers",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The student is enrolled in the class but is not a TA."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/ta-role-required",
+          "title": "TA role required",
+          "status": 403,
+          "detail": "This operation requires the TA role.",
+          "instance": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members"
+        }
+      }
+    },
+    {
+      "id": "classes.members.add.created",
+      "operationId": "addClassMember",
+      "decision": "D07",
+      "effects": ["The class has exactly 100 students."],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The class has 99 students; the account is not yet a member."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "email": "student.one@example.edu",
+          "studentCode": "23120001"
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "userId": "57000000-0000-4000-8000-000000000001",
+          "role": "student",
+          "displayName": "Student One",
+          "email": "student.one@example.edu",
+          "studentCode": "23120001",
+          "joinedAt": "2026-11-12T02:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "classes.members.add.existing",
+      "operationId": "addClassMember",
+      "effects": ["No second membership exists."],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The student is already a member."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "email": "student.one@example.edu",
+          "studentCode": "23120001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "userId": "57000000-0000-4000-8000-000000000001",
+          "role": "student",
+          "displayName": "Student One",
+          "email": "student.one@example.edu",
+          "studentCode": "23120001",
+          "joinedAt": "2026-11-12T02:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "classes.members.add.capacity",
+      "operationId": "addClassMember",
+      "decision": "D07",
+      "covers": ["identity-and-classes/Class administration and enrollment"],
+      "effects": ["The class still has exactly 100 students."],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The class has 100 students; the account is not a member."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "email": "student.two@example.edu"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/class-capacity-reached",
+          "title": "Class capacity reached",
+          "status": 409,
+          "detail": "The class already has the maximum number of students.",
+          "instance": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members",
+          "capacity": 100
+        }
+      }
+    },
+    {
+      "id": "classes.members.remove",
+      "operationId": "removeClassMember",
+      "effects": ["A lab roster frozen at an earlier deadline still lists the student."],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "DELETE",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/members/57000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef"
+        }
+      },
+      "response": {
+        "status": 204,
+        "contentType": null,
+        "body": null
+      }
+    },
+    {
+      "id": "classes.roster.import",
+      "operationId": "importRoster",
+      "decision": "D07",
+      "covers": ["identity-and-classes/Class administration and enrollment"],
+      "effects": [
+        "Accepted rows stay accepted although later rows are rejected.",
+        "Importing the same file again reports rows 2 and 8 as unchanged and enrolls nobody."
+      ],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "The class has 98 students. a@ and c@ are student accounts; b@ is already enrolled; nobody@ has no account; ta.one@ is a TA."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/roster-imports",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/csv; charset=utf-8"
+        },
+        "bodyText": "email,studentCode\na@example.edu,23120010\nb@example.edu,23120011\nnot-an-email,23120012\na@example.edu,23120010\nnobody@example.edu,23120013\nta.one@example.edu,\nc@example.edu,23120014\nd@example.edu,23120015\n"
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "rows": [
+            {
+              "line": 2,
+              "status": "enrolled",
+              "code": null
+            },
+            {
+              "line": 3,
+              "status": "unchanged",
+              "code": null
+            },
+            {
+              "line": 4,
+              "status": "rejected",
+              "code": "invalid-email"
+            },
+            {
+              "line": 5,
+              "status": "rejected",
+              "code": "duplicate-row"
+            },
+            {
+              "line": 6,
+              "status": "rejected",
+              "code": "account-not-found"
+            },
+            {
+              "line": 7,
+              "status": "rejected",
+              "code": "not-a-student"
+            },
+            {
+              "line": 8,
+              "status": "enrolled",
+              "code": null
+            },
+            {
+              "line": 9,
+              "status": "rejected",
+              "code": "class-capacity-reached"
+            }
+          ],
+          "enrolledCount": 2,
+          "unchangedCount": 1,
+          "rejectedCount": 5,
+          "studentCount": 100
+        }
+      }
+    },
+    {
+      "id": "classes.roster.import.too-large",
+      "operationId": "importRoster",
+      "effects": ["No row is applied."],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/roster-imports",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/csv; charset=utf-8"
+        },
+        "bodyRepeat": {
+          "text": "x",
+          "count": 65537
+        }
+      },
+      "response": {
+        "status": 413,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/payload-too-large",
+          "title": "Payload too large",
+          "status": 413,
+          "detail": "The request body exceeds the documented limit.",
+          "instance": "/v2/classes/c1a55000-0000-4000-8000-000000000001/roster-imports",
+          "maximumBytes": 65536
+        }
+      }
+    },
+    {
+      "id": "classes.invitations.create",
+      "operationId": "createInvitation",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/invitations",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expiresAt": "2026-11-19T02:00:00.000Z"
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "body": {
+          "id": "1a710000-0000-4000-8000-000000000001",
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "code": "Zm9vYmFyYmF6cXV4MDEyMzQ1",
+          "expiresAt": "2026-11-19T02:00:00.000Z",
+          "revokedAt": null,
+          "createdAt": "2026-11-12T02:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "classes.invitations.list",
+      "operationId": "listInvitations",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/invitations",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "1a710000-0000-4000-8000-000000000001",
+              "classId": "c1a55000-0000-4000-8000-000000000001",
+              "code": "Zm9vYmFyYmF6cXV4MDEyMzQ1",
+              "expiresAt": "2026-11-19T02:00:00.000Z",
+              "revokedAt": null,
+              "createdAt": "2026-11-12T02:00:00.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "classes.invitations.revoke",
+      "operationId": "revokeInvitation",
+      "effects": ["Students who already joined with this code remain enrolled."],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "DELETE",
+        "path": "/v2/classes/c1a55000-0000-4000-8000-000000000001/invitations/1a710000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef"
+        }
+      },
+      "response": {
+        "status": 204,
+        "contentType": null,
+        "body": null
+      }
+    },
+    {
+      "id": "classes.enroll.redeem",
+      "operationId": "redeemInvitation",
+      "covers": ["identity-and-classes/Class administration and enrollment"],
+      "effects": ["The class contains exactly one membership for this student."],
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The student already belongs to the class of this valid code."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/enrollments",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "code": "Zm9vYmFyYmF6cXV4MDEyMzQ1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "userId": "57000000-0000-4000-8000-000000000001",
+          "role": "student",
+          "displayName": "Student One",
+          "email": "student.one@example.edu",
+          "studentCode": "23120001",
+          "joinedAt": "2026-11-12T02:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "classes.enroll.invalid",
+      "operationId": "redeemInvitation",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "student-not-enrolled",
+        "state": ["The code is unknown, expired, or revoked. All three return this exact body."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/enrollments",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-not-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "code": "AAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invitation-not-found",
+          "title": "Invitation not found",
+          "status": 404,
+          "detail": "This invitation cannot be used.",
+          "instance": "/v2/classes/enrollments"
+        }
+      }
+    },
+    {
+      "id": "classes.enroll.not-student",
+      "operationId": "redeemInvitation",
+      "given": {
+        "now": "2026-11-12T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/classes/enrollments",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "code": "Zm9vYmFyYmF6cXV4MDEyMzQ1"
+        }
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/student-role-required",
+          "title": "Student role required",
+          "status": 403,
+          "detail": "This operation requires the student role.",
+          "instance": "/v2/classes/enrollments"
+        }
+      }
+    }
+  ]
+}
