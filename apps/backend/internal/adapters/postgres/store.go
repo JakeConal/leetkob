@@ -1,8 +1,8 @@
 // Package postgres holds the durable store adapter shared by the API and
-// worker commands. Task 2.1 of issue #38 adds the transactional adapters;
-// this file provides the health dependency wiring so the API reports 503
-// when the configured database is unreachable, per the PA#3 contract's
-// unavailable problem type.
+// worker commands. Initialization is additive. Transactions commit only
+// when the caller says so, so an interrupted write is not visible after
+// restart. Health still reports 503 when the configured database is
+// unreachable, per the PA#3 contract's unavailable problem type.
 package postgres
 
 import (
@@ -25,8 +25,7 @@ type PingFunc func(ctx context.Context) error
 // Ping implements Pinger.
 func (f PingFunc) Ping(ctx context.Context) error { return f(ctx) }
 
-// Store wraps the connection pool. It is intentionally minimal until the
-// transactional adapters land in task 2.1.
+// Store wraps the connection pool and applies the additive schema.
 type Store struct {
 	pool *pgxpool.Pool
 }
@@ -54,6 +53,8 @@ func (s *Store) Ping(ctx context.Context) error {
 }
 
 // Close releases all pool connections. Safe to call more than once.
+// Transactions must be committed or rolled back first; Close waits until
+// checked-out connections are returned.
 func (s *Store) Close() {
 	if s != nil && s.pool != nil {
 		s.pool.Close()

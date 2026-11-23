@@ -50,10 +50,24 @@ type Job struct {
 }
 
 // Queue is the durable job source leased by a separate worker process.
-// The concrete adapter lands with the PostgreSQL store (issue #38 task
-// 2.1/4.2); the port keeps the worker independent of storage.
+// Leasing is issue #38 task 4.2. This port keeps the worker independent
+// of storage; the shared transaction port below is what a lease will use.
 type Queue interface {
 	// Lease claims at most max pending jobs for this worker. Each claimed
 	// job carries its current attempt fence.
 	Lease(ctx context.Context, max int) ([]Job, error)
+}
+
+// Transaction is one durable unit of work. Commit publishes its writes.
+// Rollback, a failed callback, or process exit before Commit leaves nothing
+// visible to a later connection. Domain services own the decision; HTTP
+// handlers and model adapters do not.
+type Transaction interface {
+	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
+}
+
+// Transactor begins a transaction on the durable store.
+type Transactor interface {
+	Begin(ctx context.Context) (Transaction, error)
 }
