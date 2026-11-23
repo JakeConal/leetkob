@@ -12,10 +12,20 @@
 // Environment: COMPARE_WARMUP (200), COMPARE_ROUNDS (5),
 // COMPARE_CONCURRENCY (50), COMPARE_LABS (200).
 
+import { constants as fsConstants } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  accessSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
 import { performance } from "node:perf_hooks";
+
+import prettier from "prettier";
 
 import { createApiApplication } from "../apps/api/src/app-factory.ts";
 import { issueToken } from "../apps/api/src/auth/token.ts";
@@ -160,16 +170,39 @@ async function runNodeSide() {
   };
 }
 
-function resolveGo() {
-  for (const candidate of [process.env.GO ?? "go", "go", "/snap/go/current/bin/go"]) {
+// Resolves an executable to a fixed absolute path by scanning candidate
+// directories directly (no PATH-dependent shell lookup).
+function resolveExecutable(name, extraCandidates = []) {
+  const candidates = [
+    process.env[`LEETKOB_${name.toUpperCase()}_BIN`],
+    ...extraCandidates,
+    join(dirname(process.execPath), name),
+    ...(process.env.PATH ?? "")
+      .split(":")
+      .filter(Boolean)
+      .map((entry) => join(entry, name)),
+  ];
+  for (const candidate of candidates) {
+    if (candidate === undefined) continue;
     try {
-      const version = execFileSync(candidate, ["version"], { encoding: "utf8" });
-      return { command: candidate, version: version.trim() };
+      if (existsSync(candidate) && statSync(candidate).isFile()) {
+        accessSync(candidate, fsConstants.X_OK);
+        return candidate;
+      }
     } catch {
-      // Try the next candidate location.
+      // Not executable at this candidate; try the next.
     }
   }
-  throw new Error("go toolchain not found; install go 1.27.4");
+  throw new Error(`executable not found: ${name}`);
+}
+
+function resolveGo() {
+  const goTool = {
+    command: resolveExecutable("go", ["/snap/go/current/bin/go", "/usr/local/go/bin/go"]),
+  };
+  const probe = execFileSync(goTool.command, ["version"], { encoding: "utf8" });
+  goTool.version = probe.trim();
+  return goTool;
 }
 
 function runGoSide() {
@@ -222,11 +255,13 @@ async function main() {
   const go = goRun.metrics;
   const node = await runNodeSide();
 
-  const gitRevision = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const gitRevision = execFileSync(resolveExecutable("git"), ["rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
   const goVersion = goRun.version;
   const nodeSideBuild = measure(
     "npm run build --workspace @leetkob/api (warm cache)",
-    ["npm", "run", "build", "--workspace", "@leetkob/api"],
+    [resolveExecutable("npm"), "run", "build", "--workspace", "@leetkob/api"],
     process.cwd(),
   );
   const goSideBuild = measure(
@@ -241,11 +276,13 @@ async function main() {
     gitRevision,
     hardware: {
       platform: `${process.platform} ${process.arch}`,
-      cpuModel: String(
-        execFileSync("sh", ["-c", "grep -m1 'model name' /proc/cpuinfo | cut -d: -f2"], {
-          encoding: "utf8",
-        }),
-      ).trim(),
+      cpuModel: readFileSync("/proc/cpuinfo", "utf8")
+        .split("\n")
+        .find((line) => line.startsWith("model name"))
+        ?.split(":")
+        .slice(1)
+        .join(":")
+        .trim(),
       totalMemoryBytes:
         Number.parseInt(readFileSync("/proc/meminfo", "utf8").split("\n")[0].split(/\s+/)[1], 10) *
         1024,
@@ -264,7 +301,8 @@ async function main() {
   };
 
   const jsonPath = join(process.cwd(), "docs", "evidence", "backend-comparison.json");
-  writeFileSync(jsonPath, `${JSON.stringify(evidence, null, 2)}\n`);
+  const formattedJson = await prettier.format(JSON.stringify(evidence), { parser: "json" });
+  writeFileSync(jsonPath, formattedJson);
 
   const markdown = `# Backend comparison — NestJS PA#2 vs Go compatpub
 
@@ -303,7 +341,8 @@ decision 1 of \`implement-pa3-go-prototype\`). A default cutover would be
 its own reviewed decision after the PA#3 flow is complete.
 `;
   const markdownPath = join(process.cwd(), "docs", "evidence", "backend-comparison.md");
-  writeFileSync(markdownPath, markdown);
+  const formattedMarkdown = await prettier.format(markdown, { parser: "markdown" });
+  writeFileSync(markdownPath, formattedMarkdown);
 
   const rows = [
     `| Metric | NestJS PA#2 | Go compatpub |`,

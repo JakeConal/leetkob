@@ -8,7 +8,8 @@
 // Usage: node scripts/go-check.mjs <format|vet|build|test|security>
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { constants as fsConstants } from "node:fs";
+import { accessSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const supported = ["format", "vet", "build", "test", "security"];
@@ -95,12 +96,29 @@ function resolveGofmt(goCommand) {
 }
 
 function resolveGo() {
-  const candidates = [process.env.GO ?? "go", "go", "/snap/go/current/bin/go"];
+  // Scan candidate locations directly so the executed path is fixed and
+  // absolute; a bare PATH lookup would be a security review hotspot.
+  const candidates = [
+    process.env.GO,
+    "/snap/go/current/bin/go",
+    "/usr/local/go/bin/go",
+    join(dirname(process.execPath), "go"),
+    ...(process.env.PATH ?? "")
+      .split(":")
+      .filter(Boolean)
+      .map((entry) => join(entry, "go")),
+  ];
   for (const candidate of candidates) {
-    const probe = spawnSync(candidate, ["version"], { encoding: "utf8" });
-    if (probe.status === 0) {
-      const reported = probe.stdout.trim().split(/\s+/)[2] ?? "";
-      return { command: candidate, reported };
+    if (candidate === undefined) continue;
+    try {
+      if (existsSync(candidate) && accessSync(candidate, fsConstants.X_OK) === undefined) {
+        const probe = spawnSync(candidate, ["version"], { encoding: "utf8" });
+        if (probe.status === 0) {
+          return { command: candidate, reported: probe.stdout.trim().split(/\s+/)[2] ?? "" };
+        }
+      }
+    } catch {
+      // Not executable at this candidate; try the next.
     }
   }
   return null;

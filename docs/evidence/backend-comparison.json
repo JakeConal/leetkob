@@ -1,15 +1,12 @@
 {
-  "generatedAt": "2026-11-23T09:22:38.524Z",
-  "gitRevision": "4713ac6c0b9b48674b8a6d257078178c4b15eb89",
+  "generatedAt": "2026-11-23T12:45:25.934Z",
+  "gitRevision": "8db6a1d244fcc91647f74362d06138a2b611f480",
   "hardware": {
     "platform": "linux x64",
     "cpuModel": "11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz",
     "totalMemoryBytes": 13601320960
   },
-  "toolchain": {
-    "node": "v22.23.4",
-    "go": "go version go1.27.4 linux/amd64"
-  },
+  "toolchain": { "node": "v22.23.4", "go": "go version go1.27.4 linux/amd64" },
   "configuration": {
     "warmup": 200,
     "rounds": 5,
@@ -28,15 +25,15 @@
       "concurrency": 50,
       "labs": 200,
       "latencyMs": {
-        "mean": 10.784652221428564,
-        "p50": 1.670361999999841,
-        "p95": 69.84011699999974,
-        "max": 175.98146600000018
+        "mean": 5.214731135714289,
+        "p50": 0.8767269999998462,
+        "p95": 33.24810400000024,
+        "max": 103.29565600000024
       },
-      "throughputPerSecond": 493.35699649687456,
-      "measuredMs": 9080.64552,
-      "startupMs": 223.21257600000035,
-      "memoryRssBytes": 170131456
+      "throughputPerSecond": 1095.8576301256953,
+      "measuredMs": 4088.1222860000003,
+      "startupMs": 324.053993,
+      "memoryRssBytes": 253698048
     },
     {
       "concurrency": 50,
@@ -60,15 +57,10 @@
   "builds": [
     {
       "label": "npm run build --workspace @leetkob/api (warm cache)",
-      "milliseconds": 2762.5943210000005
+      "milliseconds": 2372.866289999999
     },
-    {
-      "label": "go build ./... (warm cache)",
-      "milliseconds": 947.9744470000023
-    }
+    { "label": "go build ./... (warm cache)", "milliseconds": 1224.777865 }
   ],
-  "artifacts": {
-    "nestjsDistBytes": 36544
-  },
+  "artifacts": { "nestjsDistBytes": 36544 },
   "reviewAcceptance": "pending; this comparison does not switch the default backend, and the Go production routes stay on their explicit development port"
 }
