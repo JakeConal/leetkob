@@ -21,12 +21,26 @@ type problemBody struct {
 // writeProblem emits one problem response with the documented media type
 // and no-store caching.
 func writeProblem(w http.ResponseWriter, status int, typeSuffix, title, detail, instance string) {
+	writeProblemWithExtensions(w, status, typeSuffix, title, detail, instance, nil)
+}
+
+// writeProblemWithExtensions adds the fixture-pinned extension members
+// (for example conflictKind) to the shared RFC 9457 body.
+func writeProblemWithExtensions(w http.ResponseWriter, status int, typeSuffix, title, detail, instance string, extensions map[string]any) {
+	body := map[string]any{
+		"type":     ProblemNamespace + typeSuffix,
+		"title":    title,
+		"status":   status,
+		"detail":   detail,
+		"instance": instance,
+	}
+	for key, value := range extensions {
+		body[key] = value
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(problemBody{
-		Type: ProblemNamespace + typeSuffix, Title: title, Status: status, Detail: detail, Instance: instance,
-	})
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 // routeNotFound writes the route-not-found problem for unknown routes.

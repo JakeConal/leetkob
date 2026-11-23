@@ -64,6 +64,35 @@ func (f *FakeStore) ClassesForUser(_ context.Context, userID string) ([]auth.Cla
 	return f.Classes[userID], nil
 }
 
+// RemoveClass removes one current membership, simulating an administrator
+// revoking class access while the session itself remains unexpired.
+func (f *FakeStore) RemoveClass(userID, classID string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	classes := f.Classes[userID]
+	kept := make([]auth.ClassSummary, 0, len(classes))
+	for _, class := range classes {
+		if class.ID != classID {
+			kept = append(kept, class)
+		}
+	}
+	f.Classes[userID] = kept
+}
+
+// SetRole changes one account's server-owned role, simulating a role change
+// that must take effect without waiting for the session to expire.
+func (f *FakeStore) SetRole(userID string, role auth.Role) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for email, user := range f.Users {
+		if user.ID == userID {
+			user.Role = role
+			f.Users[email] = user
+			return
+		}
+	}
+}
+
 // RecordAttempt implements auth.Store with the same window semantics as
 // the durable adapter.
 func (f *FakeStore) RecordAttempt(_ context.Context, clientIP, accountKey string, now time.Time) (bool, time.Duration, error) {
@@ -121,7 +150,8 @@ func (f *FakeStore) CreateSession(_ context.Context, session auth.SessionRecord)
 	return nil
 }
 
-// SessionByTokenHash implements auth.Store.
+// SessionByTokenHash implements auth.Store. The account is resolved from the
+// current users map so a server-owned role change takes effect immediately.
 func (f *FakeStore) SessionByTokenHash(_ context.Context, tokenHash []byte) (auth.SessionWithUser, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -129,7 +159,21 @@ func (f *FakeStore) SessionByTokenHash(_ context.Context, tokenHash []byte) (aut
 	if !ok || f.revoked[session.Session.ID] {
 		return auth.SessionWithUser{}, auth.ErrUnauthenticated
 	}
+	user, ok := f.userByIDLocked(session.Session.UserID)
+	if !ok {
+		return auth.SessionWithUser{}, auth.ErrUnauthenticated
+	}
+	session.User = user
 	return session, nil
+}
+
+func (f *FakeStore) userByIDLocked(userID string) (auth.UserRecord, bool) {
+	for _, candidate := range f.Users {
+		if candidate.ID == userID {
+			return candidate, true
+		}
+	}
+	return auth.UserRecord{}, false
 }
 
 // SessionByID implements auth.Store.

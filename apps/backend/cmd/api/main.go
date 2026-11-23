@@ -1,7 +1,7 @@
 // Command api is the PA#3 production API process. It serves the health
-// contract and, when a durable store is configured, the /v2 session
-// routes; the remaining /v2 families arrive with issue #38 tasks 2.3-2.4
-// and 4-6, built against the published OpenAPI contract. The PA#2
+// contract and, when a durable store is configured, the /v2 session, class
+// and lab-authoring routes; the remaining /v2 families arrive with issue #38
+// tasks 4-6, built against the published OpenAPI contract. The PA#2
 // compatibility API keeps running separately and is never registered
 // against production storage.
 package main
@@ -57,6 +57,8 @@ func run(logger *slog.Logger) error {
 		}
 		deps.Pinger = store
 		deps.Auth = auth.NewService(store, auth.SystemClock{}, identity.VerifyPassword)
+		deps.Labs = store
+		deps.Idempotency = store
 		logger.Info("durable store configured; additive migrations applied")
 	} else {
 		logger.Info("no DATABASE_URL configured; health reports process state only")

@@ -154,8 +154,7 @@ func (h *sessionHandlers) logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !valid {
-		writeProblem(w, http.StatusForbidden, "role-required", "Role required",
-			"Your account is not permitted to perform this operation.", r.URL.Path)
+		writeRoleRequiredProblem(w, r)
 		return
 	}
 	if err := h.auth.Logout(r.Context(), identity); err != nil {
@@ -173,35 +172,12 @@ func (h *sessionHandlers) logout(w http.ResponseWriter, r *http.Request) {
 
 // authenticate resolves the session cookie or writes the 401 problem.
 func (h *sessionHandlers) authenticate(w http.ResponseWriter, r *http.Request) (auth.Identity, bool) {
-	cookie, err := r.Cookie(SessionCookieName)
-	if err != nil || cookie.Value == "" {
-		h.writeUnauthenticated(w, r)
-		return auth.Identity{}, false
-	}
-	identity, err := h.auth.Authenticate(r.Context(), cookie.Value)
-	if err != nil {
-		h.writeUnauthenticated(w, r)
-		return auth.Identity{}, false
-	}
-	return identity, true
+	return resolveIdentity(r.Context(), h.auth, w, r)
 }
 
-func (h *sessionHandlers) writeUnauthenticated(w http.ResponseWriter, r *http.Request) {
-	writeProblem(w, http.StatusUnauthorized, "authentication-required", "Authentication required",
-		"Authentication is required to access this resource.", r.URL.Path)
-}
-
-// allowedOrigin rejects a differing Origin before any state is read. A
-// missing header is allowed for same-origin clients that omit it; the
-// CSRF proof still gates every mutation.
+// allowedOrigin rejects a differing Origin before any state is read.
 func (h *sessionHandlers) allowedOrigin(w http.ResponseWriter, r *http.Request) bool {
-	origin := r.Header.Get("Origin")
-	if origin != "" && h.webOrigin != "" && origin != h.webOrigin {
-		writeProblem(w, http.StatusForbidden, "role-required", "Role required",
-			"Your account is not permitted to perform this operation.", r.URL.Path)
-		return false
-	}
-	return true
+	return originAllowed(h.webOrigin, w, r)
 }
 
 // clientIP extracts the direct peer address; forwarded headers are not
