@@ -1,0 +1,269 @@
+.live-workspace {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #f4f7fb;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.live-workspace :focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.live-skip {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 1;
+  transform: translateY(-160%);
+  border-radius: 16px;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 8px 12px;
+}
+
+.live-skip:focus {
+  transform: none;
+}
+
+.live-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.live-nav,
+.live-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.live-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  align-self: start;
+  position: sticky;
+  top: 24px;
+  padding: 20px;
+}
+
+.live-wordmark {
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.live-nav a,
+.live-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 16px;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.live-nav a {
+  background: transparent;
+  color: #1e3a8a;
+  justify-content: flex-start;
+}
+
+.live-nav button,
+.live-button-secondary {
+  min-height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.live-main {
+  min-width: 0;
+}
+
+.live-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.live-card {
+  min-width: 0;
+  padding: 24px;
+}
+
+.live-card h1,
+.live-card h2,
+.live-finding h2 {
+  margin: 0 0 8px;
+  letter-spacing: -0.03em;
+}
+
+.live-muted {
+  color: #475569;
+}
+
+.live-form,
+.live-field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.live-field {
+  font-weight: 600;
+}
+
+.live-workspace input,
+.live-workspace textarea {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  padding: 10px 12px;
+}
+
+.live-alert {
+  margin: 0;
+  border: 1px solid #b91c1c;
+  border-radius: 16px;
+  background: #fff7f7;
+  color: #7f1d1d;
+  padding: 12px 14px;
+}
+
+.live-notice {
+  border-radius: 16px;
+  background: #eff6ff;
+  padding: 16px;
+}
+
+.live-statement {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.live-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.live-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.live-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.live-meta div {
+  min-width: 0;
+}
+
+.live-meta dt {
+  color: #475569;
+  font-size: 16px;
+}
+
+.live-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.live-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 16px;
+  min-width: 0;
+}
+
+.live-source {
+  max-width: 100%;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 16px;
+  background: #f8fafc;
+  margin: 0;
+  padding: 12px;
+  white-space: pre;
+}
+
+.live-choice {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.live-choice label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+}
+
+.live-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.live-table th,
+.live-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 4px;
+  text-align: left;
+}
+
+.live-workspace button:disabled {
+  cursor: not-allowed;
+  background: #cbd5e1;
+  color: #334155;
+}
+
+@media (max-width: 700px) {
+  .live-shell,
+  .live-panels,
+  .live-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .live-nav {
+    position: static;
+  }
+}
