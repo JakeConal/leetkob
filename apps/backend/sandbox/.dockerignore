@@ -1,0 +1,5 @@
+# The runtime image contains only the compiler, C++ runtime and harness.
+# Attack fixtures and documentation are repository artifacts, not image
+# content, so they never enter the execution boundary.
+README.md
+attacks/

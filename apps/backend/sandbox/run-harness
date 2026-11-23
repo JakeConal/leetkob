@@ -1,0 +1,17 @@
+#!/bin/sh
+# Fixed run harness for the LeeTKOB C++17 execution image.
+#
+# The container itself already enforces the isolation boundary: non-root
+# user, no network, read-only root filesystem, dropped capabilities,
+# no-new-privileges, memory/swap and PID ceilings, and a host-enforced
+# deadline that removes the whole container. This harness only:
+#   * disables core dumps (they would otherwise consume the work mount),
+#   * runs from the disposable work directory, and
+#   * replaces itself with the compiled submission so signals and the
+#     exit status belong to the submission.
+set -eu
+
+ulimit -c 0 2>/dev/null || true
+
+cd /work
+exec /work/program
