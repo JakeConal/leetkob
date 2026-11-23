@@ -1,8 +1,10 @@
 # PA#3 dependency review
 
 Revised November 20, 2026 after the owner requested alignment with the published
-PA#3 rubric. Status: awaiting approval for the additions below. This does not
-authorize a paid model request or public deployment.
+PA#3 rubric. **Approved by the owner on November 23, 2026** as the concrete PA#3
+runtime inventory; exact digests and installed package versions are recorded
+during build qualification. This approval covers the listed additions only. It
+does not authorize a paid model request or public deployment.
 
 PA#3 implements the required end-to-end flow in Go. The existing full-product
 OpenSpec design remains the later-milestone plan; this inventory does not make

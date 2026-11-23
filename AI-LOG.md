@@ -94,6 +94,14 @@
 - **Why:** the PA#2 hand-in rules require a public repository, and public evidence is necessary for the lecturer and the later red team.
 - **Evidence:** <https://api.github.com/repos/JakeConal/leetkob> reports `visibility: public`; protected settings remain captured in `docs/evidence/main-branch-protection.json`.
 
+### D13 — Changed: PA#3 dependency and API approval recorded; contract published
+
+- **Initial state:** the PA#3 dependency inventory and API draft were awaiting owner approval, so no Go routes or modules could start.
+- **Changed:** on November 23, 2026 the owner approved both documents as the PA#3 implementation boundary. The approved subset is published as OpenAPI 3.1 (`docs/contract/pa3-openapi.json`) with versioned internal schemas (`docs/contract/schemas/job-envelope.v1.json`, `checker-prediction.v1.json`) and exact RFC 9457 bodies (`docs/contract/fixtures/pa3-problems.json`) before any route exists.
+- **Interpreted:** the approved error enumeration has exactly one 403 type, so CSRF/Origin mutation rejections reuse `role-required`; unsure causes are pinned as timeout, provider-failure, schema-invalid, evidence-invalid and sanitization-unsafe. Both interpretations are recorded here for review.
+- **Why:** issue #38 task 1.1 requires recorded approval plus published contracts before new routes; paid-model access, public hosting and coursework upload remain separately authorized and are still undecided.
+- **Evidence:** `docs/requirements/pa3-dependencies.md`, `docs/contract/pa3-api.md`, `docs/contract/pa3-openapi.json`, and this decision.
+
 ## Session record
 
 ### 2026-10-24 — PA#2 planning and baseline
@@ -170,3 +178,11 @@
 - Changed: reconciled the now-published eight-criterion rubric and advanced public deployment/private review into PA#3 scope. Distinguished valid first-run scorer exit 1 from invalid-input exit 2 without changing the later eval thresholds.
 - Rejected: treating the full remaining-product roadmap as this checkpoint, inventing an overall PA#3 eval pass requirement, exposing unconfirmed findings to students, or interpreting a request for a new change as approval for dependencies, paid calls or hosting.
 - Preserved the existing umbrella proposal/specs, PA#2 implementation/contracts/tests, official hash manifest and unrelated staged `.opencode` files. No production implementation was edited. Planning validation is separate from evidence that the planned system works.
+
+### 2026-11-23 — PA#3 contract approval and task 1.1
+
+- Tools: OpenCode (GLM-5.3) with the OpenSpec CLI, the in-app browser for the Classroom assignment re-read, GitHub API reads for issue #38, and local repository inspection. No model-provider request or deployment was made.
+- Re-read the live PA#3 Classroom assignment, re-audited the change against every requirement, and confirmed the plan covers the assignment without conflict.
+- The owner approved the PA#3 dependency inventory and API draft, authorized implementation to start, deferred the paid model run, and asked for free hosting research. Recorded approval in both documents and here as D13.
+- Published the approved contract subset before any route exists: OpenAPI 3.1 `pa3-openapi.json`, versioned `job-envelope.v1` and `checker-prediction.v1` schemas, and the `pa3-problems.json` fixtures pinning every RFC 9457 body including the closed-window and stale-revision conflict extensions.
+- Committed the previously uncommitted November 20 planning artifacts on `codex/implement-pa3-go-prototype`, preserving the unrelated staged `.opencode` files.

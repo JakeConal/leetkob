@@ -1,10 +1,13 @@
-# PA#3 API contract proposal
+# PA#3 API contract — version 1.0
 
-Revised November 20, 2026 to match the published PA#3 rubric. Status: awaiting
-owner approval before new endpoints are implemented. The lecturer requires the
+Revised November 20, 2026 to match the published PA#3 rubric. **Approved by the
+owner on November 23, 2026** as the PA#3 implementation contract; it is published
+as OpenAPI 3.1 in [`pa3-openapi.json`](pa3-openapi.json), with internal job and
+checker schemas in [`schemas/`](schemas/) and exact problem bodies in
+[`fixtures/pa3-problems.json`](fixtures/pa3-problems.json). The lecturer requires the
 flow through product screens or API; seed scripts must not create the marked lab.
 The existing full-product OpenSpec design remains canonical for later milestones.
-This proposal selects its PA#3 implementation boundary, not a replacement product.
+This contract selects its PA#3 implementation boundary, not a replacement product.
 
 Sources: [assignment](https://classroom.google.com/c/ODg2MTU1OTQ4NDc0/a/ODk5OTQ1NDY0NTgy/details),
 [rubric](https://drive.google.com/file/d/1EGXZQNjbevJ5cE18rgXEujeKJ1hFeFvf/view),

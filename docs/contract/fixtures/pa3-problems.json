@@ -1,0 +1,166 @@
+{
+  "title": "LeeTKOB PA#3 problem fixtures",
+  "description": "Exact RFC 9457 response bodies for every PA#3 problem type, pinned before implementation. Contract tests must assert these bodies (modulo the occurrence-specific `detail` sentence and `instance` path where a fixture marks them). The 403 `role-required` type covers both wrong-role requests and authenticated mutations whose CSRF proof or Origin is not accepted; the approved PA#3 error enumeration has exactly one 403 type and this mapping is recorded in AI-LOG D13.",
+  "namespace": "https://leetkob.example/problems/",
+  "fixtures": [
+    {
+      "name": "invalid-request",
+      "condition": "Malformed body, unknown members, trailing JSON, invalid field bounds, invalid UUID or invalid idempotency key.",
+      "status": 400,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/invalid-request",
+        "title": "Invalid request",
+        "status": 400,
+        "detail": "The request is not valid for this operation.",
+        "instance": "/v2/classes/1b0a6a26-0f9e-4d3d-a2e1-5c7f7e9e1f01/labs"
+      }
+    },
+    {
+      "name": "authentication-required",
+      "condition": "Missing, malformed, expired or revoked session; login failures are generic and never disclose which part failed.",
+      "status": 401,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/authentication-required",
+        "title": "Authentication required",
+        "status": 401,
+        "detail": "Authentication is required to access this resource.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12/submissions"
+      }
+    },
+    {
+      "name": "role-required",
+      "condition": "Wrong role for the operation, or an authenticated mutation without a session-matching X-CSRF-Token / with a rejected Origin.",
+      "status": 403,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/role-required",
+        "title": "Role required",
+        "status": 403,
+        "detail": "Your account is not permitted to perform this operation.",
+        "instance": "/v2/classes/1b0a6a26-0f9e-4d3d-a2e1-5c7f7e9e1f01/labs"
+      }
+    },
+    {
+      "name": "resource-not-found",
+      "condition": "Wrong route, or an absent/inaccessible resource. An unknown ID and another class's lab, source, submission or queue are deliberately indistinguishable.",
+      "status": 404,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/resource-not-found",
+        "title": "Resource not found",
+        "status": 404,
+        "detail": "The requested resource does not exist.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12"
+      }
+    },
+    {
+      "name": "conflict-idempotency-content-mismatch",
+      "condition": "A completed idempotency key is retried with different request content. The stored result is not replayed.",
+      "status": 409,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/conflict",
+        "title": "Conflict",
+        "status": 409,
+        "detail": "The idempotency key was already used with different request content.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12/submissions",
+        "conflictKind": "idempotency-content-mismatch"
+      }
+    },
+    {
+      "name": "conflict-submission-window-closed",
+      "condition": "The full bounded submission request completed at or after the lab deadline, so it is not accepted.",
+      "status": 409,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/conflict",
+        "title": "Conflict",
+        "status": 409,
+        "detail": "The submission window for this lab is closed.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12/submissions",
+        "conflictKind": "submission-window-closed",
+        "deadline": "2026-11-25T15:00:00.000Z"
+      }
+    },
+    {
+      "name": "conflict-stale-revision",
+      "condition": "A TA decision or mutation targets a finding/lab revision that is no longer current.",
+      "status": 409,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/conflict",
+        "title": "Conflict",
+        "status": 409,
+        "detail": "The item changed before this request was applied.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12/reviews/3d2c8c48-2b1a-4f5f-c4a3-7e9a9a1a3a23/decision",
+        "conflictKind": "stale-revision",
+        "expectedRevision": 7,
+        "currentRevision": 9
+      }
+    },
+    {
+      "name": "payload-too-large",
+      "condition": "The request body exceeded the bounded size limit before being fully consumed.",
+      "status": 413,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/payload-too-large",
+        "title": "Payload too large",
+        "status": 413,
+        "detail": "The request body exceeds the accepted size limit.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12/submissions"
+      }
+    },
+    {
+      "name": "rate-limited",
+      "condition": "Login throttling exceeded per IP (10/minute) or per account identifier (10/15 minutes).",
+      "status": 429,
+      "contentType": "application/problem+json",
+      "headers": {
+        "Retry-After": "60"
+      },
+      "body": {
+        "type": "https://leetkob.example/problems/rate-limited",
+        "title": "Rate limited",
+        "status": 429,
+        "detail": "Too many attempts. Retry after the indicated delay.",
+        "instance": "/v2/auth/login"
+      }
+    },
+    {
+      "name": "unavailable",
+      "condition": "A required dependency such as the database is not reachable. The occurrence-specific detail names no internal topology details.",
+      "status": 503,
+      "contentType": "application/problem+json",
+      "body": {
+        "type": "https://leetkob.example/problems/unavailable",
+        "title": "Service unavailable",
+        "status": 503,
+        "detail": "The service is temporarily unavailable. The request can be safely retried.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12/submissions"
+      }
+    },
+    {
+      "name": "internal-error",
+      "condition": "Unexpected failure. The detail sentence is fixed and generic; never exception text, stack traces, database details or secrets.",
+      "status": 500,
+      "contentType": "application/problem+json",
+      "fixedDetail": true,
+      "body": {
+        "type": "https://leetkob.example/problems/internal-error",
+        "title": "Internal server error",
+        "status": 500,
+        "detail": "An unexpected error occurred. The request can be safely retried.",
+        "instance": "/v2/labs/2c1b7b37-1a0f-4e4e-b3f2-6d8f8f0f2f12/submissions"
+      }
+    }
+  ],
+  "notes": [
+    "All protected responses carry Cache-Control: no-store.",
+    "Timestamps are RFC 3339 UTC with milliseconds.",
+    "instance is always the request path without a query string.",
+    "503 unavailable uses its fixture body above; no fixture value is asserted for its occurrence-specific detail."
+  ]
+}

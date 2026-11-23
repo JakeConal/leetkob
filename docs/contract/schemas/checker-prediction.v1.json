@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leetkob.example/schemas/checker-prediction.v1.json",
+  "title": "LeeTKOB checker prediction line, version 1",
+  "description": "One JSONL line written by `checker --data <dir> --predictions <file>`. Predictions derive only from statements, constraints and source; never labels or scorer data. `MODEL_OFF=1` decides ban-list pairs with hard rules and writes unsure for every semantic pair.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["solution", "constraint", "verdict", "evidence"],
+  "properties": {
+    "solution": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Solution identifier from the dataset directory, not a per-problem configured value."
+    },
+    "constraint": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Constraint identifier as discovered from the dataset."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "violation", "unsure"]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["line", "text"],
+        "properties": {
+          "line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "One-based line in the solution source."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          }
+        }
+      },
+      "description": "Original-line evidence; required by the schema even when empty, so an unsure line is always valid JSONL."
+    }
+  }
+}
