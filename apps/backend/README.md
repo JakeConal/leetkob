@@ -56,6 +56,37 @@ connections) and health verifies the store; without it, the process runs
 storeless and health reports process state only. The worker uses the same
 `DATABASE_URL` when its queue adapter lands.
 
+## Durable store (PostgreSQL 18)
+
+The API, worker and integration tests share one additive schema. The
+image is pinned to `postgres@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a`
+(PostgreSQL 18.7, Debian `18.7-1.pgdg13+5`, resolved 2026-11-23).
+
+Start a loopback-only database:
+
+```bash
+docker run -d --name leetkob-pg \
+  -e POSTGRES_PASSWORD=leetkob-dev \
+  -p 127.0.0.1:5432:5432 \
+  postgres@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
+
+export DATABASE_URL='postgres://postgres:leetkob-dev@127.0.0.1:5432/postgres?sslmode=disable'
+```
+
+`cmd/api` applies the additive migrations automatically at startup and
+records each version in `schema_migrations`; re-running is a no-op. Every
+migration is additive (`CREATE ... IF NOT EXISTS`): there is **no
+destructive migration path** in this repository, and recovery from a bad
+schema never means dropping or rewriting durable data. The migrations
+live in `internal/adapters/postgres/migrations` and are embedded in the
+binary.
+
+The integration suite provisions a disposable database per test: it
+starts a temporary pinned PostgreSQL container when Docker is available,
+or uses `TEST_DATABASE_URL` when pointed at an existing instance.
+`TEST_POSTGRES_IMAGE` may override the image for local disposable runs
+only.
+
 ## Health
 
 `GET /healthz` returns `200 {"status":"ok"}` with

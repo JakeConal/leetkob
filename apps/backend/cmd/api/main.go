@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -42,8 +43,11 @@ func run(logger *slog.Logger) error {
 			return err
 		}
 		defer store.Close()
+		if err := postgres.Migrate(ctx, store.Pool()); err != nil {
+			return fmt.Errorf("apply additive migrations: %w", err)
+		}
 		health.Pinger = store
-		logger.Info("durable store configured")
+		logger.Info("durable store configured; additive migrations applied")
 	} else {
 		logger.Info("no DATABASE_URL configured; health reports process state only")
 	}

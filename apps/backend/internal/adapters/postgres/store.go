@@ -53,6 +53,11 @@ func (s *Store) Ping(ctx context.Context) error {
 	return s.pool.Ping(pingCtx)
 }
 
+// Pool exposes the connection pool for adapters and migration startup.
+func (s *Store) Pool() *pgxpool.Pool {
+	return s.pool
+}
+
 // Close releases all pool connections. Safe to call more than once.
 func (s *Store) Close() {
 	if s != nil && s.pool != nil {
