@@ -215,19 +215,29 @@ func TestMigrateIsCleanIdempotentAndAdditive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied versions: %v", err)
 	}
-	if len(versions) != 1 || versions[0] != 1 {
-		t.Fatalf("versions after first migrate = %v, want [1]", versions)
+	if len(versions) == 0 {
+		t.Fatal("no migrations recorded")
+	}
+	for i := 1; i < len(versions); i++ {
+		if versions[i] <= versions[i-1] {
+			t.Fatalf("versions not strictly increasing: %v", versions)
+		}
 	}
 
 	if err := Migrate(ctx, pool); err != nil {
 		t.Fatalf("second migrate must be a no-op: %v", err)
 	}
-	versions, err = AppliedVersions(ctx, pool)
+	reapplied, err := AppliedVersions(ctx, pool)
 	if err != nil {
 		t.Fatalf("applied versions after second migrate: %v", err)
 	}
-	if len(versions) != 1 || versions[0] != 1 {
-		t.Fatalf("versions after second migrate = %v, want [1]", versions)
+	if len(reapplied) != len(versions) {
+		t.Fatalf("second migrate applied extra versions: %v -> %v", versions, reapplied)
+	}
+	for i := range reapplied {
+		if reapplied[i] != versions[i] {
+			t.Fatalf("second migrate changed versions: %v -> %v", versions, reapplied)
+		}
 	}
 
 	for _, table := range []string{

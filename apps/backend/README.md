@@ -87,6 +87,35 @@ or uses `TEST_DATABASE_URL` when pointed at an existing instance.
 `TEST_POSTGRES_IMAGE` may override the image for local disposable runs
 only.
 
+## Synthetic assessment accounts
+
+```bash
+DATABASE_URL='postgres://postgres:leetkob-dev@127.0.0.1:5432/postgres?sslmode=disable' \
+  go run ./cmd/provision
+```
+
+The command creates the five synthetic accounts, two classes and their
+memberships: one admin (no class), `ta1` and `ta2` in separate classes,
+and two students in the first TA's class. It is idempotent — a repeated
+run never recreates an account or resets a password — and it never
+creates the marked lab or any submission. Newly created passwords are
+printed exactly once (only Argon2id hashes are stored).
+
+## Sessions and auth routes
+
+With `DATABASE_URL` configured, `cmd/api` serves:
+
+| Route                  | Behaviour                                                                                                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v2/auth/login`  | 8-hour opaque session in an HttpOnly, host-only, SameSite=Lax cookie and a per-session CSRF token in the body. Generic 401 on any credential failure; durable throttling (10/min per address, 10/15 min per account) returns 429 with `Retry-After`. |
+| `GET /v2/auth/me`      | Safe current user plus current class memberships from server-owned state.                                                                                                                                                                            |
+| `POST /v2/auth/logout` | Requires `X-CSRF-Token`; revokes the session and clears the cookie.                                                                                                                                                                                  |
+
+`WEB_ORIGIN` (default `http://127.0.0.1:3000`) rejects differing Origins
+on mutations, and `SECURE_COOKIES=1` marks cookies `Secure` on deployed
+HTTPS. Neither raw session tokens nor CSRF proofs are ever stored or
+logged — only SHA-256 digests.
+
 ## Health
 
 `GET /healthz` returns `200 {"status":"ok"}` with

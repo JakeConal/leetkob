@@ -1,8 +1,9 @@
-// Command api is the PA#3 production API process. It currently serves
-// the health contract; the authenticated /v2 route families arrive with
-// issue #38 tasks 2.2-2.4 and 4-6, built against the published OpenAPI
-// contract. The PA#2 compatibility API keeps running separately and is
-// never registered against production storage.
+// Command api is the PA#3 production API process. It serves the health
+// contract and, when a durable store is configured, the /v2 session
+// routes; the remaining /v2 families arrive with issue #38 tasks 2.3-2.4
+// and 4-6, built against the published OpenAPI contract. The PA#2
+// compatibility API keeps running separately and is never registered
+// against production storage.
 package main
 
 import (
@@ -18,10 +19,15 @@ import (
 	"time"
 
 	"github.com/JakeConal/leetkob/backend/internal/adapters/postgres"
+	"github.com/JakeConal/leetkob/backend/internal/auth"
 	"github.com/JakeConal/leetkob/backend/internal/httpapi"
+	"github.com/JakeConal/leetkob/backend/internal/identity"
 )
 
-const defaultPort = 8080
+const (
+	defaultPort   = 8080
+	defaultOrigin = "http://127.0.0.1:3000"
+)
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("command", "api")
@@ -36,7 +42,10 @@ func run(logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	health := &httpapi.HealthHandler{}
+	deps := httpapi.Deps{
+		WebOrigin:     envOr("WEB_ORIGIN", defaultOrigin),
+		SecureCookies: os.Getenv("SECURE_COOKIES") == "1",
+	}
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
 		store, err := postgres.New(ctx, databaseURL)
 		if err != nil {
@@ -46,17 +55,12 @@ func run(logger *slog.Logger) error {
 		if err := postgres.Migrate(ctx, store.Pool()); err != nil {
 			return fmt.Errorf("apply additive migrations: %w", err)
 		}
-		health.Pinger = store
+		deps.Pinger = store
+		deps.Auth = auth.NewService(store, auth.SystemClock{}, identity.VerifyPassword)
 		logger.Info("durable store configured; additive migrations applied")
 	} else {
 		logger.Info("no DATABASE_URL configured; health reports process state only")
 	}
-
-	mux := http.NewServeMux()
-	// Register without a method restriction so every method reaches the
-	// handler and wrong-method requests get the contract's problem body
-	// instead of the mux's plain-text 405.
-	mux.Handle("/healthz", health)
 
 	port := defaultPort
 	if raw := os.Getenv("PORT"); raw != "" {
@@ -69,7 +73,7 @@ func run(logger *slog.Logger) error {
 
 	server := &http.Server{
 		Addr:              ":" + strconv.Itoa(port),
-		Handler:           mux,
+		Handler:           httpapi.NewServer(deps),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -94,4 +98,11 @@ func run(logger *slog.Logger) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return server.Shutdown(shutdownCtx)
+}
+
+func envOr(name, fallback string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return fallback
 }
