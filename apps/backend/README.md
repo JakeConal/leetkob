@@ -50,6 +50,19 @@ go run ./cmd/worker
 go run ./cmd/checker --data <dataset-dir> --predictions <output.jsonl>
 ```
 
+## Sandbox
+
+Untrusted C++17 compilation and execution go through
+`internal/sandbox`. The fixed image, the nine attack fixtures, and the
+exact `docker build` / `docker create` lines the future `pa3` tag job must
+run are in [`sandbox/README.md`](sandbox/README.md). This package does not
+map student verdicts (task 3.5) and it does not change CI (task 8.1).
+
+```bash
+cd apps/backend
+CGO_ENABLED=0 go test ./internal/sandbox/... -count=1 -timeout 20m
+```
+
 `PORT` selects the listen port (default 8080, validated 1–65535). With
 `DATABASE_URL` set, the API opens a bounded connection pool (max 4
 connections), applies the additive schema, and health verifies the store.
