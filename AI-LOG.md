@@ -161,3 +161,12 @@
 - `PA2.md` and `SELF_ASSESSMENT_REPORT.md` linked tag runs from earlier tag positions (40152904321, 40177068435). They now link the filtered `pa2` run list, because a commit cannot contain the ID of the run its own tag push triggers.
 - Re-captured `main` protection: the active ruleset now requires one approving review (previously 0) and has no bypass actors. The four required checks are unchanged.
 - Aligned the install command in `AGENTS.md` with README and CI (`npm ci --ignore-scripts`).
+
+### 2026-11-20 — Separate PA#3 Go change
+
+- Tools: Codex, authenticated Classroom/Drive and GitHub readers, local repository inspection, OpenSpec CLI and Prettier. Read the exact PA#3 assignment/rubric and current class brief; no model-provider request or deployment was made.
+- The owner requested Go implementation, then asked that proposals match PA#3 and that a separate change be created. Created `implement-pa3-go-prototype` with proposal, design, eight capability deltas and the sole task checklist in [issue #38](https://github.com/JakeConal/leetkob/issues/38). All 37 implementation tasks remain unchecked.
+- Changed: the first API/dependency draft included registration, rotating JWT sessions and broader account administration. Revised it to the assessment-account sign-in, authoring, judging, checking and private TA review needed for PA#3; removed the JWT dependency. Concrete dependency/API approval remains pending.
+- Changed: reconciled the now-published eight-criterion rubric and advanced public deployment/private review into PA#3 scope. Distinguished valid first-run scorer exit 1 from invalid-input exit 2 without changing the later eval thresholds.
+- Rejected: treating the full remaining-product roadmap as this checkpoint, inventing an overall PA#3 eval pass requirement, exposing unconfirmed findings to students, or interpreting a request for a new change as approval for dependencies, paid calls or hosting.
+- Preserved the existing umbrella proposal/specs, PA#2 implementation/contracts/tests, official hash manifest and unrelated staged `.opencode` files. No production implementation was edited. Planning validation is separate from evidence that the planned system works.
