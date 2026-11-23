@@ -17,8 +17,11 @@ import (
 	"time"
 
 	"github.com/JakeConal/leetkob/backend/internal/adapters/postgres"
+	"github.com/JakeConal/leetkob/backend/internal/checker/hardrule"
+	"github.com/JakeConal/leetkob/backend/internal/checking"
 	"github.com/JakeConal/leetkob/backend/internal/judge"
 	"github.com/JakeConal/leetkob/backend/internal/sandbox"
+	"github.com/JakeConal/leetkob/backend/internal/semantic"
 )
 
 func main() {
@@ -45,19 +48,84 @@ func run(ctx context.Context, logger *slog.Logger, getenv func(string) string) e
 	if err := store.Initialize(ctx); err != nil {
 		return err
 	}
-	logger.Info("worker leasing judge jobs")
-	worker := &judge.Worker{
+	logger.Info("worker leasing judge and check jobs")
+	id := workerID()
+	now := func() time.Time { return time.Now().UTC() }
+	judgeWorker := &judge.Worker{
 		Queue: store,
 		Exec: &judge.SandboxJudge{
 			Runtime: sandbox.New(),
 			Loader:  store,
 		},
-		ID:       workerID(),
+		ID:       id,
 		LeaseFor: 15 * time.Minute,
-		Now:      func() time.Time { return time.Now().UTC() },
+		Now:      now,
 		Log:      logger,
 	}
-	return worker.Run(ctx)
+	checks := &checking.Runner{
+		Queue:   store,
+		Service: checkService(ctx, store, getenv, logger),
+		ID:      id,
+		Now:     now,
+	}
+	for {
+		if ctx.Err() != nil {
+			return nil
+		}
+		if _, err := judgeWorker.Process(ctx); err != nil && ctx.Err() == nil {
+			logger.Error("judge batch failed", "error", err.Error())
+		}
+		if _, err := checks.Process(ctx); err != nil && ctx.Err() == nil {
+			logger.Error("check batch failed", "error", err.Error())
+		}
+		timer := time.NewTimer(200 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil
+		case <-timer.C:
+		}
+	}
+}
+
+func checkService(ctx context.Context, store *postgres.Store, getenv func(string) string, logger *slog.Logger) *checking.Service {
+	analyze := func(context.Context, string) ([]byte, error) {
+		return []byte(`{"version":1,"status":"unsure","reason":"analyzer-not-configured","references":[]}`), nil
+	}
+	if binary := strings.TrimSpace(getenv("CHECKER_ANALYZER")); binary != "" {
+		args, err := hardrule.CompilerArgs(ctx)
+		if err != nil {
+			logger.Error("checker compiler arguments failed", "error", err.Error())
+		} else {
+			analyze = func(ctx context.Context, source string) ([]byte, error) {
+				return checking.AnalyzeSource(ctx, binary, args, source)
+			}
+		}
+	}
+	return &checking.Service{
+		Store:   &postgres.FindingRepo{Store: store},
+		Analyze: analyze,
+		Checker: &semantic.Checker{
+			Model:   offlineModel{},
+			Store:   &postgres.Budget{Store: store},
+			Timeout: 2 * time.Second,
+		},
+		Price: semantic.Price{
+			Known:                  true,
+			MaxInputTokens:         1000,
+			MaxOutputTokens:        200,
+			InputMicroUSDPerToken:  1,
+			OutputMicroUSDPerToken: 1,
+		},
+	}
+}
+
+// offlineModel keeps the pipeline complete without a paid provider. Invalid
+// output becomes unsure after the checker's one repair attempt.
+type offlineModel struct{}
+
+func (offlineModel) Complete(context.Context, semantic.CompletionRequest) (semantic.ModelResponse, error) {
+	return semantic.ModelResponse{Content: `{}`, TokensKnown: true, InputTokens: 1, OutputTokens: 1, RequestID: "model-off"}, nil
 }
 
 func workerID() string {

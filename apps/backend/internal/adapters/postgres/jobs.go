@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	"github.com/JakeConal/leetkob/backend/internal/checking"
 	"github.com/JakeConal/leetkob/backend/internal/domain"
 	"github.com/JakeConal/leetkob/backend/internal/judge"
 	"github.com/JakeConal/leetkob/backend/internal/submit"
@@ -632,6 +633,109 @@ func (s *Store) FailJudge(ctx context.Context, job domain.Job, reason string) er
 				WHERE id = $1 AND judge_verdict IS NULL`, job.SubmissionID, reason); err != nil {
 				return err
 			}
+		}
+		return nil
+	})
+}
+
+// LeaseCheckJobs claims pending or expired check jobs. It does not change
+// the student-visible submission state.
+func (s *Store) LeaseCheckJobs(ctx context.Context, workerID string, max int, now, expires time.Time) ([]domain.Job, error) {
+	if workerID == "" || max < 1 || max > 16 || !expires.After(now) {
+		return nil, errors.New("postgres: invalid lease")
+	}
+	var jobs []domain.Job
+	err := s.Within(ctx, func(ctx context.Context, tx *Tx) error {
+		rows, err := tx.pg.Query(ctx, `
+			SELECT id::text
+			FROM jobs
+			WHERE kind = 'check'
+			  AND (state = 'pending' OR (state = 'leased' AND lease_expires_at <= $1))
+			ORDER BY created_at, id
+			FOR UPDATE SKIP LOCKED
+			LIMIT $2`, now, max)
+		if err != nil {
+			return fmt.Errorf("postgres: pick check jobs: %w", err)
+		}
+		var ids []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				rows.Close()
+				return err
+			}
+			ids = append(ids, id)
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return err
+		}
+		for _, id := range ids {
+			var job domain.Job
+			var kind string
+			err := tx.QueryRow(ctx, `
+				UPDATE jobs
+				SET state = 'leased',
+				    attempt = attempt + 1,
+				    lease_expires_at = $2,
+				    worker_id = $3,
+				    last_error = NULL
+				WHERE id = $1
+				RETURNING id::text, attempt, kind, submission_id::text, lab_id::text,
+				          generation, test_revision, constraint_revision, source_sha256`,
+				id, expires, workerID).Scan(
+				&job.JobID, &job.Attempt, &kind, &job.SubmissionID, &job.LabID,
+				&job.Generation, &job.TestRevision, &job.ConstraintRevision, &job.SourceSHA256)
+			if err != nil {
+				return fmt.Errorf("postgres: lease check job: %w", err)
+			}
+			job.Version = 1
+			job.Kind = domain.JobKind(kind)
+			jobs = append(jobs, job)
+		}
+		return nil
+	})
+	return jobs, err
+}
+
+// CompleteCheck marks the leased check job done. A stale fence writes nothing.
+func (s *Store) CompleteCheck(ctx context.Context, job domain.Job) error {
+	return s.Within(ctx, func(ctx context.Context, tx *Tx) error {
+		tag, err := tx.pg.Exec(ctx, `
+			UPDATE jobs
+			SET state = 'done', lease_expires_at = NULL
+			WHERE id = $1 AND attempt = $2 AND state = 'leased' AND kind = 'check'`,
+			job.JobID, job.Attempt)
+		if err != nil {
+			return fmt.Errorf("postgres: complete check: %w", err)
+		}
+		if tag.RowsAffected() != 1 {
+			return checking.ErrStale
+		}
+		return nil
+	})
+}
+
+// FailCheck returns a leased check job to the queue, or marks it failed
+// after three attempts. It does not write a student verdict.
+func (s *Store) FailCheck(ctx context.Context, job domain.Job, reason string) error {
+	reason = cleanReason(reason)
+	return s.Within(ctx, func(ctx context.Context, tx *Tx) error {
+		next := "pending"
+		if job.Attempt >= 3 {
+			next = "failed"
+		}
+		tag, err := tx.pg.Exec(ctx, `
+			UPDATE jobs
+			SET state = $2, lease_expires_at = NULL, worker_id = NULL, last_error = $3
+			WHERE id = $1 AND attempt = $4 AND state = 'leased' AND kind = 'check'`,
+			job.JobID, next, reason, job.Attempt)
+		if err != nil {
+			return fmt.Errorf("postgres: fail check: %w", err)
+		}
+		if tag.RowsAffected() != 1 {
+			return checking.ErrStale
 		}
 		return nil
 	})
