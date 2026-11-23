@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const defaultLocalMaintenanceURL = "postgres://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable"
@@ -226,12 +226,13 @@ func openDisposable(t *testing.T, ctx context.Context) (*Store, string) {
 		t.Fatalf("create disposable database: %v", err)
 	}
 
-	cfg, err := pgxpool.ParseConfig(maintenance)
+	// pgx ConnString returns the originally parsed URL. Setting Database on
+	// the parsed config does not change that string, so New would attach
+	// every test to the maintenance database.
+	databaseURL, err := withDatabase(maintenance, name)
 	if err != nil {
-		t.Fatalf("parse maintenance URL: %v", err)
+		t.Fatalf("disposable url: %v", err)
 	}
-	cfg.ConnConfig.Database = name
-	databaseURL := cfg.ConnString()
 	store, err := New(ctx, databaseURL)
 	if err != nil {
 		t.Fatalf("connect disposable database: %v", err)
@@ -339,6 +340,54 @@ func resolveMaintenanceURL(getenv func(string) string, dial func(string, string)
 
 func quoteIdent(name string) string {
 	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
+}
+
+// withDatabase points a maintenance URL at a disposable database. pgx's
+// ConnString method keeps the original text, so the database name has to be
+// rewritten before the pool is opened.
+func withDatabase(raw, name string) (string, error) {
+	if strings.Contains(raw, "://") {
+		parsed, err := url.Parse(raw)
+		if err != nil {
+			return "", err
+		}
+		parsed.Path = "/" + name
+		return parsed.String(), nil
+	}
+	fields := strings.Fields(raw)
+	replaced := false
+	for i, field := range fields {
+		key, _, ok := strings.Cut(field, "=")
+		if ok && strings.EqualFold(key, "dbname") {
+			fields[i] = "dbname=" + name
+			replaced = true
+		}
+	}
+	if !replaced {
+		fields = append(fields, "dbname="+name)
+	}
+	return strings.Join(fields, " "), nil
+}
+
+func TestWithDatabaseRewritesURLAndKeywordForms(t *testing.T) {
+	got, err := withDatabase(defaultLocalMaintenanceURL, "leetkob_it_abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := url.Parse(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed.Path != "/leetkob_it_abc" || parsed.Query().Get("sslmode") != "disable" || parsed.User.Username() != "postgres" {
+		t.Fatalf("url = %s", got)
+	}
+	keyword, err := withDatabase("host=127.0.0.1 user=postgres dbname=postgres sslmode=disable", "leetkob_it_abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if keyword != "host=127.0.0.1 user=postgres dbname=leetkob_it_abc sslmode=disable" {
+		t.Fatalf("keyword = %s", keyword)
+	}
 }
 
 func newUUID(t *testing.T) string {
