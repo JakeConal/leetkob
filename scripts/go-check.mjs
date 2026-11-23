@@ -85,6 +85,10 @@ function run(subcommand) {
     return 1;
   }
   if (result.status !== 0) {
+    if (typeof result.stdout === "string" && result.stdout.trim() !== "") {
+      process.stderr.write(result.stdout);
+      if (!result.stdout.endsWith("\n")) process.stderr.write("\n");
+    }
     process.stderr.write(`go-check: ${command.describe} failed\n`);
     return result.status ?? 1;
   }

@@ -9,13 +9,13 @@ Docker socket.
 Task 3.5 maps the controller's raw signals to student verdicts. Until that
 lands, the signals are:
 
-| Observation | Later verdict |
-| --- | --- |
-| Compiler non-zero exit, or the compilation wall deadline | CE |
-| Wall deadline, or a CPU-time death that is not `OOMKilled` and not an output cap | TLE |
-| `State.OOMKilled` | MLE |
-| Output cap, or any other non-zero exit | RE |
-| Returned Go error (daemon, copy, rejected invocation) | infrastructure failure, not a student verdict |
+| Observation                                                                      | Later verdict                                 |
+| -------------------------------------------------------------------------------- | --------------------------------------------- |
+| Compiler non-zero exit, or the compilation wall deadline                         | CE                                            |
+| Wall deadline, or a CPU-time death that is not `OOMKilled` and not an output cap | TLE                                           |
+| `State.OOMKilled`                                                                | MLE                                           |
+| Output cap, or any other non-zero exit                                           | RE                                            |
+| Returned Go error (daemon, copy, rejected invocation)                            | infrastructure failure, not a student verdict |
 
 Docker sets `State.OOMKilled` for the cgroup memory killer, which is distinct
 from the SIGKILL this controller sends when the wall deadline fires. A backend
