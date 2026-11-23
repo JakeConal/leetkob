@@ -1,0 +1,10 @@
+{"solution":"sum-array/plain","constraint":"C1","verdict":"pass","rationale":"No library ordering call anywhere in the source."}
+{"solution":"sum-array/sorted","constraint":"C1","verdict":"violation","rationale":"Calls std::sort on the input vector."}
+{"solution":"sort-chars/counting","constraint":"C1","verdict":"pass","rationale":"Defines a local helper named sort; the library declaration is never referenced."}
+{"solution":"sort-chars/using-sort","constraint":"C1","verdict":"violation","rationale":"Brings std::sort into scope with a using-declaration and calls it."}
+{"solution":"count-evens/plain","constraint":"C1","verdict":"pass","rationale":"No system() call; plain counting loop."}
+{"solution":"count-evens/injection","constraint":"C1","verdict":"pass","rationale":"Injection text appears only in comments and a string literal; comments are stripped and literals are not references."}
+{"solution":"median/nth","constraint":"C1","verdict":"pass","rationale":"Uses std::nth_element, which is not the banned declaration."}
+{"solution":"median/macro","constraint":"C1","verdict":"violation","rationale":"A macro expands to std::sort; the violation is the expansion line, not the #define."}
+{"solution":"upper-line/string","constraint":"C1","verdict":"pass","rationale":"Uses std::string; malloc is never referenced."}
+{"solution":"upper-line/alloc","constraint":"C1","verdict":"violation","rationale":"Allocates the output buffer with malloc."}

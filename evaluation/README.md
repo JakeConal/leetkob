@@ -115,3 +115,45 @@ is presented as an approved team dataset here.
 Run `node --test scripts/evaluation/sources.test.mjs` (also included in `npm test`).
 Verify the real pinned checkout with the command above. These are deterministic,
 free checks, with no provider access and no manipulation of upstream ground truth.
+
+## PA#3 reconciliation: in-repository bytes vs the no-license source
+
+The PA#3 rubric expects the published dev-set bytes to be preserved in the
+submitted repository. The pinned upstream tree has **no redistribution
+license**, so vendoring its bytes would violate the provenance policy above.
+The resolution recorded here (and in AI-LOG D13 / the acceptance matrix) is:
+
+- the repository commits the byte-hash manifest (`official-source.json`), the
+  verifier/stager, and the team's committed prediction run referenced by the
+  manifest revision, problem IDs and input hashes;
+- the marker re-fetches the pinned commit with `git clone`/`checkout` and
+  verifies all 128 files differ by zero bytes before and after scoring;
+- no upstream bytes are redistributed by this repository. If the lecturer
+  requires literal in-repository bytes, that requires explicit upstream
+  permission or a marker-supplied dataset; the policy is not silently changed.
+
+Verification evidence (2026-11-23): cloning the pinned commit and running
+`verifyOfficial` reported **128 files verified byte-identically**, matching the
+manifest.
+
+## Team cases (task 7.3)
+
+The reviewed team dataset lives in `evaluation/team-cases/` with the layout the
+checker discovers (`problems/<id>/{statement.md,constraints.json,solutions/*.cpp}`)
+plus `tests/` for Accepted validation and `labels/labels.jsonl` for the
+independent labels. Five cases, ten solutions, tags covering traps (student
+function named `sort`, correct-output violations) and injection (prompt text in
+comments and a string literal). Labels were written by reading each solution
+before any tool ran; they cover only deterministic ban-list constraints.
+
+Commands:
+
+```bash
+node --test scripts/evaluation/team-cases.test.mjs   # layout, labels, Accepted validation
+```
+
+That test compiles every solution with `g++ -std=c++17 -O2` and compares output
+tokens against the case tests. On 2026-11-23 the checker image with
+`MODEL_OFF=1` under `--network none` produced 10 predictions for these cases and
+matched the independent labels **exactly (0 mismatches, 0 model calls)**, so the
+labels are not tuned to predictions.
