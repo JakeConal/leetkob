@@ -1,10 +1,9 @@
 // Package checker is the shared, dataset-independent constraint checker used
-// by the offline marking command (cmd/checker) and, later, by the judging
-// worker.
+// by the offline marking command (cmd/checker) and by the judging worker.
 //
-// # Scope of task 7.1 (issue #38)
+// # Prediction contract
 //
-// This package discovers problems, statements, constraints and solution
+// The package discovers problems, statements, constraints and solution
 // sources from the documented dataset layout and writes one deterministic JSONL
 // prediction per solution/constraint pair, matching
 // docs/contract/schemas/checker-prediction.v1.json. Discovery is generic: no
@@ -12,17 +11,28 @@
 // Dataset-level metadata such as labels.jsonl, eval.mjs, reports and test data
 // is never opened, even when it sits next to the inputs.
 //
-// # Verdict scope
+// # Verdict selection
 //
-// The hard-rule analyzer (task 5.1) and the semantic model pipeline (tasks 5.3,
-// 5.4 and 7.2) are not wired into this core yet. Until task 7.2 connects them,
-// BuildPredictions writes an honest "unsure" verdict with empty evidence for
-// every pair. It never fabricates a pass or a violation. Ban-list names are
-// nevertheless parsed here (BannedNames) so the analyzer can consume them
-// without re-implementing the constraint grammar. When MODEL_OFF=1, Args.ModelOff
-// is selected before any provider exists; this package imports no network
-// package at all, so both online and offline runs are network-free in this
-// slice.
+// Ban-list constraints ("Do not use ..." / "Do not call ..." with backticked
+// names) are decided only by the analyzer boundary, which resolves C++
+// declarations rather than text. Comments, string literals, harmless includes
+// and student-defined names therefore cannot become a wrongful deduction. Any
+// tooling, protocol or evidence failure becomes unsure.
+//
+// Other constraints are semantic. They are sent to the guarded model port only
+// when MODEL_OFF is not set, sanitization succeeded, a semantic port exists and
+// a conservative priced reservation succeeds. Sanitization removes comments
+// and known identities while preserving line numbers; unsafe sanitization
+// produces unsure without transmission. Ban-list constraints are never sent to
+// the model.
+//
+// # Offline operation
+//
+// MODEL_OFF=1 is selected before any provider client, credential read or
+// budget reservation. Every semantic pair is then unsure, ban-list pairs are
+// still decided by the bundled analyzer, and the summary reports zero model
+// calls. The checker image embeds the analyzer executable and runs with
+// --network none, memory/PID limits, no keys and no Docker socket.
 //
 // # Supported layout
 //

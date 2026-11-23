@@ -2,6 +2,7 @@ package checker
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,31 +11,53 @@ import (
 )
 
 // Summary reports what one checker run produced. It contains no verdict
-// quality claim: in task 7.1 every prediction is unsure by design.
+// quality claim: the cause map explains why pairs stayed unsure so an
+// operator can distinguish an honest offline run from a broken one.
 type Summary struct {
 	Problems    int
 	Solutions   int
 	Constraints int
 	Predictions int
+	Pass        int
+	Violation   int
 	Unsure      int
+	// ModelCalls counts semantic dispatch attempts. MODEL_OFF must leave
+	// this at zero.
+	ModelCalls int
+	// UnsureCauses counts unsure pairs by cause. It is diagnostic only and
+	// never written to the prediction file.
+	UnsureCauses map[string]int
 }
 
-// Run discovers the dataset and writes predictions to predictionsPath. The
-// output file is replaced atomically, so a failed run never leaves a partial
-// file that a scorer could mistake for valid JSONL.
+// Run discovers the dataset and writes predictions using the environment
+// selection: MODEL_OFF first, then the bundled analyzer, then (only when
+// model use is enabled) the guarded semantic port and a priced budget.
 func Run(dataDir, predictionsPath string) (Summary, error) {
-	return runWithOps(dataDir, predictionsPath, defaultFileOps)
+	return RunContext(context.Background(), dataDir, predictionsPath, OptionsFromEnv())
 }
 
+// RunContext is the injectable entry point used by the worker and tests.
+// The caller owns cancellation; the marking command applies the ten-minute
+// bound.
+func RunContext(ctx context.Context, dataDir, predictionsPath string, options Options) (Summary, error) {
+	return runWithOptions(ctx, dataDir, predictionsPath, defaultFileOps, options)
+}
+
+// runWithOps keeps the task 7.1 test seam: a zero Options value is offline-
+// safe and transport-free (no analyzer, no semantic port, no budget).
 func runWithOps(dataDir, predictionsPath string, ops fileOps) (Summary, error) {
+	return runWithOptions(context.Background(), dataDir, predictionsPath, ops, Options{})
+}
+
+func runWithOptions(ctx context.Context, dataDir, predictionsPath string, ops fileOps, options Options) (Summary, error) {
 	problems, err := discoverDataset(dataDir, ops)
 	if err != nil {
 		return Summary{}, err
 	}
-	return writePredictions(problems, predictionsPath, ops)
+	return writePredictions(ctx, problems, predictionsPath, ops, newEngine(options))
 }
 
-func writePredictions(problems []Problem, predictionsPath string, ops fileOps) (Summary, error) {
+func writePredictions(ctx context.Context, problems []Problem, predictionsPath string, ops fileOps, engine *engine) (Summary, error) {
 	summary := Summary{Problems: len(problems)}
 	for _, problem := range problems {
 		summary.Solutions += len(problem.Solutions)
@@ -58,36 +81,29 @@ func writePredictions(problems []Problem, predictionsPath string, ops fileOps) (
 	writer := bufio.NewWriterSize(temp, 64*1024)
 	encoder := json.NewEncoder(writer)
 	encoder.SetEscapeHTML(false)
-	// Evidence is allocated once and reused; every prediction marshals it as []
-	// rather than null, which the prediction schema requires for unsure lines.
-	emptyEvidence := []Evidence{}
 
 	for _, problem := range problems {
-		if err := readProblemStatement(problem.StatementPath, ops); err != nil {
+		statement, err := readProblemStatement(problem.StatementPath, ops)
+		if err != nil {
 			return Summary{}, err
 		}
 		for _, solution := range problem.Solutions {
-			if err := readSolutionSource(solution.Path, ops); err != nil {
+			if err := ctx.Err(); err != nil {
+				return Summary{}, fmt.Errorf("checker: run cancelled: %w", err)
+			}
+			source, err := readSolutionSource(solution.Path, ops)
+			if err != nil {
 				return Summary{}, err
 			}
-			for _, constraint := range problem.Constraints {
-				// Task 7.1 does not decide verdicts. The hard-rule analyzer
-				// (task 5.1) and the semantic model pipeline (tasks 5.3, 5.4
-				// and 7.2) are not wired here yet, so every pair is honestly
-				// unsure with empty evidence. Task 7.2 replaces this branch
-				// with hard-rule and model verdicts; it must never infer a
-				// verdict from labels, scorer data or test output.
-				prediction := Prediction{
-					Solution:   solution.ID,
-					Constraint: constraint.ID,
-					Verdict:    VerdictUnsure,
-					Evidence:   emptyEvidence,
-				}
+			predictions, err := engine.evaluateSolution(ctx, solution, problem.Constraints, statement, source, &summary)
+			if err != nil {
+				return Summary{}, err
+			}
+			for _, prediction := range predictions {
 				if err := encoder.Encode(prediction); err != nil {
 					return Summary{}, fmt.Errorf("checker: write prediction: %w", err)
 				}
 				summary.Predictions++
-				summary.Unsure++
 			}
 		}
 	}
@@ -108,45 +124,43 @@ func writePredictions(problems []Problem, predictionsPath string, ops fileOps) (
 	return summary, nil
 }
 
-// readProblemStatement validates and reads one bounded statement. The bytes are
-// unused until task 7.2 supplies the semantic model; reading here keeps
-// discovery honest about unreadable or oversized statements.
-func readProblemStatement(path string, ops fileOps) error {
+// readProblemStatement validates and reads one bounded statement. The text is
+// sanitized before any semantic dispatch.
+func readProblemStatement(path string, ops fileOps) (string, error) {
 	info, err := ops.stat(path)
 	if err != nil {
-		return fmt.Errorf("checker: stat statement %s: %w", path, err)
+		return "", fmt.Errorf("checker: stat statement %s: %w", path, err)
 	}
 	if info.Size() > maxStatementBytes {
-		return fmt.Errorf("%w: %s (%d bytes)", ErrStatementTooLarge, path, info.Size())
+		return "", fmt.Errorf("%w: %s (%d bytes)", ErrStatementTooLarge, path, info.Size())
 	}
 	data, err := ops.readFile(path)
 	if err != nil {
-		return fmt.Errorf("checker: read statement %s: %w", path, err)
+		return "", fmt.Errorf("checker: read statement %s: %w", path, err)
 	}
 	if !utf8.Valid(data) {
-		return fmt.Errorf("%w: %s", ErrInvalidStatement, path)
+		return "", fmt.Errorf("%w: %s", ErrInvalidStatement, path)
 	}
-	return nil
+	return string(data), nil
 }
 
-// readSolutionSource validates and reads one bounded source file. The bytes are
-// intentionally unused until task 7.2 supplies the analyzer; reading them here
-// keeps discovery honest about unreadable or oversized inputs instead of
-// silently emitting predictions for sources that cannot be analyzed.
-func readSolutionSource(path string, ops fileOps) error {
+// readSolutionSource validates and reads one bounded source file. Comments
+// are analyzed by the hard rules and stripped by the sanitizer before any
+// semantic dispatch; the original text is never sent unsanitized.
+func readSolutionSource(path string, ops fileOps) (string, error) {
 	info, err := ops.stat(path)
 	if err != nil {
-		return fmt.Errorf("checker: stat solution %s: %w", path, err)
+		return "", fmt.Errorf("checker: stat solution %s: %w", path, err)
 	}
 	if info.Size() > maxSourceBytes {
-		return fmt.Errorf("%w: %s (%d bytes)", ErrSourceTooLarge, path, info.Size())
+		return "", fmt.Errorf("%w: %s (%d bytes)", ErrSourceTooLarge, path, info.Size())
 	}
 	data, err := ops.readFile(path)
 	if err != nil {
-		return fmt.Errorf("checker: read solution %s: %w", path, err)
+		return "", fmt.Errorf("checker: read solution %s: %w", path, err)
 	}
 	if !utf8.Valid(data) {
-		return fmt.Errorf("%w: %s", ErrInvalidSource, path)
+		return "", fmt.Errorf("%w: %s", ErrInvalidSource, path)
 	}
-	return nil
+	return string(data), nil
 }

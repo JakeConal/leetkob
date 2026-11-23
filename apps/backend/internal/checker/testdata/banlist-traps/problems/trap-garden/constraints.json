@@ -1,0 +1,5 @@
+[
+  { "id": "B1", "text": "Do not call `std::sort`.", "deduction": 3 },
+  { "id": "B2", "text": "Do not use `malloc`.", "deduction": 2 },
+  { "id": "B3", "text": "Implement a stable ordering.", "deduction": 4 }
+]

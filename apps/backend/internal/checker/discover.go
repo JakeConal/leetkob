@@ -45,7 +45,8 @@ var (
 
 // Constraint is one discovered constraint. BannedNames holds the backticked
 // names parsed from a "Do not use"/"Do not call" ban-list text; it is empty for
-// semantic constraints. Task 7.1 does not decide verdicts from it yet.
+// semantic constraints. The engine sends BannedNames to the hard-rule analyzer
+// and never to the semantic model.
 type Constraint struct {
 	ID          string
 	Text        string

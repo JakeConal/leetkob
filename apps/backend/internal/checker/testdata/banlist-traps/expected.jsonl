@@ -1,0 +1,33 @@
+{"solution":"trap-garden/s01","constraint":"B1","verdict":"violation","evidence":[{"line":7,"text":"  std::sort(values.begin(), values.end());"}]}
+{"solution":"trap-garden/s01","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s01","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s02","constraint":"B1","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s02","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s02","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s03","constraint":"B1","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s03","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s03","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s04","constraint":"B1","verdict":"violation","evidence":[{"line":8,"text":"  sort(values.begin(), values.end());"}]}
+{"solution":"trap-garden/s04","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s04","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s05","constraint":"B1","verdict":"violation","evidence":[{"line":8,"text":"  SORT_RANGE(values);"}]}
+{"solution":"trap-garden/s05","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s05","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s06","constraint":"B1","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s06","constraint":"B2","verdict":"violation","evidence":[{"line":5,"text":"  int* values = static_cast\u003cint*\u003e(malloc(sizeof(int) * 4));"}]}
+{"solution":"trap-garden/s06","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s07","constraint":"B1","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s07","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s07","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s08","constraint":"B1","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s08","constraint":"B2","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s08","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s09","constraint":"B1","verdict":"violation","evidence":[{"line":8,"text":"  alg::sort(values.begin(), values.end());"}]}
+{"solution":"trap-garden/s09","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s09","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s10","constraint":"B1","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s10","constraint":"B2","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s10","constraint":"B3","verdict":"unsure","evidence":[]}
+{"solution":"trap-garden/s11","constraint":"B1","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s11","constraint":"B2","verdict":"pass","evidence":[]}
+{"solution":"trap-garden/s11","constraint":"B3","verdict":"unsure","evidence":[]}

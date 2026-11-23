@@ -111,6 +111,9 @@ func validatePredictionLine(t *testing.T, line []byte, schema predictionSchema) 
 
 func TestRunWritesOneValidPredictionPerPair(t *testing.T) {
 	t.Setenv("MODEL_OFF", "1")
+	// Without a bundled analyzer the core must never guess a hard-rule
+	// verdict; this keeps the discovery test independent of host tooling.
+	t.Setenv(EnvAnalyzerPath, "")
 	output := filepath.Join(t.TempDir(), "predictions.jsonl")
 	summary, err := Run(unfamiliarFixture, output)
 	if err != nil {
@@ -190,6 +193,7 @@ func TestRunWritesOneValidPredictionPerPair(t *testing.T) {
 }
 
 func TestPredictionOutputIgnoresLabelsScorerAndTests(t *testing.T) {
+	clearModelEnv(t)
 	baseData, err := os.ReadFile(filepath.Join(unfamiliarFixture, "labels.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -255,6 +259,7 @@ func TestPredictionOutputIgnoresLabelsScorerAndTests(t *testing.T) {
 }
 
 func TestRunIsDeterministicAndModelOffIndependent(t *testing.T) {
+	clearModelEnv(t)
 	dir := t.TempDir()
 	first := filepath.Join(dir, "first.jsonl")
 	second := filepath.Join(dir, "second.jsonl")
@@ -305,7 +310,13 @@ func TestCoreImportsNoNetworkPackage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	forbidden := []string{"net", "net/http", "os/exec", "syscall"}
+	// Task 7.2 allows exactly one process boundary: the analyzer executable
+	// bundled in the checker image, invoked without a shell. The checker
+	// package itself still imports no network package; semantic transport
+	// stays behind the internal/model port, and MODEL_OFF never constructs
+	// it.
+	forbidden := []string{"net", "net/http", "syscall"}
+	allowed := map[string]bool{"os/exec": true}
 	for _, entry := range entries {
 		name := entry.Name()
 		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
@@ -317,8 +328,11 @@ func TestCoreImportsNoNetworkPackage(t *testing.T) {
 		}
 		for _, spec := range file.Imports {
 			imported := strings.Trim(spec.Path.Value, `"`)
+			if allowed[imported] {
+				continue
+			}
 			if slices.Contains(forbidden, imported) || strings.HasPrefix(imported, "net/") {
-				t.Fatalf("%s imports %q; task 7.1 must not be able to open a network", name, imported)
+				t.Fatalf("%s imports %q; the shared checker core must not open a network", name, imported)
 			}
 		}
 	}
