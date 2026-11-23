@@ -18,10 +18,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// The queue is an injected domain port (internal/domain.Queue). The
-	// concrete leased-jobs adapter is the PostgreSQL store from task 2.1;
-	// no queue can be constructed until that adapter exists.
-	logger.Info("worker started; no queue adapter configured yet (issue #38 task 2.1/4.2); idling until shutdown")
+	// The queue is an injected domain port (internal/domain.Queue). Task 2.1
+	// provides the shared store and transactions; job leasing is task 4.2.
+	logger.Info("worker started; job leasing is not configured yet (issue #38 task 4.2); idling until shutdown")
 	<-ctx.Done()
 	logger.Info("shutdown signal received; worker stopped with no leased jobs")
 }

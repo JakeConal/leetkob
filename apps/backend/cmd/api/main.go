@@ -42,8 +42,11 @@ func run(logger *slog.Logger) error {
 			return err
 		}
 		defer store.Close()
+		if err := store.Initialize(ctx); err != nil {
+			return err
+		}
 		health.Pinger = store
-		logger.Info("durable store configured")
+		logger.Info("durable store initialized")
 	} else {
 		logger.Info("no DATABASE_URL configured; health reports process state only")
 	}
