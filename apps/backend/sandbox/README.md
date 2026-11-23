@@ -37,18 +37,18 @@ docker inspect --format '{{index .RepoDigests 0}}' debian:trixie-slim
 # debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 ```
 
-| Component | Pin |
-| --- | --- |
-| Base image | `debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` (Debian 13, slim) |
-| Build output | local tag `leetkob-sandbox:pa3`; publish and pin the registry digest before deployment |
-| Image size | `129607560` bytes (≈124 MiB uncompressed) |
-| `g++` package | `4:14.2.0-1` |
-| `g++` compiler version | Debian 14.2.0-19 |
-| `g++-14` / `gcc-14` / `cpp-14` toolchain | `14.2.0-19` |
-| `libstdc++6` | `14.2.0-19` |
-| `libstdc++-14-dev` | `14.2.0-19` |
-| `binutils` | `2.44-3` |
-| `libc6` | `2.41-12+deb13u5` |
+| Component                                | Pin                                                                                                            |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Base image                               | `debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` (Debian 13, slim) |
+| Build output                             | local tag `leetkob-sandbox:pa3`; publish and pin the registry digest before deployment                         |
+| Image size                               | `129607560` bytes (≈124 MiB uncompressed)                                                                      |
+| `g++` package                            | `4:14.2.0-1`                                                                                                   |
+| `g++` compiler version                   | Debian 14.2.0-19                                                                                               |
+| `g++-14` / `gcc-14` / `cpp-14` toolchain | `14.2.0-19`                                                                                                    |
+| `libstdc++6`                             | `14.2.0-19`                                                                                                    |
+| `libstdc++-14-dev`                       | `14.2.0-19`                                                                                                    |
+| `binutils`                               | `2.44-3`                                                                                                       |
+| `libc6`                                  | `2.41-12+deb13u5`                                                                                              |
 
 The full installed-package inventory is reproducible with:
 
@@ -92,22 +92,22 @@ each test case against the same artifact. Every phase uses the same fixed
 image and the same boundary; nothing is compiled or parsed on the trusted
 host.
 
-| Control | Enforced by |
-| --- | --- |
-| No network | `--network none` for compile and run |
-| Non-root | `--user 65534:65534`, and `USER 65534:65534` in the image |
-| Read-only root | `--read-only`, with a private `/tmp` tmpfs |
-| No host binds | exactly one `--mount` of a freshly copied disposable work directory (`/work`); read-only during execution |
-| No Docker socket | the socket is never mounted and does not exist in the image; `host_probe.cpp` proves it is absent |
-| No capabilities / escalation | `--cap-drop ALL`, `--security-opt no-new-privileges:true` |
-| Memory including swap | `--memory N --memory-swap N` (equal means no swap) |
-| PIDs / threads | `--pids-limit 64` |
-| CPU | `--cpus 1` quota |
-| Output | at most 1 MiB of stdout and 1 MiB of stderr are stored; the rest is drained and the run is RE |
-| Wall deadline | host-side context; on expiry the whole container is removed with `docker kill` then `docker rm --force` |
-| Compile wall | fixed 10 s host-side deadline |
-| Source cap | 64 KiB, rejected before any container starts |
-| Secrets | no host environment is forwarded; the only mount is the work copy; the image has no service secrets |
+| Control                      | Enforced by                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| No network                   | `--network none` for compile and run                                                                      |
+| Non-root                     | `--user 65534:65534`, and `USER 65534:65534` in the image                                                 |
+| Read-only root               | `--read-only`, with a private `/tmp` tmpfs                                                                |
+| No host binds                | exactly one `--mount` of a freshly copied disposable work directory (`/work`); read-only during execution |
+| No Docker socket             | the socket is never mounted and does not exist in the image; `host_probe.cpp` proves it is absent         |
+| No capabilities / escalation | `--cap-drop ALL`, `--security-opt no-new-privileges:true`                                                 |
+| Memory including swap        | `--memory N --memory-swap N` (equal means no swap)                                                        |
+| PIDs / threads               | `--pids-limit 64`                                                                                         |
+| CPU                          | `--cpus 1` quota                                                                                          |
+| Output                       | at most 1 MiB of stdout and 1 MiB of stderr are stored; the rest is drained and the run is RE             |
+| Wall deadline                | host-side context; on expiry the whole container is removed with `docker kill` then `docker rm --force`   |
+| Compile wall                 | fixed 10 s host-side deadline                                                                             |
+| Source cap                   | 64 KiB, rejected before any container starts                                                              |
+| Secrets                      | no host environment is forwarded; the only mount is the work copy; the image has no service secrets       |
 
 Compile and run limits differ only where the compiler needs more room:
 compile uses 512 MiB and 1 CPU (both still bounded); execution uses the
@@ -133,13 +133,13 @@ an operational state, never stored as a student failure.
 
 ### Verdict mapping
 
-| Observation | Verdict |
-| --- | --- |
-| compile exit ≠ 0 or compile wall expired | `CE` (compile timeout sets `TimedOut`; diagnostics are bounded) |
-| Docker reports `OOMKilled` | `MLE` |
-| host wall deadline expired | `TLE` |
-| non-zero exit, crash, or stdout/stderr overflow | `RE` |
-| exit 0, no overflow | `RAN` (token comparison decides AC/WA in task 3.5) |
+| Observation                                     | Verdict                                                         |
+| ----------------------------------------------- | --------------------------------------------------------------- |
+| compile exit ≠ 0 or compile wall expired        | `CE` (compile timeout sets `TimedOut`; diagnostics are bounded) |
+| Docker reports `OOMKilled`                      | `MLE`                                                           |
+| host wall deadline expired                      | `TLE`                                                           |
+| non-zero exit, crash, or stdout/stderr overflow | `RE`                                                            |
+| exit 0, no overflow                             | `RAN` (token comparison decides AC/WA in task 3.5)              |
 
 Memory is reported as `MLE` only when Docker's observed `OOMKilled` state
 proves it. If that signal is unavailable (for example a daemon that cannot
@@ -164,20 +164,20 @@ The 64 KiB source cap is rejected before any container starts as
 Each fixture prints machine-readable markers so the test asserts the
 observed containment rather than only the configured flags.
 
-| Fixture | Attack | Expected containment |
-| --- | --- | --- |
-| `attacks/network_probe.cpp` | DNS lookup and TCP connect to `1.1.1.1:53` | `DNS=denied`, `CONNECT=denied`; exits 0 |
-| `attacks/cpu_loop.cpp` | infinite CPU loop | host wall deadline, `TLE`, container gone |
-| `attacks/wall_sleep.cpp` | `sleep(60)` | host wall deadline, `TLE`, container gone, `SLEPT` never printed |
-| `attacks/memory_overflow.cpp` | 8 MiB chunks with page write and read-back | `OOMKilled`, `MLE`, no `ALLOCATION_COMPLETED` |
-| `attacks/process_limit.cpp` | thread creation then `fork` until `EAGAIN` | counts stay below the 64 PID limit; a later run is unaffected |
-| `attacks/output_flood.cpp` | 16 MiB of stdout | collected output is exactly the 1 MiB cap, `OutputTruncated`, `RE` |
-| `attacks/root_probe.cpp` | `geteuid`, `setuid(0)`, capabilities, `/etc/shadow`, rootfs write, `unshare` | `UID=65534`, `CAPEFF=000…`, `NONEWPRIVS=1`, all privileged operations denied |
-| `attacks/host_probe.cpp` | Docker socket, host canary path and `/proc/self/mountinfo` | socket and canary absent; only `/work` is a bind mount |
-| `attacks/secret_probe.cpp` | environment, canary env/file and compile-time `#include` of a canary path, plus candidate service paths | `ENV_CANARY=absent`, `FILE_CANARY=absent`, `INCLUDE_CANARY=absent`, no canary value in compile or run output |
-| `attacks/compile_hang.cpp` | preprocessor blocks reading `/dev/ptmx` forever | compile wall, `CE` with `TimedOut=true` |
-| `attacks/compile_error.cpp` | invalid C++17 | `CE` with bounded diagnostics |
-| `attacks/compliant.cpp` | reads two integers, prints the sum | compiles and returns token data |
+| Fixture                       | Attack                                                                                                  | Expected containment                                                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `attacks/network_probe.cpp`   | DNS lookup and TCP connect to `1.1.1.1:53`                                                              | `DNS=denied`, `CONNECT=denied`; exits 0                                                                      |
+| `attacks/cpu_loop.cpp`        | infinite CPU loop                                                                                       | host wall deadline, `TLE`, container gone                                                                    |
+| `attacks/wall_sleep.cpp`      | `sleep(60)`                                                                                             | host wall deadline, `TLE`, container gone, `SLEPT` never printed                                             |
+| `attacks/memory_overflow.cpp` | 8 MiB chunks with page write and read-back                                                              | `OOMKilled`, `MLE`, no `ALLOCATION_COMPLETED`                                                                |
+| `attacks/process_limit.cpp`   | thread creation then `fork` until `EAGAIN`                                                              | counts stay below the 64 PID limit; a later run is unaffected                                                |
+| `attacks/output_flood.cpp`    | 16 MiB of stdout                                                                                        | collected output is exactly the 1 MiB cap, `OutputTruncated`, `RE`                                           |
+| `attacks/root_probe.cpp`      | `geteuid`, `setuid(0)`, capabilities, `/etc/shadow`, rootfs write, `unshare`                            | `UID=65534`, `CAPEFF=000…`, `NONEWPRIVS=1`, all privileged operations denied                                 |
+| `attacks/host_probe.cpp`      | Docker socket, host canary path and `/proc/self/mountinfo`                                              | socket and canary absent; only `/work` is a bind mount                                                       |
+| `attacks/secret_probe.cpp`    | environment, canary env/file and compile-time `#include` of a canary path, plus candidate service paths | `ENV_CANARY=absent`, `FILE_CANARY=absent`, `INCLUDE_CANARY=absent`, no canary value in compile or run output |
+| `attacks/compile_hang.cpp`    | preprocessor blocks reading `/dev/ptmx` forever                                                         | compile wall, `CE` with `TimedOut=true`                                                                      |
+| `attacks/compile_error.cpp`   | invalid C++17                                                                                           | `CE` with bounded diagnostics                                                                                |
+| `attacks/compliant.cpp`       | reads two integers, prints the sum                                                                      | compiles and returns token data                                                                              |
 
 The secret fixtures use synthetic canaries only. The test process places a
 canary in its own environment and in a host file outside the work copy,

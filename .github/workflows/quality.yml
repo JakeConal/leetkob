@@ -5,7 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
-    tags: [pa2]
+    tags: [pa2, pa3]
 
 permissions:
   contents: read
@@ -94,7 +94,19 @@ jobs:
           cache: true
           cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
-      - run: npm test
+      # The sandbox attack suite builds this image on first use. Building it
+      # explicitly keeps the expensive step visible and lets the tests reuse
+      # it under the marker's 15-minute ordinary-check budget.
+      - name: Build sandbox image
+        run: docker build --tag leetkob-sandbox:pa3 apps/backend/sandbox
+      # The analyzer and checker image builds are much slower on a cold
+      # runner. Their container tests run in the tag-only "Sandbox attacks"
+      # job; the pure-Go analyzer/checker tests still run here. Packages run
+      # serially so Docker-backed suites do not race for host resources.
+      - name: Run tests
+        env:
+          GOFLAGS: "-p=1 -skip=TestDockerAnalyzerHardRuleTraps|TestCheckerImage"
+        run: npm test
 
   security:
     name: Security
@@ -114,3 +126,66 @@ jobs:
           cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm run security
+
+  # PA3-GATE-02: this job runs only for the submitted pa3 tag and checks out
+  # that exact revision. It is additive: the four protected results above keep
+  # their names and behaviour. No provider secret is exposed to this job.
+  sandbox-attacks:
+    name: Sandbox attacks
+    if: github.ref == 'refs/tags/pa3'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANALYZER_IMAGE: leetkob-analyzer:pa3
+      CHECKER_IMAGE: leetkob-checker:pa3
+      TEST_SANDBOX_IMAGE: leetkob-sandbox:pa3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.4"
+          cache: true
+          cache-dependency-path: apps/backend/go.sum
+      - name: Verify Docker is available
+        run: |
+          docker version
+          docker info > /dev/null
+      - name: Assert no provider credentials are present
+        run: |
+          for name in MODEL_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY GOOGLE_API_KEY; do
+            if [ -n "${!name:-}" ]; then
+              echo "::error::$name must not be set in the tag sandbox job" >&2
+              exit 1
+            fi
+          done
+      - name: Build sandbox image
+        run: docker build --tag leetkob-sandbox:pa3 apps/backend/sandbox
+      - name: Build analyzer image
+        run: docker build --tag leetkob-analyzer:pa3 apps/backend/analyzer
+      - name: Build checker image
+        run: docker build -f apps/backend/checker/Dockerfile --tag leetkob-checker:pa3 apps/backend
+      - name: Run sandbox attack suite
+        working-directory: apps/backend
+        run: |
+          set -euo pipefail
+          go test -race -count=1 -v ./internal/sandbox/ | tee /tmp/sandbox-attacks.log
+          if grep -q -- "--- SKIP" /tmp/sandbox-attacks.log; then
+            echo "::error::sandbox attack tests were skipped; the tag job requires containment evidence" >&2
+            exit 1
+          fi
+      - name: Run analyzer container trap suite
+        working-directory: apps/backend
+        run: |
+          set -euo pipefail
+          go test -race -count=1 -v ./internal/analyzer/ | tee /tmp/analyzer-traps.log
+          if grep -q -- "--- SKIP" /tmp/analyzer-traps.log; then
+            echo "::error::analyzer trap tests were skipped; the tag job requires image evidence" >&2
+            exit 1
+          fi
+      - name: Run checker image tests without a provider key
+        working-directory: apps/backend
+        run: |
+          set -euo pipefail
+          go test -race -count=1 -v ./internal/checker/ | tee /tmp/checker-tests.log
+          grep -q -- "--- PASS: TestCheckerImageModelOffRunsWithoutNetworkOrDockerSocket" /tmp/checker-tests.log
+          grep -q -- "--- PASS: TestCheckerImageBundlesAnalyzerWithoutSocketOrKeys" /tmp/checker-tests.log

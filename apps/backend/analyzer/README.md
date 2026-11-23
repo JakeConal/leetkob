@@ -17,7 +17,7 @@ inside the checker container.
 One bounded JSON request on stdin:
 
 ```json
-{"source": "int main(){return 0;}", "bannedNames": ["std::sort", "sort"]}
+{ "source": "int main(){return 0;}", "bannedNames": ["std::sort", "sort"] }
 ```
 
 One bounded JSON reply on stdout, one result per requested name in
@@ -51,20 +51,20 @@ request order:
 
 Resolution rules (generic; no development-problem answers are built in):
 
-| Case                                                        | Result                                                                                                                |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Qualified ban `std::sort`, call `std::sort(...)`            | violation at the call line                                                                                            |
-| Unqualified ban `sort`, call `std::sort(...)`               | violation at the call line                                                                                            |
-| Student defines `namespace sort` or their own `sort`        | pass; declarations defined in the submitted file are treated as student-defined                                      |
-| Mention only in a comment or string/raw string              | pass; no AST reference exists                                                                                         |
-| `<algorithm>` included only for `std::swap`                 | pass; includes are not scanned as text                                                                                |
-| `namespace alg = std; alg::sort(...)`                       | violation; libclang resolves the alias                                                                                |
-| `using std::sort; sort(...)` / `using namespace std`        | violation; the call resolves to `std::sort`                                                                           |
-| Function-like or object-like macro expanding to `std::sort` | violation at the macro-expansion line, not the `#define` line                                                         |
-| Wrapper function containing `std::sort`                     | violation at the `std::sort` reference inside the wrapper                                                             |
-| Unexpanded `#define SORT std::sort`                         | pass; a macro definition is not a use                                                                                 |
-| Disabled `#if 0` branch                                     | pass; it is not in the parsed AST                                                                                     |
-| Unresolved `unknown::sort(...)` / missing include           | unsure (an error diagnostic is not a pass)                                                                            |
+| Case                                                        | Result                                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Qualified ban `std::sort`, call `std::sort(...)`            | violation at the call line                                                      |
+| Unqualified ban `sort`, call `std::sort(...)`               | violation at the call line                                                      |
+| Student defines `namespace sort` or their own `sort`        | pass; declarations defined in the submitted file are treated as student-defined |
+| Mention only in a comment or string/raw string              | pass; no AST reference exists                                                   |
+| `<algorithm>` included only for `std::swap`                 | pass; includes are not scanned as text                                          |
+| `namespace alg = std; alg::sort(...)`                       | violation; libclang resolves the alias                                          |
+| `using std::sort; sort(...)` / `using namespace std`        | violation; the call resolves to `std::sort`                                     |
+| Function-like or object-like macro expanding to `std::sort` | violation at the macro-expansion line, not the `#define` line                   |
+| Wrapper function containing `std::sort`                     | violation at the `std::sort` reference inside the wrapper                       |
+| Unexpanded `#define SORT std::sort`                         | pass; a macro definition is not a use                                           |
+| Disabled `#if 0` branch                                     | pass; it is not in the parsed AST                                               |
+| Unresolved `unknown::sort(...)` / missing include           | unsure (an error diagnostic is not a pass)                                      |
 
 Evidence text is read from the submitted source, never from headers.
 Multiple references are deduplicated and bounded to four lines per name
@@ -80,36 +80,36 @@ cases; the caller records `unsure`.
 
 ## Limits and isolation
 
-| Control      | Value                                                                                  |
-| ------------ | -------------------------------------------------------------------------------------- |
-| stdin        | 256 KiB encoded request; source 65,536 bytes; 64 names; 256 bytes per name             |
-| stdout       | 2 MiB bounded collection; bounded tool reply                                           |
-| time         | 20 s default Go deadline; `--stop-timeout 1`; timed-out container is force-removed      |
-| network      | `docker run --network none`                                                             |
-| filesystem   | `--read-only` plus `noexec,nosuid` 16 MiB `/tmp` tmpfs; no host mounts                  |
-| privileges   | UID/GID 65534, `--cap-drop ALL`, `no-new-privileges`                                   |
-| processes    | `--pids-limit 64`                                                                      |
-| memory/swap  | 512 MiB memory and equal swap ceiling                                                  |
-| CPU          | 1 CPU                                                                                  |
-| secrets      | no provider key, dataset label or Docker socket is in the image or its environment      |
+| Control     | Value                                                                              |
+| ----------- | ---------------------------------------------------------------------------------- |
+| stdin       | 256 KiB encoded request; source 65,536 bytes; 64 names; 256 bytes per name         |
+| stdout      | 2 MiB bounded collection; bounded tool reply                                       |
+| time        | 20 s default Go deadline; `--stop-timeout 1`; timed-out container is force-removed |
+| network     | `docker run --network none`                                                        |
+| filesystem  | `--read-only` plus `noexec,nosuid` 16 MiB `/tmp` tmpfs; no host mounts             |
+| privileges  | UID/GID 65534, `--cap-drop ALL`, `no-new-privileges`                               |
+| processes   | `--pids-limit 64`                                                                  |
+| memory/swap | 512 MiB memory and equal swap ceiling                                              |
+| CPU         | 1 CPU                                                                              |
+| secrets     | no provider key, dataset label or Docker socket is in the image or its environment |
 
 ## Image pin
 
 Built and recorded on 2026-11-23 from:
 
-| Component             | Pin / version                                                                       |
-| --------------------- | ----------------------------------------------------------------------------------- |
+| Component             | Pin / version                                                                                               |
+| --------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Base image            | `debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2` (trixie-slim, Debian 13.7) |
-| Local image tag       | `leetkob-analyzer:pa3`                                                               |
-| Local image ID        | `sha256:8aed1ee3889b67054b735832174a73031e24d413e3e684914da6d6b9143b0546`             |
-| Config digest         | `sha256:f06d57f9e60ac3fb35a789a72532370934ba4598e1fda909e80047c927431640`             |
-| Image size            | 276,936,006 bytes (264 MiB)                                                          |
-| Linux / arch          | linux/amd64                                                                          |
-| clang / libclang      | `clang-19 1:19.1.7-3+b1`, `libclang-19-dev 1:19.1.7-3+b1`, `libclang1-19 1:19.1.7-3+b1` |
-| GNU C++ compiler      | `g++-14 14.2.0-19`                                                                   |
-| libstdc++ dev headers | `libstdc++-14-dev 14.2.0-19`                                                         |
-| C library             | `libc6 2.41-12+deb13u5`                                                              |
-| Runtime user          | `uid=65534(nobody) gid=65534(nogroup)`                                               |
+| Local image tag       | `leetkob-analyzer:pa3`                                                                                      |
+| Local image ID        | `sha256:8aed1ee3889b67054b735832174a73031e24d413e3e684914da6d6b9143b0546`                                   |
+| Config digest         | `sha256:f06d57f9e60ac3fb35a789a72532370934ba4598e1fda909e80047c927431640`                                   |
+| Image size            | 276,936,006 bytes (264 MiB)                                                                                 |
+| Linux / arch          | linux/amd64                                                                                                 |
+| clang / libclang      | `clang-19 1:19.1.7-3+b1`, `libclang-19-dev 1:19.1.7-3+b1`, `libclang1-19 1:19.1.7-3+b1`                     |
+| GNU C++ compiler      | `g++-14 14.2.0-19`                                                                                          |
+| libstdc++ dev headers | `libstdc++-14-dev 14.2.0-19`                                                                                |
+| C library             | `libc6 2.41-12+deb13u5`                                                                                     |
+| Runtime user          | `uid=65534(nobody) gid=65534(nogroup)`                                                                      |
 
 The Debian base digest is the reproducible pin; the package versions are
 the installed `clang-19`, `libclang-19-dev` and `libstdc++-14-dev`

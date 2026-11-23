@@ -16,10 +16,10 @@ problem ID, prompt, switch, table, label or scorer read is compiled in.
 
 ## Verdict selection
 
-| Constraint                     | Decided by                                                   | Never                                    |
-| ------------------------------ | ------------------------------------------------------------ | ---------------------------------------- |
-| `Do not use` / `Do not call`   | bundled libclang analyzer (syntax + resolved declarations)   | model, text search, labels, test output  |
-| everything else (semantic)     | guarded model port behind a priced budget reservation        | hard rules, labels, deductions           |
+| Constraint                   | Decided by                                                 | Never                                   |
+| ---------------------------- | ---------------------------------------------------------- | --------------------------------------- |
+| `Do not use` / `Do not call` | bundled libclang analyzer (syntax + resolved declarations) | model, text search, labels, test output |
+| everything else (semantic)   | guarded model port behind a priced budget reservation      | hard rules, labels, deductions          |
 
 Hard-rule decisions are final for the pair: comments, string/raw-string
 literals, `<algorithm>` included only for `std::swap`, student-defined `sort`
@@ -115,15 +115,15 @@ available, `TestOptionalUnmodifiedScorerAcceptsPredictions` accepts
 
 ## Environment
 
-| Variable                          | Meaning                                                                    |
-| --------------------------------- | -------------------------------------------------------------------------- |
-| `MODEL_OFF=1`                     | Offline selection before any provider/budget construction.                 |
-| `CHECKER_ANALYZER`                | Bundled analyzer executable; the image sets `/usr/local/bin/leetkob-analyzer`. |
-| `MODEL_BASE_URL`, `MODEL_NAME`    | Non-secret provider configuration; absent means semantic pairs are unsure. |
-| `MODEL_API_KEY`                   | Read lazily only on a real dispatch; never present in the image run.       |
-| `MODEL_INPUT_CENTS_PER_1K`        | Verified integer-cent input price; absent/zero refuses dispatch.           |
-| `MODEL_OUTPUT_CENTS_PER_1K`       | Verified integer-cent output price; absent/zero refuses dispatch.          |
-| `MODEL_LAB_ID`                    | Run-scoped spend bucket name for the command (default `checker`).          |
+| Variable                       | Meaning                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------ |
+| `MODEL_OFF=1`                  | Offline selection before any provider/budget construction.                     |
+| `CHECKER_ANALYZER`             | Bundled analyzer executable; the image sets `/usr/local/bin/leetkob-analyzer`. |
+| `MODEL_BASE_URL`, `MODEL_NAME` | Non-secret provider configuration; absent means semantic pairs are unsure.     |
+| `MODEL_API_KEY`                | Read lazily only on a real dispatch; never present in the image run.           |
+| `MODEL_INPUT_CENTS_PER_1K`     | Verified integer-cent input price; absent/zero refuses dispatch.               |
+| `MODEL_OUTPUT_CENTS_PER_1K`    | Verified integer-cent output price; absent/zero refuses dispatch.              |
+| `MODEL_LAB_ID`                 | Run-scoped spend bucket name for the command (default `checker`).              |
 
 The command's budget store is run-scoped and in memory; the production worker
 supplies the durable store. The USD 0.25 per-lab cap comes from
