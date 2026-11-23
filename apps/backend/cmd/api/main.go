@@ -59,6 +59,7 @@ func run(logger *slog.Logger) error {
 		deps.Auth = auth.NewService(store, auth.SystemClock{}, identity.VerifyPassword)
 		deps.Labs = store
 		deps.Idempotency = store
+		deps.Submissions = store
 		logger.Info("durable store configured; additive migrations applied")
 	} else {
 		logger.Info("no DATABASE_URL configured; health reports process state only")

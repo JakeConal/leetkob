@@ -15,6 +15,7 @@ type Deps struct {
 	Auth          *auth.Service
 	Labs          LabStore
 	Idempotency   IdempotencyStore
+	Submissions   SubmissionAcceptor
 	WebOrigin     string
 	SecureCookies bool
 }
@@ -51,6 +52,14 @@ func NewServer(deps Deps) http.Handler {
 			for _, method := range []string{"POST", "PUT", "PATCH", "DELETE"} {
 				mux.HandleFunc(method+" /v2/labs/{labId}", routeNotFound)
 			}
+		}
+		if deps.Submissions != nil {
+			submissions := &submissionHandlers{
+				auth:        deps.Auth,
+				submissions: deps.Submissions,
+				webOrigin:   deps.WebOrigin,
+			}
+			mux.HandleFunc("POST /v2/labs/{labId}/submissions", submissions.create)
 		}
 	}
 	mux.HandleFunc("/", routeNotFound)
