@@ -11,9 +11,12 @@ dataset independently of the product.
   Currently serves `GET /healthz`. The PA#2 compatibility API
   (`apps/api`, unprefixed `/labs/{labId}/publish`) keeps running
   separately and is never registered against production storage.
-- `cmd/worker` — the separate judging worker. The durable PostgreSQL
-  queue adapter arrives with tasks 2.1/4.2; until then it starts, idles
-  and shuts down cleanly.
+- `cmd/worker` — the separate judging worker. It leases durable PostgreSQL
+  jobs, compiles and runs each submission only through
+  `internal/sandbox`, and commits one fenced verdict set. Infrastructure
+  failures retry a bounded number of times and then stay visibly failed;
+  they are never turned into a student verdict. See
+  [Worker judging and recovery](#worker-judging-and-recovery).
 - `cmd/checker` — the dataset-independent marking command
   (`--data <dir> --predictions <file>`). Argument validation and the
   `MODEL_OFF=1` selection point are pinned; generic discovery lands with
@@ -46,15 +49,17 @@ server-side tokens.
 cd apps/backend
 go build ./...
 PORT=8080 DATABASE_URL=postgres://... go run ./cmd/api
-go run ./cmd/worker
+DATABASE_URL=postgres://... go run ./cmd/worker
 go run ./cmd/checker --data <dataset-dir> --predictions <output.jsonl>
 ```
 
 `PORT` selects the listen port (default 8080, validated 1–65535). With
 `DATABASE_URL` set, the API opens a bounded connection pool (max 4
 connections) and health verifies the store; without it, the process runs
-storeless and health reports process state only. The worker uses the same
-`DATABASE_URL` when its queue adapter lands.
+storeless and health reports process state only. The worker requires the
+same `DATABASE_URL`; it applies the additive migrations and leases durable
+jobs. Its sandbox image defaults to `leetkob-sandbox:pa3` and can be pinned
+with `WORKER_SANDBOX_IMAGE`.
 
 ## Durable store (PostgreSQL 18)
 
@@ -130,6 +135,120 @@ Non-GET methods receive a `405` problem response.
 
 All three commands install `SIGINT`/`SIGTERM` handlers. The API drains
 in-flight requests for up to 10 seconds before closing; the worker stops
-without abandoning any durable state (jobs remain leased-with-expiry once
-the queue adapter exists); the checker exits with its documented code.
-A clean API shutdown logs `api shut down cleanly`.
+leasing, finishes the current job when it can, and otherwise releases that
+lease without counting an infrastructure failure; the checker exits with
+its documented code. A clean API shutdown logs `api shut down cleanly`.
+A clean worker shutdown logs `worker shut down cleanly`; an abrupt kill
+leaves only a lease that expires and is re-leased under a higher fence.
+
+## Worker judging and recovery
+
+`cmd/worker` requires `DATABASE_URL`. It applies the same additive
+migrations as the API, then leases durable jobs from PostgreSQL. Acceptance
+commits the source, submission, counted selection, replay record and one
+pending `judge` job atomically; the API never compiles or runs student code.
+
+| Variable                  | Default               | Meaning                                                       |
+| ------------------------- | --------------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`            | required              | PostgreSQL connection URL shared with the API                 |
+| `WORKER_ID`               | `worker-1`            | Lease owner recorded in structured logs                       |
+| `WORKER_SANDBOX_IMAGE`    | `leetkob-sandbox:pa3` | Fixed execution image; never a caller-supplied image          |
+| `WORKER_BATCH`            | `1`                   | Maximum jobs leased per poll                                  |
+| `WORKER_LEASE_SECONDS`    | `1800`                | Lease duration before another worker may recover the job      |
+| `WORKER_MAX_FAILURES`     | `3`                   | Infrastructure failures before a job becomes visibly `failed` |
+| `WORKER_POLL_SECONDS`     | `2`                   | Idle poll interval                                            |
+| `WORKER_SHUTDOWN_SECONDS` | `30`                  | Bound for finishing, releasing and cleanup during shutdown    |
+
+The worker enforces these recovery rules:
+
+- `LeaseJobs` uses `FOR UPDATE SKIP LOCKED`, increments the attempt fence
+  and assigns a lease deadline. Another worker cannot take an active lease.
+- `CommitJudgeResult` only succeeds for the current attempt while its lease
+  is live. A duplicate delivery or a late attempt after expiry returns
+  `ErrStaleFence` and cannot replace or duplicate stored rows.
+- Results are keyed by submission and per-test ID. A duplicate execution
+  therefore leaves exactly one aggregate verdict and one row per test.
+- The worker checks the submission lab, generation and source SHA-256
+  against the leased job envelope before executing anything. A mismatch is
+  an operational failure, never a verdict.
+- Sandbox and store failures go through `FailJob`, which is bounded by
+  `WORKER_MAX_FAILURES`. The exhausted job stays visibly failed and never
+  becomes a student WA/RE.
+- On `SIGTERM` the worker stops leasing. It commits a result that is already
+  complete; otherwise it releases the lease to `pending` without counting a
+  failure. If the process is killed, the lease simply expires.
+- Structured JSON logs include `jobId`, `submissionId`, `attempt`, the
+  verdict and per-test count. They never include source, hidden tests or
+  credentials.
+
+### Recorded stop/submit/restart exercise
+
+The automated proof starts a disposable pinned PostgreSQL 18.7 database,
+seeds a verification lab through the store, accepts a submission while no
+worker is running, and then starts the real worker with the local
+`leetkob-sandbox:pa3` image. It asserts one `done` job, one aggregate
+verdict and exactly one stored row per test after a duplicate delivery and
+a worker restart. A second test expires a lease, lets a replacement claim
+the next attempt, and proves the old attempt's commit is refused. A third
+test drives the real HTTP ingress while the worker is stopped, runs the
+real worker, polls the safe result endpoint, and checks that another
+student and another class's TA receive a concealed `404` while the owner
+and assigned TA receive the judge verdicts.
+
+Repeat it with:
+
+```bash
+cd apps/backend
+PATH="/snap/go/current/bin:$PATH" GOTOOLCHAIN=local \
+  go test ./internal/worker/ -count=1 -v \
+  -run 'TestHTTPIngressToJudgedResultStaysOwnerPrivate|TestStopSubmitRestartStoresExactlyOneVerdictSet|TestLateAttemptAfterLeaseExpiryCannotCommit|TestTwoWorkersJudgeOneSubmissionExactlyOnce'
+```
+
+Recorded on 2026-11-23 against the pinned PostgreSQL image and
+`leetkob-sandbox:pa3`:
+
+```text
+=== RUN   TestHTTPIngressToJudgedResultStaysOwnerPrivate
+--- PASS: TestHTTPIngressToJudgedResultStaysOwnerPrivate (21.38s)
+=== RUN   TestStopSubmitRestartStoresExactlyOneVerdictSet
+--- PASS: TestStopSubmitRestartStoresExactlyOneVerdictSet (10.76s)
+=== RUN   TestLateAttemptAfterLeaseExpiryCannotCommit
+--- PASS: TestLateAttemptAfterLeaseExpiryCannotCommit (10.62s)
+=== RUN   TestTwoWorkersJudgeOneSubmissionExactlyOnce
+--- PASS: TestTwoWorkersJudgeOneSubmissionExactlyOnce (10.90s)
+PASS
+ok  	github.com/JakeConal/leetkob/backend/internal/worker	53.668s
+```
+
+The manual equivalent is:
+
+1. Start PostgreSQL and export `DATABASE_URL` as shown above.
+2. Provision the synthetic accounts and create a lab through the TA API.
+3. Leave `cmd/worker` stopped. Sign in as the enrolled student and submit
+   through `POST /v2/labs/{labId}/submissions`; the response is `202` with
+   `state: "queued"` and the pending job is visible in `jobs`.
+4. Start `cmd/worker` with the same `DATABASE_URL`.
+5. Poll `GET /v2/submissions/{submissionId}` until `state` is `judged` (the
+   web submission panel does this every second). The response then carries
+   `judge.verdict` and per-test `{id, verdict, timeMs}` only.
+6. Verify the stored effect:
+
+   ```sql
+   SELECT state, verdict, attempt FROM submissions s
+   JOIN jobs j ON j.submission_id = s.id
+   WHERE s.id = '<submission-id>';
+   -- judged | AC | 1
+
+   SELECT count(*) FROM submission_test_results
+   WHERE submission_id = '<submission-id>';
+   -- number of lab tests, exactly once
+   ```
+
+7. Send `SIGTERM` to the worker, restart it, and confirm the job attempt and
+   result counts do not change. A duplicate commit with the same attempt
+   reports a stale fence.
+
+The tests skip only when neither `TEST_DATABASE_URL` nor Docker is
+available, or when the real sandbox image is absent; the skip message names
+the missing prerequisite. They never substitute a fake judge for the
+stop/submit/restart claim.

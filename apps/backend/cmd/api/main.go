@@ -60,6 +60,8 @@ func run(logger *slog.Logger) error {
 		deps.Labs = store
 		deps.Idempotency = store
 		deps.Submissions = store
+		deps.SubmissionReader = store
+		deps.Reviews = store
 		logger.Info("durable store configured; additive migrations applied")
 	} else {
 		logger.Info("no DATABASE_URL configured; health reports process state only")

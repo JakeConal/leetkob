@@ -11,13 +11,15 @@ import (
 // so the process can run storeless during bring-up. Labs and Idempotency are
 // wired from the same durable store in production and from fakes in tests.
 type Deps struct {
-	Pinger        postgres.Pinger
-	Auth          *auth.Service
-	Labs          LabStore
-	Idempotency   IdempotencyStore
-	Submissions   SubmissionAcceptor
-	WebOrigin     string
-	SecureCookies bool
+	Pinger           postgres.Pinger
+	Auth             *auth.Service
+	Labs             LabStore
+	Idempotency      IdempotencyStore
+	Submissions      SubmissionAcceptor
+	SubmissionReader SubmissionReader
+	Reviews          ReviewStore
+	WebOrigin        string
+	SecureCookies    bool
 }
 
 // NewServer builds the route table: the health contract plus, when
@@ -60,6 +62,23 @@ func NewServer(deps Deps) http.Handler {
 				webOrigin:   deps.WebOrigin,
 			}
 			mux.HandleFunc("POST /v2/labs/{labId}/submissions", submissions.create)
+		}
+		if deps.SubmissionReader != nil {
+			reads := &submissionReadHandlers{auth: deps.Auth, reads: deps.SubmissionReader}
+			mux.HandleFunc("GET /v2/submissions/{submissionId}", reads.get)
+			mux.HandleFunc("GET /v2/labs/{labId}/submissions", reads.list)
+		}
+		if deps.Reviews != nil {
+			reviews := &reviewHandlers{
+				auth:      deps.Auth,
+				reviews:   deps.Reviews,
+				idem:      deps.Idempotency,
+				webOrigin: deps.WebOrigin,
+			}
+			mux.HandleFunc("GET /v2/labs/{labId}/reviews", reviews.list)
+			if deps.Idempotency != nil {
+				mux.HandleFunc("POST /v2/labs/{labId}/reviews/{findingId}/decision", reviews.decide)
+			}
 		}
 	}
 	mux.HandleFunc("/", routeNotFound)

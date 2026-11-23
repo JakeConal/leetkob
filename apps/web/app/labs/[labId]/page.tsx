@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { AppShell } from "../../../components/app-shell";
 import { LabDetailPanel } from "./lab-detail";
+import { SubmissionPanel } from "./submission-panel";
 
 export const metadata: Metadata = {
   title: "Lab | LeeTKOB",
@@ -61,6 +62,7 @@ export default async function LabPage({
       </section>
 
       <LabDetailPanel labId={labId} />
+      <SubmissionPanel labId={labId} />
     </AppShell>
   );
 }

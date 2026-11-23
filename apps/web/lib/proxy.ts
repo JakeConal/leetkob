@@ -57,6 +57,12 @@ export function isAllowedV2Request(method: string, segments: readonly string[]):
   if (first === "labs" && second !== undefined && third === undefined) {
     return isUuid(second) && upperMethod === "GET";
   }
+  if (first === "labs" && second !== undefined && third === "submissions") {
+    return isUuid(second) && (upperMethod === "GET" || upperMethod === "POST");
+  }
+  if (first === "submissions" && second !== undefined && third === undefined) {
+    return isUuid(second) && upperMethod === "GET";
+  }
   return false;
 }
 
