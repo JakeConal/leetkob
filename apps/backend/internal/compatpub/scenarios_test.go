@@ -95,6 +95,17 @@ func scenarioPath(t *testing.T) string {
 	return candidate
 }
 
+// scenarioDeps carries one scenario's wired adapters and remembered
+// bodies to the per-step handlers.
+type scenarioDeps struct {
+	file        scenarioFile
+	sc          scenario
+	subs        map[string]string
+	labRepo     *InMemoryLabRepository
+	serverURL   string
+	savedBodies map[string]any
+}
+
 func runScenario(t *testing.T, file scenarioFile, sc scenario, subs map[string]string, instant time.Time) {
 	t.Helper()
 
@@ -123,88 +134,135 @@ func runScenario(t *testing.T, file scenarioFile, sc scenario, subs map[string]s
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	savedBodies := map[string]any{}
+	deps := scenarioDeps{file: file, sc: sc, subs: subs, labRepo: labRepo, serverURL: server.URL, savedBodies: map[string]any{}}
 	for i, step := range sc.Steps {
-		kind, _ := step["type"].(string)
-		switch kind {
+		switch kind, _ := step["type"].(string); kind {
 		case "request":
-			response := doRequest(t, server.URL, file, sc, step, subs)
-			assertExpected(t, step, response, savedBodies, subs)
-			drainAndClose(t, response)
+			runRequestStep(t, deps, step, i)
 		case "saveLab":
-			encoded, err := json.Marshal(step["lab"])
-			if err != nil {
-				t.Fatalf("step %d: marshal lab: %v", i, err)
-			}
-			var seeded struct {
-				ID                 string `json:"id"`
-				ClassID            string `json:"classId"`
-				Status             string `json:"status"`
-				PendingReviews     int    `json:"pendingReviews"`
-				SubmissionDeadline string `json:"submissionDeadline"`
-			}
-			if err := json.Unmarshal(encoded, &seeded); err != nil {
-				t.Fatalf("step %d: parse lab: %v", i, err)
-			}
-			if err := labRepo.Save(Lab{
-				ID:                 resolve(subs, seeded.ID),
-				ClassID:            seeded.ClassID,
-				Status:             LabStatus(seeded.Status),
-				PendingReviews:     seeded.PendingReviews,
-				SubmissionDeadline: resolve(subs, seeded.SubmissionDeadline),
-			}); err != nil {
-				t.Fatalf("step %d: save lab: %v", i, err)
-			}
+			runSaveLabStep(t, deps, step, i)
 		case "expectLab":
-			labID := resolve(subs, fmt.Sprint(step["labId"]))
-			lab, ok := labRepo.FindByID(labID)
-			if !ok {
-				t.Fatalf("step %d: lab %s not found", i, labID)
-			}
-			want, _ := step["status"].(string)
-			if string(lab.Status) != want {
-				t.Fatalf("step %d: lab %s status = %q, want %q", i, labID, lab.Status, want)
-			}
+			runExpectLabStep(t, deps, step, i)
 		case "concurrent":
-			requests, _ := step["requests"].([]any)
-			statuses := make([]int, len(requests))
-			var wg sync.WaitGroup
-			for j, raw := range requests {
-				requestStep, _ := raw.(map[string]any)
-				wg.Add(1)
-				go func(j int, requestStep map[string]any) {
-					defer wg.Done()
-					response := doRequest(t, server.URL, file, sc, requestStep, subs)
-					statuses[j] = response.StatusCode
-					drainAndClose(t, response)
-				}(j, requestStep)
-			}
-			wg.Wait()
-			sort.Ints(statuses)
-			expected, _ := step["expectedStatuses"].([]any)
-			want := make([]int, 0, len(expected))
-			for _, status := range expected {
-				want = append(want, int(status.(float64)))
-			}
-			if !reflect.DeepEqual(statuses, want) {
-				t.Fatalf("step %d: concurrent statuses = %v, want %v", i, statuses, want)
-			}
+			runConcurrentStep(t, deps, step, i)
 		case "assertNotContains":
-			text := marshalCompact(t, savedBodies[nameOf(step["from"])])
-			for _, forbidden := range stringSlice(step["forbidden"]) {
-				if strings.Contains(text, forbidden) {
-					t.Fatalf("step %d: body contains forbidden %q", i, forbidden)
-				}
-			}
+			runAssertNotContainsStep(t, deps, step, i)
 		case "assertNotMatches":
-			text := marshalCompact(t, savedBodies[nameOf(step["from"])])
-			pattern, _ := step["pattern"].(string)
-			if regexp.MustCompile(`(?i)` + pattern).MatchString(text) {
-				t.Fatalf("step %d: body matches forbidden pattern %q", i, pattern)
-			}
+			runAssertNotMatchesStep(t, deps, step, i)
 		default:
 			t.Fatalf("step %d: unknown step type %q", i, kind)
 		}
+	}
+}
+
+func runRequestStep(t *testing.T, deps scenarioDeps, step map[string]any, index int) {
+	t.Helper()
+	response := doRequest(t, deps.serverURL, deps.file, deps.sc, step, deps.subs)
+	assertExpected(t, step, response, deps.savedBodies, deps.subs)
+	drainAndClose(t, response)
+}
+
+func runSaveLabStep(t *testing.T, deps scenarioDeps, step map[string]any, index int) {
+	t.Helper()
+	seeded, ok := parseScenarioLab(t, step["lab"], index)
+	if !ok {
+		return
+	}
+	if err := deps.labRepo.Save(labFromSeed(deps.subs, seeded)); err != nil {
+		t.Fatalf("step %d: save lab: %v", index, err)
+	}
+}
+
+func runExpectLabStep(t *testing.T, deps scenarioDeps, step map[string]any, index int) {
+	t.Helper()
+	labID := resolve(deps.subs, fmt.Sprint(step["labId"]))
+	lab, ok := deps.labRepo.FindByID(labID)
+	if !ok {
+		t.Fatalf("step %d: lab %s not found", index, labID)
+	}
+	want, _ := step["status"].(string)
+	if string(lab.Status) != want {
+		t.Fatalf("step %d: lab %s status = %q, want %q", index, labID, lab.Status, want)
+	}
+}
+
+func runConcurrentStep(t *testing.T, deps scenarioDeps, step map[string]any, index int) {
+	t.Helper()
+	requests, _ := step["requests"].([]any)
+	statuses := make([]int, len(requests))
+	var wg sync.WaitGroup
+	for j, raw := range requests {
+		requestStep, _ := raw.(map[string]any)
+		wg.Add(1)
+		go func(j int, requestStep map[string]any) {
+			defer wg.Done()
+			response := doRequest(t, deps.serverURL, deps.file, deps.sc, requestStep, deps.subs)
+			statuses[j] = response.StatusCode
+			drainAndClose(t, response)
+		}(j, requestStep)
+	}
+	wg.Wait()
+	sort.Ints(statuses)
+	expected, _ := step["expectedStatuses"].([]any)
+	want := make([]int, 0, len(expected))
+	for _, status := range expected {
+		want = append(want, int(status.(float64)))
+	}
+	if !reflect.DeepEqual(statuses, want) {
+		t.Fatalf("step %d: concurrent statuses = %v, want %v", index, statuses, want)
+	}
+}
+
+func runAssertNotContainsStep(t *testing.T, deps scenarioDeps, step map[string]any, index int) {
+	t.Helper()
+	text := marshalCompact(t, deps.savedBodies[nameOf(step["from"])])
+	for _, forbidden := range stringSlice(step["forbidden"]) {
+		if strings.Contains(text, forbidden) {
+			t.Fatalf("step %d: body contains forbidden %q", index, forbidden)
+		}
+	}
+}
+
+func runAssertNotMatchesStep(t *testing.T, deps scenarioDeps, step map[string]any, index int) {
+	t.Helper()
+	text := marshalCompact(t, deps.savedBodies[nameOf(step["from"])])
+	pattern, _ := step["pattern"].(string)
+	if regexp.MustCompile(`(?i)` + pattern).MatchString(text) {
+		t.Fatalf("step %d: body matches forbidden pattern %q", index, pattern)
+	}
+}
+
+// scenarioLabSeed is the lab shape used by scenario files.
+type scenarioLabSeed struct {
+	ID                 string `json:"id"`
+	ClassID            string `json:"classId"`
+	Status             string `json:"status"`
+	PendingReviews     int    `json:"pendingReviews"`
+	SubmissionDeadline string `json:"submissionDeadline"`
+}
+
+func parseScenarioLab(t *testing.T, raw any, index int) (scenarioLabSeed, bool) {
+	t.Helper()
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		t.Fatalf("step %d: marshal lab: %v", index, err)
+		return scenarioLabSeed{}, false
+	}
+	var seeded scenarioLabSeed
+	if err := json.Unmarshal(encoded, &seeded); err != nil {
+		t.Fatalf("step %d: parse lab: %v", index, err)
+		return scenarioLabSeed{}, false
+	}
+	return seeded, true
+}
+
+func labFromSeed(subs map[string]string, seeded scenarioLabSeed) Lab {
+	return Lab{
+		ID:                 resolve(subs, seeded.ID),
+		ClassID:            seeded.ClassID,
+		Status:             LabStatus(seeded.Status),
+		PendingReviews:     seeded.PendingReviews,
+		SubmissionDeadline: resolve(subs, seeded.SubmissionDeadline),
 	}
 }
 

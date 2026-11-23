@@ -81,6 +81,8 @@ async function runNodeSide() {
     return { status: response.status, elapsedMs: performance.now() - startedAt };
   };
 
+  // Warmup is deliberately sequential: each replay pays full request
+  // latency so the measured phase starts from a steady connection pool.
   for (let i = 0; i < warmup; i += 1) {
     const { status } = await post(taToken, `${labUUID(0)}/publish`, "warmup-key");
     if (status !== 200) throw new Error(`warmup returned ${status}`);
@@ -93,20 +95,19 @@ async function runNodeSide() {
     latencies.push(elapsedMs);
   };
 
-  const start = performance.now();
-  for (let round = 0; round < rounds; round += 1) {
-    for (let i = 1; i < labCount; i += 1) await labRepository.save(readyLab(labUUID(i), "class-a"));
-    for (let i = 1; i < labCount; i += 1) {
-      const key = `publish-key-${round}-${i}`;
-      let result = await post(taToken, `${labUUID(i)}/publish`, key);
-      record(result.status, 200, result.elapsedMs);
-      result = await post(taToken, `${labUUID(i)}/publish`, key);
-      record(result.status, 200, result.elapsedMs);
-      result = await post(taToken, `${foreignId}/publish`, `missing-${key}`);
-      record(result.status, 404, result.elapsedMs);
-      result = await post(studentToken, `${labUUID(i)}/publish`, `student-${key}`);
-      record(result.status, 403, result.elapsedMs);
-    }
+  const sequentialLabRequests = async (labId, round, i) => {
+    const key = `publish-key-${round}-${i}`;
+    let result = await post(taToken, `${labId}/publish`, key);
+    record(result.status, 200, result.elapsedMs);
+    result = await post(taToken, `${labId}/publish`, key);
+    record(result.status, 200, result.elapsedMs);
+    result = await post(taToken, `${foreignId}/publish`, `missing-${key}`);
+    record(result.status, 404, result.elapsedMs);
+    result = await post(studentToken, `${labId}/publish`, `student-${key}`);
+    record(result.status, 403, result.elapsedMs);
+  };
+
+  const concurrentWave = async (round) => {
     const fresh = labUUID(labCount + 1 + round);
     await labRepository.save(readyLab(fresh, "class-a"));
     const results = await Promise.all(
@@ -118,6 +119,21 @@ async function runNodeSide() {
       if (result.status !== 200 && result.status !== 409) errors += 1;
       latencies.push(result.elapsedMs);
     }
+  };
+
+  const start = performance.now();
+  // Rounds run sequentially by design: the measured phases are per-request
+  // latency, not aggregate throughput, so each round's work is awaited.
+  for (let round = 0; round < rounds; round += 1) {
+    await Promise.all(
+      Array.from({ length: labCount - 1 }, (_, i) =>
+        labRepository.save(readyLab(labUUID(i + 1), "class-a")),
+      ),
+    );
+    for (let i = 1; i < labCount; i += 1) {
+      await sequentialLabRequests(labUUID(i), round, i);
+    }
+    await concurrentWave(round);
   }
   const measuredMs = performance.now() - start;
   await application.close();
@@ -135,7 +151,7 @@ async function runNodeSide() {
       mean: sorted.reduce((sum, value) => sum + value, 0) / (sorted.length || 1),
       p50: sorted[Math.floor((sorted.length * 50) / 100)] ?? 0,
       p95: sorted[Math.floor((sorted.length * 95) / 100)] ?? 0,
-      max: sorted[sorted.length - 1] ?? 0,
+      max: sorted.at(-1) ?? 0,
     },
     throughputPerSecond: sorted.length / (measuredMs / 1000),
     measuredMs,

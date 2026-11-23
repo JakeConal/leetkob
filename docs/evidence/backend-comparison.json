@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-23T09:05:21.210Z",
-  "gitRevision": "d52700990aadb74b41b09fcd410ce24f45faa412",
+  "generatedAt": "2026-11-23T09:22:38.524Z",
+  "gitRevision": "4713ac6c0b9b48674b8a6d257078178c4b15eb89",
   "hardware": {
     "platform": "linux x64",
     "cpuModel": "11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz",
@@ -28,15 +28,15 @@
       "concurrency": 50,
       "labs": 200,
       "latencyMs": {
-        "mean": 4.9639100665178555,
-        "p50": 0.849065000000337,
-        "p95": 27.106549000000086,
-        "max": 101.04536399999961
+        "mean": 10.784652221428564,
+        "p50": 1.670361999999841,
+        "p95": 69.84011699999974,
+        "max": 175.98146600000018
       },
-      "throughputPerSecond": 1047.0739796585494,
-      "measuredMs": 4278.589753,
-      "startupMs": 175.07671400000004,
-      "memoryRssBytes": 179064832
+      "throughputPerSecond": 493.35699649687456,
+      "measuredMs": 9080.64552,
+      "startupMs": 223.21257600000035,
+      "memoryRssBytes": 170131456
     },
     {
       "concurrency": 50,
@@ -44,27 +44,27 @@
       "implementation": "go-compatpub",
       "labs": 200,
       "latencyMs": {
-        "max": 60.236,
-        "mean": 1.825849553571429,
-        "p50": 0.343,
-        "p95": 8.811
+        "max": 61.172,
+        "mean": 2.429655580357141,
+        "p50": 0.371,
+        "p95": 13.329
       },
-      "measuredMs": 1566.687,
+      "measuredMs": 1843.005,
       "requests": 4680,
       "rounds": 5,
-      "startupMs": 21.524,
-      "throughputPerSecond": 2859.535896596333,
+      "startupMs": 21.601,
+      "throughputPerSecond": 2430.8123364845987,
       "warmup": 200
     }
   ],
   "builds": [
     {
       "label": "npm run build --workspace @leetkob/api (warm cache)",
-      "milliseconds": 2057.613305
+      "milliseconds": 2762.5943210000005
     },
     {
       "label": "go build ./... (warm cache)",
-      "milliseconds": 640.7397380000002
+      "milliseconds": 947.9744470000023
     }
   ],
   "artifacts": {

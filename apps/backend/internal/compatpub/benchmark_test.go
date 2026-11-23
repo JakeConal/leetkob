@@ -64,7 +64,7 @@ func TestPublicationBenchmark(t *testing.T) {
 		t.Fatalf("issue student token: %v", err)
 	}
 
-	post := func(token string, path string, key string) (int, time.Duration) {
+	post := func(token, path, key string) (int, time.Duration) {
 		request, requestErr := http.NewRequest(http.MethodPost, server.URL+"/labs/"+path, nil)
 		if requestErr != nil {
 			t.Fatalf("build request: %v", requestErr)
@@ -82,16 +82,12 @@ func TestPublicationBenchmark(t *testing.T) {
 	}
 
 	// Warmup: replays on an already-published lab.
-	for i := 0; i < warmup; i++ {
-		if status, _ := post(taToken, labUUID(0)+"/publish", "warmup-key"); status != 200 {
-			t.Fatalf("warmup request returned %d", status)
-		}
-	}
+	runWarmup(t, post, taToken, warmup)
 
 	var mu sync.Mutex
 	latencies := make([]float64, 0, rounds*(labCount*4+concurrency*2))
 	errors := 0
-	record := func(status int, want int, elapsed time.Duration) {
+	record := func(status, want int, elapsed time.Duration) {
 		mu.Lock()
 		defer mu.Unlock()
 		if status != want {
@@ -101,50 +97,13 @@ func TestPublicationBenchmark(t *testing.T) {
 		latencies = append(latencies, float64(elapsed.Microseconds())/1000.0)
 	}
 
+	bench := benchmarkState{labRepo: labRepo, labCount: labCount, taToken: taToken, studentToken: studentToken, foreignID: foreignID, record: record, post: post}
+
 	start := time.Now()
 	for round := 0; round < rounds; round++ {
-		// Reset the round's labs to ready so every round measures the same
-		// publication path against fresh state.
-		for i := 1; i < labCount; i++ {
-			if err := labRepo.Save(readyBenchLab(labUUID(i), "class-a")); err != nil {
-				t.Fatalf("reset lab: %v", err)
-			}
-		}
-		// Sequential phase: publication, replay, concealed 404, forbidden.
-		for i := 1; i < labCount; i++ {
-			labID := labUUID(i)
-			key := fmt.Sprintf("publish-key-%d-%d", round, i)
-			status, elapsed := post(taToken, labID+"/publish", key)
-			record(status, 200, elapsed)
-			status, elapsed = post(taToken, labID+"/publish", key)
-			record(status, 200, elapsed)
-			status, elapsed = post(taToken, foreignID+"/publish", "missing-"+key)
-			record(status, 404, elapsed)
-			status, elapsed = post(studentToken, labID+"/publish", "student-"+key)
-			record(status, 403, elapsed)
-		}
-		// Concurrent phase: different keys race on one fresh lab.
-		fresh := labUUID(labCount + 1 + round)
-		if err := labRepo.Save(readyBenchLab(fresh, "class-a")); err != nil {
-			t.Fatalf("save fresh lab: %v", err)
-		}
-		var wg sync.WaitGroup
-		for i := 0; i < concurrency*2; i++ {
-			key := fmt.Sprintf("concurrent-%d-%d", round, i)
-			wg.Add(1)
-			go func(key string) {
-				defer wg.Done()
-				status, elapsed := post(taToken, fresh+"/publish", key)
-				if status != 200 && status != 409 {
-					mu.Lock()
-					errors++
-					mu.Unlock()
-					return
-				}
-				record(status, status, elapsed)
-			}(key)
-		}
-		wg.Wait()
+		resetRoundLabs(t, bench, labCount, round)
+		runSequentialPhase(t, bench, labCount, round)
+		runConcurrentWave(t, bench, concurrency, round, &mu, &errors)
 	}
 	elapsedTotal := time.Since(start)
 
@@ -173,6 +132,84 @@ func TestPublicationBenchmark(t *testing.T) {
 		t.Fatalf("marshal metrics: %v", err)
 	}
 	fmt.Printf("BENCHJSON:%s\n", encoded)
+}
+
+// benchmarkState carries the phase helpers' shared wiring.
+type benchmarkState struct {
+	labRepo      *InMemoryLabRepository
+	labCount     int
+	taToken      string
+	studentToken string
+	foreignID    string
+	post         func(token, path, key string) (int, time.Duration)
+	record       func(status, want int, elapsed time.Duration)
+}
+
+// runWarmup replays on the already-published lab 0 so connection and
+// handler setup costs stay out of the measured phase.
+func runWarmup(t *testing.T, post func(token, path, key string) (int, time.Duration), taToken string, warmup int) {
+	t.Helper()
+	for i := 0; i < warmup; i++ {
+		if status, _ := post(taToken, labUUID(0)+"/publish", "warmup-key"); status != 200 {
+			t.Fatalf("warmup request returned %d", status)
+		}
+	}
+}
+
+// resetRoundLabs returns the round's labs to ready so every round
+// measures the same publication path against fresh state.
+func resetRoundLabs(t *testing.T, bench benchmarkState, labCount, round int) {
+	t.Helper()
+	for i := 1; i < labCount; i++ {
+		if err := bench.labRepo.Save(readyBenchLab(labUUID(i), "class-a")); err != nil {
+			t.Fatalf("round %d: reset lab: %v", round, err)
+		}
+	}
+}
+
+// runSequentialPhase measures publication, same-key replay, concealed
+// cross-class 404 and forbidden 403 for each lab.
+func runSequentialPhase(t *testing.T, bench benchmarkState, labCount, round int) {
+	t.Helper()
+	for i := 1; i < labCount; i++ {
+		labID := labUUID(i)
+		key := fmt.Sprintf("publish-key-%d-%d", round, i)
+		status, elapsed := bench.post(bench.taToken, labID+"/publish", key)
+		bench.record(status, 200, elapsed)
+		status, elapsed = bench.post(bench.taToken, labID+"/publish", key)
+		bench.record(status, 200, elapsed)
+		status, elapsed = bench.post(bench.taToken, bench.foreignID+"/publish", "missing-"+key)
+		bench.record(status, 404, elapsed)
+		status, elapsed = bench.post(bench.studentToken, labID+"/publish", "student-"+key)
+		bench.record(status, 403, elapsed)
+	}
+}
+
+// runConcurrentWave races different idempotency keys on one fresh lab;
+// exactly one request can win the single publication.
+func runConcurrentWave(t *testing.T, bench benchmarkState, concurrency, round int, mu *sync.Mutex, errors *int) {
+	t.Helper()
+	fresh := labUUID(bench.labCount + 1 + round)
+	if err := bench.labRepo.Save(readyBenchLab(fresh, "class-a")); err != nil {
+		t.Fatalf("round %d: save fresh lab: %v", round, err)
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < concurrency*2; i++ {
+		key := fmt.Sprintf("concurrent-%d-%d", round, i)
+		wg.Add(1)
+		go func(key string) {
+			defer wg.Done()
+			status, elapsed := bench.post(bench.taToken, fresh+"/publish", key)
+			if status != 200 && status != 409 {
+				mu.Lock()
+				*errors++
+				mu.Unlock()
+				return
+			}
+			bench.record(status, status, elapsed)
+		}(key)
+	}
+	wg.Wait()
 }
 
 func readyBenchLab(id string, classID string) Lab {

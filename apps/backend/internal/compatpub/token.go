@@ -89,7 +89,7 @@ func validClaims(claims map[string]any, nowSeconds int64) (*Identity, bool) {
 	return &Identity{Subject: sub, Role: role, ClassIDs: classIDs}, true
 }
 
-func signatureFor(payloadSegment string, secret string) []byte {
+func signatureFor(payloadSegment, secret string) []byte {
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(payloadSegment))
 	return mac.Sum(nil)
@@ -103,31 +103,44 @@ func IssueToken(identity Identity, secret string, expiresAtEpochSeconds int64) (
 	if !hasStrongEnoughSecret(secret) {
 		return "", fmt.Errorf("compatpub: AUTH_TOKEN_SECRET must contain at least %d UTF-8 bytes", secretMinimumBytes)
 	}
+	claims := tokenClaims(identity, expiresAtEpochSeconds)
+	if _, ok := validClaims(claims, 0); !ok {
+		return "", fmt.Errorf("compatpub: cannot issue a token for invalid claims")
+	}
+	payloadSegment, err := encodeSegment(claims)
+	if err != nil {
+		return "", err
+	}
+	signatureSegment := base64.RawURLEncoding.EncodeToString(signatureFor(payloadSegment, secret))
+	return payloadSegment + "." + signatureSegment, nil
+}
+
+// tokenClaims builds the signed claim set with JSON-compatible types.
+func tokenClaims(identity Identity, expiresAtEpochSeconds int64) map[string]any {
 	classIDs := make([]any, 0, len(identity.ClassIDs))
 	for _, classID := range identity.ClassIDs {
 		classIDs = append(classIDs, classID)
 	}
-	claims := map[string]any{
+	return map[string]any{
 		"sub":      identity.Subject,
 		"role":     string(identity.Role),
 		"classIds": classIDs,
 		"exp":      float64(expiresAtEpochSeconds),
 	}
-	if _, ok := validClaims(claims, 0); !ok {
-		return "", fmt.Errorf("compatpub: cannot issue a token for invalid claims")
-	}
+}
+
+// encodeSegment marshals the claims to the base64url payload segment.
+func encodeSegment(claims map[string]any) (string, error) {
 	payload, err := json.Marshal(claims)
 	if err != nil {
 		return "", fmt.Errorf("compatpub: marshal claims: %w", err)
 	}
-	payloadSegment := base64.RawURLEncoding.EncodeToString(payload)
-	signatureSegment := base64.RawURLEncoding.EncodeToString(signatureFor(payloadSegment, secret))
-	return payloadSegment + "." + signatureSegment, nil
+	return base64.RawURLEncoding.EncodeToString(payload), nil
 }
 
 // VerifyAuthorizationHeader mirrors the PA#2 Node verifier. Any malformed,
 // tampered, structurally invalid or expired header yields no identity.
-func VerifyAuthorizationHeader(authorization string, secret string, nowSeconds int64) (*Identity, bool) {
+func VerifyAuthorizationHeader(authorization, secret string, nowSeconds int64) (*Identity, bool) {
 	if authorization == "" || len(authorization) > maxAuthorizationBytes || !hasStrongEnoughSecret(secret) {
 		return nil, false
 	}
