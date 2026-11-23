@@ -312,7 +312,7 @@ func assertViolationAt(t *testing.T, source string, got Decision, line int) {
 		t.Fatalf("verdict = %s (%s), want violation", got.Verdict, got.Reason)
 	}
 	text := evidenceText(t, got, line)
-	want, ok := originalLine(source, line)
+	want, ok := fixtureLine(source, line)
 	if !ok || text != want {
 		t.Fatalf("evidence text = %q, want original line %q", text, want)
 	}
@@ -350,7 +350,7 @@ func lineContaining(t *testing.T, source, marker string) int {
 	return 0
 }
 
-func originalLine(source string, line int) (string, bool) {
+func fixtureLine(source string, line int) (string, bool) {
 	parts := strings.Split(strings.ReplaceAll(source, "\r\n", "\n"), "\n")
 	if line < 1 || line > len(parts) {
 		return "", false
