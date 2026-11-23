@@ -33,6 +33,9 @@
 - Never trust caller-supplied role headers; verify signed identity claims. See `AI-LOG.md` decision D2.
 - Never publish a lab before its submission deadline. See `AI-LOG.md` decision D11.
 - Never publish a lab while any review remains pending.
+- Never fabricate evaluation or deployment evidence: a provider request ID, token/cost record, dev-run output, CI run, or deployment URL that did not actually happen. See `AI-LOG.md` decision D13 and issue #38.
+- Never compile or parse untrusted source outside the qualified isolation boundary, and never place a live model key where student code can reach it through the environment, files, or `#include`. See `AI-LOG.md` decision D1 and the PA#3 design decisions 6-7.
+- Never weaken or skip a sandbox control, attack submission, required check, or branch protection to make a check pass.
 
 ## Permissions
 

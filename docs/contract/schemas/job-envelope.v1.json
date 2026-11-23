@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leetkob.example/schemas/job-envelope.v1.json",
+  "title": "LeeTKOB persisted job envelope, version 1",
+  "description": "Internal durable queue envelope leased by a separate worker. Results echo the revision tuple and attempt fence; a stale fence or superseded revision tuple cannot commit. This is not a public HTTP route and carries no credentials.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "jobId",
+    "attempt",
+    "kind",
+    "submissionId",
+    "labId",
+    "generation",
+    "testRevision",
+    "constraintRevision",
+    "sourceSha256"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "jobId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonically increasing lease-attempt fence; a result carrying a stale attempt cannot commit."
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["judge", "check"],
+      "description": "judge compiles/executes and stores one verdict set; check runs hard rules and guarded semantic calls for current counted AC work."
+    },
+    "submissionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "labId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Counted-selection generation at enqueue time; a superseded generation cannot restore old findings."
+    },
+    "testRevision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "constraintRevision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sourceSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lowercase hex SHA-256 of the submitted source bytes."
+    }
+  }
+}

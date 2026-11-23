@@ -1,0 +1,680 @@
+{
+  "title": "LeeTKOB publication compatibility scenarios",
+  "description": "Seed-and-expectation scenarios for the PA#2 publication contract, executed unchanged against the NestJS PA#2 application and the Go compatibility composition (apps/backend/internal/compatpub). Runners supply identical fixed clocks, synthetic identity tokens issued from the shared test secret, and in-memory adapters. Mirrors apps/api/test/contract/publish-lab.contract.test.ts; that suite remains the authoritative PA#2 assertion set. String placeholders: {owned}, {pending}, {foreign}, {absent}, {open}, {exact} resolve to lab UUIDs; {instant} to the fixed clock time; {passed} and {future} to the seeded deadlines.",
+  "secret": "contract-test-secret-that-is-at-least-32-bytes",
+  "nowSeconds": 1800000000,
+  "instant": "2026-10-24T01:02:03.000Z",
+  "identities": {
+    "ta": { "subject": "ta-1", "role": "ta", "classIds": ["class-a"] },
+    "student": { "subject": "student-1", "role": "student", "classIds": ["class-a"] }
+  },
+  "labs": {
+    "owned": "0d0f366c-f9cf-45e8-bbf2-ab1b8e370ec8",
+    "pending": "f6729f3d-d07e-497d-83fb-86a85810d84d",
+    "foreign": "39cd4be5-103f-480c-a664-79b61bafabfa",
+    "absent": "2a6c5486-63c7-48a6-9b30-9ab3a6f67c83",
+    "open": "99d8b6db-4897-40a1-a153-b334f703612b",
+    "exact": "c74d9158-c760-4a58-b1ca-402959d09469"
+  },
+  "deadlines": { "passed": "2026-10-23T22:00:00.000Z", "future": "2026-10-25T22:00:00.000Z" },
+  "scenarios": [
+    {
+      "name": "successful-publication-returns-exact-safe-representation",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "publish-request-0001",
+          "expected": {
+            "status": 200,
+            "contentType": "application/json",
+            "body": {
+              "labId": "{owned}",
+              "status": "published",
+              "publishedAt": "{instant}",
+              "publishedBy": "ta-1"
+            }
+          }
+        },
+        { "type": "expectLab", "labId": "{owned}", "status": "published" }
+      ]
+    },
+    {
+      "name": "missing-malformed-tampered-expired-tokens-authenticate-failure",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "tokenKind": "absent",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "token-case-0001",
+          "expected": {
+            "status": 401,
+            "body": {
+              "type": "https://leetkob.example/problems/authentication-required",
+              "title": "Authentication required",
+              "status": 401,
+              "detail": "Provide a valid, unexpired bearer token.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "tokenKind": "malformed",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "token-case-0002",
+          "expected": {
+            "status": 401,
+            "body": {
+              "type": "https://leetkob.example/problems/authentication-required",
+              "title": "Authentication required",
+              "status": 401,
+              "detail": "Provide a valid, unexpired bearer token.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "tokenKind": "tampered",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "token-case-0003",
+          "expected": {
+            "status": 401,
+            "body": {
+              "type": "https://leetkob.example/problems/authentication-required",
+              "title": "Authentication required",
+              "status": 401,
+              "detail": "Provide a valid, unexpired bearer token.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "tokenKind": "expired",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "token-case-0004",
+          "expected": {
+            "status": 401,
+            "body": {
+              "type": "https://leetkob.example/problems/authentication-required",
+              "title": "Authentication required",
+              "status": 401,
+              "detail": "Provide a valid, unexpired bearer token.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "invalid-uuid-key-body-and-query-return-request-problems",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/not-a-uuid/publish",
+          "idempotencyKey": "invalid-request-0001",
+          "expected": {
+            "status": 400,
+            "body": {
+              "type": "https://leetkob.example/problems/invalid-request",
+              "title": "Invalid request",
+              "status": 400,
+              "detail": "Use a UUID labId, an 8-128 character visible-ASCII Idempotency-Key, and an empty body.",
+              "instance": "/labs/not-a-uuid/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "",
+          "expected": {
+            "status": 400,
+            "body": {
+              "type": "https://leetkob.example/problems/invalid-request",
+              "title": "Invalid request",
+              "status": 400,
+              "detail": "Use a UUID labId, an 8-128 character visible-ASCII Idempotency-Key, and an empty body.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "short",
+          "expected": {
+            "status": 400,
+            "body": {
+              "type": "https://leetkob.example/problems/invalid-request",
+              "title": "Invalid request",
+              "status": 400,
+              "detail": "Use a UUID labId, an 8-128 character visible-ASCII Idempotency-Key, and an empty body.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "invalid-request-0004",
+          "body": "{}",
+          "expected": {
+            "status": 400,
+            "body": {
+              "type": "https://leetkob.example/problems/invalid-request",
+              "title": "Invalid request",
+              "status": 400,
+              "detail": "Use a UUID labId, an 8-128 character visible-ASCII Idempotency-Key, and an empty body.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish?force=true",
+          "idempotencyKey": "invalid-request-0005",
+          "expected": {
+            "status": 404,
+            "body": {
+              "type": "https://leetkob.example/problems/route-not-found",
+              "title": "Route not found",
+              "status": 404,
+              "detail": "No route matches this request.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "GET",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "invalid-request-0006",
+          "expected": {
+            "status": 404,
+            "body": {
+              "type": "https://leetkob.example/problems/route-not-found",
+              "title": "Route not found",
+              "status": 404,
+              "detail": "No route matches this request.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "non-ta-rejection-replays-for-same-subject",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "student",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "student-request-0001",
+          "saveBodyAs": "first",
+          "expected": {
+            "status": 403,
+            "body": {
+              "type": "https://leetkob.example/problems/ta-role-required",
+              "title": "TA role required",
+              "status": 403,
+              "detail": "Only a teaching assistant may publish a lab.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identityRef": "promoted",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "student-request-0001",
+          "expectedBodyEqualTo": "first"
+        },
+        { "type": "expectLab", "labId": "{owned}", "status": "ready" }
+      ],
+      "identities": {
+        "promoted": { "subject": "student-1", "role": "ta", "classIds": ["class-a"] }
+      }
+    },
+    {
+      "name": "absent-and-cross-class-labs-are-indistinguishable",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        },
+        {
+          "id": "{foreign}",
+          "classId": "class-b",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{absent}/publish",
+          "idempotencyKey": "absent-request-0001",
+          "saveBodyAs": "absentBody",
+          "expected": {
+            "status": 404,
+            "body": {
+              "type": "https://leetkob.example/problems/lab-not-found",
+              "title": "Lab not found",
+              "status": 404,
+              "detail": "No lab is available to this teaching assistant at the requested identifier.",
+              "instance": "/labs/{absent}/publish"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{foreign}/publish",
+          "idempotencyKey": "foreign-request-0001",
+          "saveBodyAs": "foreignBody",
+          "expected": {
+            "status": 404,
+            "body": {
+              "type": "https://leetkob.example/problems/lab-not-found",
+              "title": "Lab not found",
+              "status": 404,
+              "detail": "No lab is available to this teaching assistant at the requested identifier.",
+              "instance": "/labs/{foreign}/publish"
+            }
+          }
+        },
+        { "type": "assertNotContains", "from": "foreignBody", "forbidden": ["class-b"] }
+      ]
+    },
+    {
+      "name": "pending-review-rejection-replays-after-state-changes",
+      "labs": [
+        {
+          "id": "{pending}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 2,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{pending}/publish",
+          "idempotencyKey": "pending-request-0001",
+          "saveBodyAs": "first",
+          "expected": {
+            "status": 409,
+            "body": {
+              "type": "https://leetkob.example/problems/reviews-pending",
+              "title": "Reviews pending",
+              "status": 409,
+              "detail": "All required reviews must be resolved before marks can be published.",
+              "instance": "/labs/{pending}/publish",
+              "pendingReviews": 2
+            }
+          }
+        },
+        { "type": "expectLab", "labId": "{pending}", "status": "ready" },
+        {
+          "type": "saveLab",
+          "lab": {
+            "id": "{pending}",
+            "classId": "class-a",
+            "status": "ready",
+            "pendingReviews": 0,
+            "submissionDeadline": "{passed}"
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{pending}/publish",
+          "idempotencyKey": "pending-request-0001",
+          "expectedBodyEqualTo": "first"
+        },
+        { "type": "expectLab", "labId": "{pending}", "status": "ready" }
+      ]
+    },
+    {
+      "name": "deadline-gate-wins-before-reviews-and-replays-exactly",
+      "labs": [
+        {
+          "id": "{open}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 2,
+          "submissionDeadline": "{future}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{open}/publish",
+          "idempotencyKey": "deadline-request-0001",
+          "saveBodyAs": "first",
+          "expected": {
+            "status": 409,
+            "body": {
+              "type": "https://leetkob.example/problems/lab-still-open",
+              "title": "Submissions still open",
+              "status": 409,
+              "detail": "Marks cannot be published before the submission deadline.",
+              "instance": "/labs/{open}/publish",
+              "submissionDeadline": "{future}"
+            }
+          }
+        },
+        { "type": "expectLab", "labId": "{open}", "status": "ready" },
+        {
+          "type": "saveLab",
+          "lab": {
+            "id": "{open}",
+            "classId": "class-a",
+            "status": "ready",
+            "pendingReviews": 0,
+            "submissionDeadline": "{future}"
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{open}/publish",
+          "idempotencyKey": "deadline-request-0001",
+          "expectedBodyEqualTo": "first"
+        },
+        { "type": "expectLab", "labId": "{open}", "status": "ready" }
+      ]
+    },
+    {
+      "name": "publication-succeeds-when-server-time-equals-the-deadline",
+      "labs": [
+        {
+          "id": "{exact}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{instant}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{exact}/publish",
+          "idempotencyKey": "exact-deadline-0001",
+          "expected": {
+            "status": 200,
+            "contentType": "application/json",
+            "body": {
+              "labId": "{exact}",
+              "status": "published",
+              "publishedAt": "{instant}",
+              "publishedBy": "ta-1"
+            }
+          }
+        },
+        { "type": "expectLab", "labId": "{exact}", "status": "published" }
+      ]
+    },
+    {
+      "name": "same-key-success-replays-different-key-gets-original-metadata",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "success-request-0001",
+          "saveBodyAs": "first",
+          "expected": {
+            "status": 200,
+            "contentType": "application/json",
+            "body": {
+              "labId": "{owned}",
+              "status": "published",
+              "publishedAt": "{instant}",
+              "publishedBy": "ta-1"
+            }
+          }
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "success-request-0001",
+          "expectedBodyEqualTo": "first"
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "success-request-0002",
+          "expected": {
+            "status": 409,
+            "body": {
+              "type": "https://leetkob.example/problems/lab-already-published",
+              "title": "Lab already published",
+              "status": 409,
+              "detail": "The lab was already published using a different idempotency key.",
+              "instance": "/labs/{owned}/publish",
+              "labId": "{owned}",
+              "publishedAt": "{instant}",
+              "publishedBy": "ta-1"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "concurrent-different-keys-result-in-one-publication",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "concurrent",
+          "requests": [
+            {
+              "identity": "ta",
+              "method": "POST",
+              "path": "/labs/{owned}/publish",
+              "idempotencyKey": "concurrent-request-0001"
+            },
+            {
+              "identity": "ta",
+              "method": "POST",
+              "path": "/labs/{owned}/publish",
+              "idempotencyKey": "concurrent-request-0002"
+            }
+          ],
+          "expectedStatuses": [200, 409]
+        }
+      ]
+    },
+    {
+      "name": "persistence-failure-returns-generic-problem-without-mutation",
+      "failLabSave": true,
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "failing-request-0001",
+          "saveBodyAs": "body",
+          "expected": {
+            "status": 500,
+            "body": {
+              "type": "https://leetkob.example/problems/internal-error",
+              "title": "Internal server error",
+              "status": 500,
+              "detail": "The request could not be completed.",
+              "instance": "/labs/{owned}/publish"
+            }
+          }
+        },
+        { "type": "assertNotContains", "from": "body", "forbidden": ["password"] },
+        { "type": "expectLab", "labId": "{owned}", "status": "ready" }
+      ]
+    },
+    {
+      "name": "success-and-problem-bodies-contain-no-protected-data",
+      "labs": [
+        {
+          "id": "{owned}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 0,
+          "submissionDeadline": "{passed}"
+        },
+        {
+          "id": "{pending}",
+          "classId": "class-a",
+          "status": "ready",
+          "pendingReviews": 2,
+          "submissionDeadline": "{passed}"
+        }
+      ],
+      "steps": [
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{owned}/publish",
+          "idempotencyKey": "publish-request-0001",
+          "saveBodyAs": "successBody"
+        },
+        {
+          "type": "request",
+          "identity": "ta",
+          "method": "POST",
+          "path": "/labs/{pending}/publish",
+          "idempotencyKey": "privacy-request-0001",
+          "saveBodyAs": "problemBody"
+        },
+        {
+          "type": "assertNotMatches",
+          "from": "successBody",
+          "pattern": "studentId|sourceCode|modelApiKey|reviewEvidence"
+        },
+        {
+          "type": "assertNotMatches",
+          "from": "problemBody",
+          "pattern": "studentId|sourceCode|modelApiKey|reviewEvidence"
+        },
+        {
+          "type": "assertNotContains",
+          "from": "successBody",
+          "forbidden": ["contract-test-secret-that-is-at-least-32-bytes"]
+        },
+        {
+          "type": "assertNotContains",
+          "from": "problemBody",
+          "forbidden": ["contract-test-secret-that-is-at-least-32-bytes"]
+        }
+      ]
+    }
+  ]
+}

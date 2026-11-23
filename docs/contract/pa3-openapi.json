@@ -1,0 +1,1323 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LeeTKOB PA#3 API",
+    "version": "1.0.0",
+    "summary": "Assessment-account sessions, TA lab authoring, student submissions, judging results and the private TA review queue for the PA#3 checkpoint.",
+    "description": "Machine-readable publication of the approved `docs/contract/pa3-api.md` draft (owner approval 2026-11-23). The route set is the PA#3 subset only: registration, refresh JWTs, CSV import, grades, appeals and production Publish are later-milestone work and are intentionally absent. All errors are RFC 9457 problem objects from the `https://leetkob.example/problems/` namespace; exact bodies are pinned by `docs/contract/fixtures/pa3-problems.json`. The PA#2 publication contract (`/labs/{labId}/publish`) is unchanged and is never registered against production storage."
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [
+    {
+      "url": "/",
+      "description": "Same-origin deployment. Browser clients call these routes through the Next.js proxy; direct API clients use the same cookie/CSRF contract."
+    }
+  ],
+  "security": [
+    {
+      "sessionCookie": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "sessions"
+    },
+    {
+      "name": "classes"
+    },
+    {
+      "name": "labs"
+    },
+    {
+      "name": "submissions"
+    },
+    {
+      "name": "reviews"
+    }
+  ],
+  "paths": {
+    "/v2/auth/login": {
+      "post": {
+        "tags": ["sessions"],
+        "summary": "Sign in with a synthetic assessment account",
+        "operationId": "login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated. Sets the opaque HttpOnly session cookie and returns the CSRF token.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "`leetkob_session=<opaque>; HttpOnly; SameSite=Lax; Path=/` plus `Secure` on deployed HTTPS; host-only.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v2/auth/me": {
+      "get": {
+        "tags": ["sessions"],
+        "summary": "Read the current user and authorized classes",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "Current user with class memberships from server-owned state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          }
+        }
+      }
+    },
+    "/v2/auth/logout": {
+      "post": {
+        "tags": ["sessions"],
+        "summary": "Revoke the current session",
+        "operationId": "logout",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session revoked; the cookie is cleared."
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/RoleRequired"
+          }
+        }
+      }
+    },
+    "/v2/classes": {
+      "get": {
+        "tags": ["classes"],
+        "summary": "List current class memberships",
+        "operationId": "listClasses",
+        "responses": {
+          "200": {
+            "description": "Classes the caller currently belongs to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items", "nextCursor"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ClassSummary"
+                      }
+                    },
+                    "nextCursor": {
+                      "$ref": "#/components/schemas/Cursor"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          }
+        }
+      }
+    },
+    "/v2/classes/{classId}/labs": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ClassId"
+        }
+      ],
+      "get": {
+        "tags": ["labs"],
+        "summary": "List safe labs of one class",
+        "operationId": "listLabs",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated safe labs of the caller's class.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items", "nextCursor"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LabSummary"
+                      }
+                    },
+                    "nextCursor": {
+                      "$ref": "#/components/schemas/Cursor"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          }
+        }
+      },
+      "post": {
+        "tags": ["labs"],
+        "summary": "Create a lab as the assigned TA",
+        "operationId": "createLab",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lab created atomically with its tests; revision is 1. No partial lab exists on failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lab"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/RoleRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          }
+        }
+      }
+    },
+    "/v2/labs/{labId}": {
+      "get": {
+        "tags": ["labs"],
+        "summary": "Read one lab with sample tests",
+        "operationId": "getLab",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LabId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe lab plus sample tests. Hidden test contents and checker findings are never included.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          }
+        }
+      }
+    },
+    "/v2/labs/{labId}/submissions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/LabId"
+        }
+      ],
+      "get": {
+        "tags": ["submissions"],
+        "summary": "List safe submissions of one lab",
+        "operationId": "listSubmissions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated safe submissions visible to the caller: a student sees only their own; the assigned TA sees their class's.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items", "nextCursor"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Submission"
+                      }
+                    },
+                    "nextCursor": {
+                      "$ref": "#/components/schemas/Cursor"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          }
+        }
+      },
+      "post": {
+        "tags": ["submissions"],
+        "summary": "Submit C++ source for judging",
+        "operationId": "createSubmission",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["source"],
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "contentEncoding": "utf-8",
+                    "minLength": 1,
+                    "maxLength": 65536,
+                    "description": "C++17 source bytes counted after UTF-8 decoding."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted after durable commit of source, submission, counted selection, queue intent and replay result. The full bounded request must have arrived with `opensAt <= receivedAt < deadline`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionAccept"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/RoleRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          }
+        }
+      }
+    },
+    "/v2/submissions/{submissionId}": {
+      "get": {
+        "tags": ["submissions"],
+        "summary": "Read one own submission and judge state",
+        "operationId": "getSubmission",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SubmissionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe submission. `judge` is absent until judged. No hidden I/O, checker verdict, evidence, provisional deduction or mark is ever included.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Submission"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          }
+        }
+      }
+    },
+    "/v2/labs/{labId}/reviews": {
+      "get": {
+        "tags": ["reviews"],
+        "summary": "Read the assigned TA's review queue",
+        "operationId": "listReviews",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LabId"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private findings queue with stable pass sampling. `processingPending` is true while judging/checking is incomplete; `reviewPending` counts unresolved obligations. Queue reads never redraw the sample.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items", "nextCursor", "processingPending", "reviewPending"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Finding"
+                      }
+                    },
+                    "nextCursor": {
+                      "$ref": "#/components/schemas/Cursor"
+                    },
+                    "processingPending": {
+                      "type": "boolean"
+                    },
+                    "reviewPending": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          }
+        }
+      }
+    },
+    "/v2/labs/{labId}/reviews/{findingId}/decision": {
+      "post": {
+        "tags": ["reviews"],
+        "summary": "Record a TA decision on one finding",
+        "operationId": "decideFinding",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LabId"
+          },
+          {
+            "$ref": "#/components/parameters/FindingId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Decision stored with append-only audit actor/time and a new finding revision. Checker provenance is never overwritten. No action publishes marks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Finding"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/RoleRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "leetkob_session",
+        "description": "Opaque server-generated session token; only a digest is stored server-side. Expires after eight hours; revoked on logout. Mutations additionally require the X-CSRF-Token header."
+      }
+    },
+    "parameters": {
+      "ClassId": {
+        "name": "classId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "LabId": {
+        "name": "labId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "SubmissionId": {
+        "name": "submissionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "FindingId": {
+        "name": "findingId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "description": "Page size 1-100; default 50.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "description": "Opaque pagination cursor from a previous `nextCursor`. Not interpreted by clients.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "8-128 visible ASCII characters; scoped to actor/operation/resource with a request fingerprint. Same key/content replays the original result; different content returns 409 conflict.",
+        "schema": {
+          "type": "string",
+          "pattern": "^[!-~]{8,128}$"
+        }
+      },
+      "CsrfToken": {
+        "name": "X-CSRF-Token",
+        "in": "header",
+        "required": true,
+        "description": "CSRF proof bound to the session; required on every authenticated mutation. Requests whose Origin differs from the configured web origin are rejected.",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "responses": {
+      "InvalidRequest": {
+        "description": "Malformed body, invalid field bounds, unknown members, trailing JSON, invalid UUID or invalid idempotency key.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "AuthenticationRequired": {
+        "description": "Missing, malformed, expired or revoked session; generic on login.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "RoleRequired": {
+        "description": "Wrong role for the operation, or an authenticated mutation whose CSRF proof/Origin is not accepted.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "ResourceNotFound": {
+        "description": "Route, or resource absent/inaccessible: an unknown ID and another class's lab, source, submission or queue are deliberately indistinguishable.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflict with current state: idempotency content mismatch, closed submission window, or stale revision. Exact extensions are pinned in the fixtures.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "Bounded body exceeded the request size limit.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Login throttling exceeded; carries Retry-After.",
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Unexpected failure; fixed generic body.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Uuid": {
+        "type": "string",
+        "format": "uuid",
+        "description": "UUID versions 1-5, case-insensitive."
+      },
+      "Cursor": {
+        "type": ["string", "null"],
+        "description": "Opaque cursor for the next page; null when the listing is complete."
+      },
+      "Role": {
+        "type": "string",
+        "enum": ["admin", "ta", "student"]
+      },
+      "User": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName", "role"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Synthetic assessment account address."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      },
+      "UserSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["user", "csrfToken", "expiresAt"],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "csrfToken": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Per-session CSRF proof for authenticated mutations."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC with milliseconds; eight hours after login."
+          }
+        }
+      },
+      "CurrentUser": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["user", "classes"],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassSummary"
+            },
+            "description": "Current memberships from server-owned state, not caller claims."
+          }
+        }
+      },
+      "ClassSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        }
+      },
+      "Constraint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "deduction"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Ban-list texts start with `Do not use` or `Do not call`; backticks identify banned names."
+          },
+          "deduction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10,
+            "multipleOf": 0.01,
+            "description": "TA-chosen deduction, at most two decimal places; stored internally as a fixed-precision integer."
+          }
+        }
+      },
+      "TestItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "input", "expectedOutput", "sample"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "input": {
+            "type": "string"
+          },
+          "expectedOutput": {
+            "type": "string"
+          },
+          "sample": {
+            "type": "boolean",
+            "description": "Sample tests are visible to enrolled students; hidden test contents stay private."
+          }
+        },
+        "description": "1-500 unique-ID tests per lab with a combined payload of at most 10 MiB."
+      },
+      "Limits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cpuSeconds", "memoryMiB"],
+        "properties": {
+          "cpuSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "memoryMiB": {
+            "type": "integer",
+            "minimum": 64,
+            "maximum": 512
+          }
+        },
+        "description": "TA-declared policy; fixed limits are C++17 -O2, 10 s compilation, 3*CPU per-test wall time, 16 processes including threads, 1 MiB output and 65,536 source bytes. No compiler command or filesystem path is accepted."
+      },
+      "LabCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "statement", "opensAt", "deadline", "constraints", "tests", "limits"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65536
+          },
+          "opensAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Must be strictly after opensAt."
+          },
+          "constraints": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/Constraint"
+            }
+          },
+          "tests": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/TestItem"
+            }
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          }
+        }
+      },
+      "Lab": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "classId",
+          "title",
+          "statement",
+          "opensAt",
+          "deadline",
+          "revision",
+          "constraints",
+          "limits",
+          "modelNotice"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "classId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "statement": {
+            "type": "string"
+          },
+          "opensAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Immutable input revision; 1 at creation."
+          },
+          "constraints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Constraint"
+            }
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "modelNotice": {
+            "type": "string",
+            "description": "Explains sanitization and that a human TA approves any deduction before release."
+          }
+        }
+      },
+      "LabSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "classId", "title", "opensAt", "deadline", "revision"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "classId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "opensAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "LabDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Lab"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sampleTests"],
+            "properties": {
+              "sampleTests": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TestItem"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "SubmissionAccept": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "labId", "state", "receivedAt"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "labId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "state": {
+            "type": "string",
+            "const": "queued"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SubmissionState": {
+        "type": "string",
+        "enum": ["queued", "judging", "judged"]
+      },
+      "TestVerdict": {
+        "type": "string",
+        "enum": ["AC", "WA", "TLE", "CE", "RE", "MLE"]
+      },
+      "Judge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["verdict", "tests"],
+        "properties": {
+          "verdict": {
+            "$ref": "#/components/schemas/TestVerdict"
+          },
+          "tests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "verdict", "timeMs"],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "verdict": {
+                  "$ref": "#/components/schemas/TestVerdict"
+                },
+                "timeMs": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "description": "Token comparison ignores whitespace. MLE where distinguishable, otherwise documented memory RE."
+      },
+      "Submission": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "labId", "state", "receivedAt"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "labId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SubmissionState"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "judge": {
+            "$ref": "#/components/schemas/Judge",
+            "description": "Absent until judged."
+          }
+        },
+        "description": "Safe projection: only the owner or the assigned TA can read it."
+      },
+      "Evidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["line", "text"],
+        "properties": {
+          "line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "One-based line in the submitted source."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          }
+        }
+      },
+      "CheckerVerdict": {
+        "type": "string",
+        "enum": ["pass", "violation", "unsure"]
+      },
+      "UnsureCause": {
+        "type": "string",
+        "enum": [
+          "timeout",
+          "provider-failure",
+          "schema-invalid",
+          "evidence-invalid",
+          "sanitization-unsafe"
+        ]
+      },
+      "TADecision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["verdict", "reason", "revision", "decidedBy", "decidedAt"],
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": ["pass", "violation"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "decidedBy": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Stored separately from immutable checker provenance with append-only audit."
+      },
+      "Finding": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "submissionId",
+          "labId",
+          "constraintId",
+          "constraintRevision",
+          "source",
+          "checkerVerdict",
+          "evidence",
+          "deduction",
+          "requiredReview"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "submissionId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "labId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "constraintId": {
+            "type": "string"
+          },
+          "constraintRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "source": {
+            "type": "string",
+            "description": "Original submitted source; assigned-TA queue only."
+          },
+          "checkerVerdict": {
+            "$ref": "#/components/schemas/CheckerVerdict"
+          },
+          "unsureCause": {
+            "$ref": "#/components/schemas/UnsureCause"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            }
+          },
+          "deduction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10,
+            "multipleOf": 0.01,
+            "description": "TA-configured deduction for the constraint, not model-chosen."
+          },
+          "requiredReview": {
+            "type": "boolean",
+            "description": "True for every violation/unsure and for the persisted stable random ceil(10%) pass sample."
+          },
+          "decision": {
+            "$ref": "#/components/schemas/TADecision"
+          }
+        },
+        "description": "Private to the assigned TA; never serialized into student responses."
+      },
+      "ReviewDecisionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["expectedRevision", "verdict", "reason"],
+        "properties": {
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Current finding revision; a stale value returns 409 conflict."
+          },
+          "verdict": {
+            "type": "string",
+            "enum": ["pass", "violation"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence",
+            "description": "Required when verdict is violation; must match original-line evidence."
+          }
+        },
+        "if": {
+          "properties": {
+            "verdict": {
+              "const": "violation"
+            }
+          }
+        },
+        "then": {
+          "required": ["evidence"]
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "required": ["type", "title", "status", "detail", "instance"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Absolute URI from https://leetkob.example/problems/."
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Safe sentence about this occurrence."
+          },
+          "instance": {
+            "type": "string",
+            "description": "Request path without query."
+          }
+        },
+        "additionalProperties": true,
+        "description": "RFC 9457 problem object; exact members per type are pinned in docs/contract/fixtures/pa3-problems.json."
+      }
+    }
+  }
+}

@@ -24,6 +24,12 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
+      # Must match the toolchain pinned by scripts/go-check.mjs (go1.27.4).
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.4"
+          cache: true
+          cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm run lint
 
@@ -36,6 +42,11 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.4"
+          cache: true
+          cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm run format:check
 
@@ -48,6 +59,11 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.4"
+          cache: true
+          cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
 
@@ -72,6 +88,11 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.4"
+          cache: true
+          cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm test
 
@@ -86,5 +107,10 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.4"
+          cache: true
+          cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm run security

@@ -21,12 +21,14 @@ The repository is an npm-workspace modular monolith:
 
 - `apps/api` contains the NestJS 12 application, Fastify transport, framework-independent publication domain, signed-claim boundary, in-memory adapters, and contract tests.
 - `apps/web` contains the Next.js 16 App Router application. Most of the page is server-rendered; a small TanStack Query client boundary owns API-health loading, retry, and error states.
+- `apps/backend` contains the PA#3 Go module (`github.com/JakeConal/leetkob/backend`): the `cmd/api`, `cmd/worker` and `cmd/checker` commands share domain ports under `internal/`. See [`apps/backend/README.md`](apps/backend/README.md).
 - `docs/design/theme.md` is the authoritative Swiss Minimalist UI and layout system.
 
 ## Requirements
 
 - Node.js 22.13 or newer
 - npm 10 or newer
+- Go 1.27.4 (snap: `snap install go`; the checks fail on any other version)
 - Git
 
 ## Fresh-clone setup
@@ -59,7 +61,7 @@ These exact commands run locally and as separate GitHub required checks:
 | Static type check       | `npm run typecheck`    |
 | Unit and contract tests | `npm test`             |
 
-Each root command covers both workspaces where applicable. `npm run build` verifies both production builds. The additional security job runs `npm run security`, which scans the current tree and reachable Git history for high-confidence credential patterns and runs `npm audit --audit-level=high`.
+Each root command covers both Node workspaces and, since PA#3, the Go backend (`apps/backend`) through [`scripts/go-check.mjs`](scripts/go-check.mjs): `lint` also runs `go vet ./...`, `format:check` also verifies `gofmt -l`, `typecheck` also compiles the Go packages, and `test` also runs `go test -race ./...`. The checks fail, rather than skip, when the pinned Go toolchain is absent. `npm run build` verifies both production builds. The additional security job runs `npm run security`, which scans the current tree and reachable Git history for high-confidence credential patterns, runs `npm audit --audit-level=high`, and runs pinned `govulncheck v1.10.0` over the Go module.
 
 ## Publication contract
 

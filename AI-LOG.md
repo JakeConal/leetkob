@@ -94,6 +94,14 @@
 - **Why:** the PA#2 hand-in rules require a public repository, and public evidence is necessary for the lecturer and the later red team.
 - **Evidence:** <https://api.github.com/repos/JakeConal/leetkob> reports `visibility: public`; protected settings remain captured in `docs/evidence/main-branch-protection.json`.
 
+### D13 — Changed: PA#3 dependency and API approval recorded; contract published
+
+- **Initial state:** the PA#3 dependency inventory and API draft were awaiting owner approval, so no Go routes or modules could start.
+- **Changed:** on November 23, 2026 the owner approved both documents as the PA#3 implementation boundary. The approved subset is published as OpenAPI 3.1 (`docs/contract/pa3-openapi.json`) with versioned internal schemas (`docs/contract/schemas/job-envelope.v1.json`, `checker-prediction.v1.json`) and exact RFC 9457 bodies (`docs/contract/fixtures/pa3-problems.json`) before any route exists.
+- **Interpreted:** the approved error enumeration has exactly one 403 type, so CSRF/Origin mutation rejections reuse `role-required`; unsure causes are pinned as timeout, provider-failure, schema-invalid, evidence-invalid and sanitization-unsafe. Both interpretations are recorded here for review.
+- **Why:** issue #38 task 1.1 requires recorded approval plus published contracts before new routes; paid-model access, public hosting and coursework upload remain separately authorized and are still undecided.
+- **Evidence:** `docs/requirements/pa3-dependencies.md`, `docs/contract/pa3-api.md`, `docs/contract/pa3-openapi.json`, and this decision.
+
 ## Session record
 
 ### 2026-10-24 — PA#2 planning and baseline
@@ -172,3 +180,24 @@
 - Rejected a hand-written JSON Schema checker; added `yaml`, `ajv`, and `ajv-formats` as development-only dependencies of the API workspace instead. `ajv` and `ajv-formats` were already installed transitively.
 - Rejected marking the task complete: contract review and the product-owner answer on D01 are still pending and are recorded as pending in the contract.
 - Injected ten faults into the contract, fixtures, and envelope schema in turn (a shared problem status, a missing CSRF problem, a role member on registration, acceptance at the deadline, a dropped adjustment, inner-whitespace evidence, a changed replay, a leaking concealed 404, an open finding schema, a drifting table). Each failed the intended assertion and the files were restored byte for byte.
+
+### 2026-11-20 — Separate PA#3 Go change
+
+- Tools: Codex, authenticated Classroom/Drive and GitHub readers, local repository inspection, OpenSpec CLI and Prettier. Read the exact PA#3 assignment/rubric and current class brief; no model-provider request or deployment was made.
+- The owner requested Go implementation, then asked that proposals match PA#3 and that a separate change be created. Created `implement-pa3-go-prototype` with proposal, design, eight capability deltas and the sole task checklist in [issue #38](https://github.com/JakeConal/leetkob/issues/38). All 37 implementation tasks remain unchecked.
+- Changed: the first API/dependency draft included registration, rotating JWT sessions and broader account administration. Revised it to the assessment-account sign-in, authoring, judging, checking and private TA review needed for PA#3; removed the JWT dependency. Concrete dependency/API approval remains pending.
+- Changed: reconciled the now-published eight-criterion rubric and advanced public deployment/private review into PA#3 scope. Distinguished valid first-run scorer exit 1 from invalid-input exit 2 without changing the later eval thresholds.
+- Rejected: treating the full remaining-product roadmap as this checkpoint, inventing an overall PA#3 eval pass requirement, exposing unconfirmed findings to students, or interpreting a request for a new change as approval for dependencies, paid calls or hosting.
+- Preserved the existing umbrella proposal/specs, PA#2 implementation/contracts/tests, official hash manifest and unrelated staged `.opencode` files. No production implementation was edited. Planning validation is separate from evidence that the planned system works.
+
+### 2026-11-23 — PA#3 contract approval and task 1.1
+
+- Tools: OpenCode (GLM-5.3) with the OpenSpec CLI, the in-app browser for the Classroom assignment re-read, GitHub API reads for issue #38, and local repository inspection. No model-provider request or deployment was made.
+- Re-read the live PA#3 Classroom assignment, re-audited the change against every requirement, and confirmed the plan covers the assignment without conflict.
+- The owner approved the PA#3 dependency inventory and API draft, authorized implementation to start, deferred the paid model run, and asked for free hosting research. Recorded approval in both documents and here as D13.
+- Published the approved contract subset before any route exists: OpenAPI 3.1 `pa3-openapi.json`, versioned `job-envelope.v1` and `checker-prediction.v1` schemas, and the `pa3-problems.json` fixtures pinning every RFC 9457 body including the closed-window and stale-revision conflict extensions.
+- Added `apps/backend` (task 1.2): Go 1.27.4 module `github.com/JakeConal/leetkob/backend` with `cmd/api`, `cmd/worker` and `cmd/checker` on injected domain ports, bounded Argon2id hashing, the unavailable problem response, and startup/health/shutdown documentation with module pins and transitive licenses. Verified by build/vet/test-race and a live three-command smoke including clean SIGTERM exits.
+- Extended the root checks to Go (task 1.4): `lint` also runs `go vet`, `format:check` also runs `gofmt -l`, `typecheck` also compiles the module, `test` also runs `go test -race`, and `security` runs pinned `govulncheck v1.10.0` via `scripts/go-check.mjs`, which fails rather than skips when the pinned toolchain is absent. Demonstrated defect detection with a deliberate failing Go test (root Test exit 1, restored exit 0) and a deliberately unformatted file (root Format exit 1, restored exit 0); neither fault was committed. Added the rubric's concrete never-list (fabricated evidence, unisolated parsing with live keys, weakened sandbox controls) to `AGENTS.md`.
+- Added the Go compatibility composition for the PA#2 publication contract (task 1.3): `apps/backend/internal/compatpub` mirrors the HMAC bearer boundary, publication service order, exact-response idempotency scope, per-lab serialization and every RFC 9457 body. The seeded/fixed-clock scenarios in `docs/contract/fixtures/publication-scenarios.json` now run unchanged against both the NestJS app (`apps/api/test/contract/publication-scenarios.contract.test.ts`) and the Go composition (race-enabled), covering authentication, input limits, ownership concealment, the deadline gate, problem bodies/media types, replay and concurrent publication. The original PA#2 suites remain untouched and green (45 API tests).
+- Captured the reproducible NestJS/Go comparison (task 1.5): `npm run compare:backends` drives the identical 4,680-request seeded workload against both compositions and writes `docs/evidence/backend-comparison.json` and `backend-comparison.md` from one run. Measured zero errors on both sides, Go compatpub at ~2.7x throughput (2,860 vs 1,047 req/s), p50 0.343 vs 0.849 ms, startup 21.5 vs 175 ms, warm-cache build 641 vs 2,058 ms, with revisions, hardware, warmup/run counts and caveats recorded. Review acceptance stays pending and no default backend switch was made: `apps/api` remains the assessed PA#2 application.
+- Committed the previously uncommitted November 20 planning artifacts on `codex/implement-pa3-go-prototype`, preserving the unrelated staged `.opencode` files.
