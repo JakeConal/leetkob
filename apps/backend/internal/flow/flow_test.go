@@ -220,47 +220,14 @@ func buildAnalyzer(t *testing.T) string {
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
 	src := filepath.Join(root, "native", "cpp-analyzer", "analyzer.c")
-	libdir, err := libclangDir()
-	if err != nil {
-		t.Skipf("libclang is not available; merged flow was not run: %v", err)
+	out, err := hardrule.CompileAnalyzer(t.TempDir(), src)
+	if errors.Is(err, hardrule.ErrToolMissing) {
+		t.Skipf("merged flow was not run: %v", err)
 	}
-	clang, err := commandPath("clang")
 	if err != nil {
-		t.Skipf("clang is not available; merged flow was not run: %v", err)
-	}
-	out := filepath.Join(t.TempDir(), "cpp-analyzer")
-	cmd := exec.Command(clang, "-std=c11", src, "-o", out, "-lclang", "-L"+libdir, "-Wl,-rpath,"+libdir)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("compile analyzer: %v\n%s", err, output)
+		t.Fatal(err)
 	}
 	return out
-}
-
-func commandPath(name string) (string, error) {
-	found, err := exec.LookPath(name)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Abs(found)
-}
-
-func libclangDir() (string, error) {
-	clang, err := commandPath("clang")
-	if err != nil {
-		return "", err
-	}
-	if out, err := exec.Command(clang, "-print-file-name=libclang.dylib").Output(); err == nil {
-		path := strings.TrimSpace(string(out))
-		if filepath.IsAbs(path) {
-			return filepath.Dir(path), nil
-		}
-	}
-	candidate := "/Library/Developer/CommandLineTools/usr/lib/libclang.dylib"
-	if _, err := os.Stat(candidate); err == nil {
-		return filepath.Dir(candidate), nil
-	}
-	return "", os.ErrNotExist
 }
 
 func openFlowStore(t *testing.T, ctx context.Context) *postgres.Store {
