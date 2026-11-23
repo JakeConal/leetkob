@@ -2,6 +2,7 @@ package hardrule
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -104,49 +105,12 @@ func buildAnalyzer(t *testing.T) string {
 	if _, err := os.Stat(src); err != nil {
 		t.Fatalf("analyzer source %s: %v", src, err)
 	}
-	libdir, err := libclangDir()
-	if err != nil {
-		t.Skipf("libclang is not available; native analyzer was not executed: %v", err)
+	out, err := CompileAnalyzer(t.TempDir(), src)
+	if errors.Is(err, ErrToolMissing) {
+		t.Skipf("native analyzer was not executed: %v", err)
 	}
-	out := filepath.Join(t.TempDir(), "cpp-analyzer")
-	cmd := exec.Command("clang", "-std=c11", src, "-o", out, "-lclang", "-L"+libdir, "-Wl,-rpath,"+libdir)
-	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("compile analyzer: %v\n%s", err, output)
+		t.Fatal(err)
 	}
 	return out
-}
-
-func libclangDir() (string, error) {
-	if out, err := exec.Command("clang", "-print-file-name=libclang.dylib").Output(); err == nil {
-		path := string(trimSpaceBytes(out))
-		if len(path) > 0 && filepath.IsAbs(path) {
-			return filepath.Dir(path), nil
-		}
-	}
-	candidates := []string{
-		"/Library/Developer/CommandLineTools/usr/lib/libclang.dylib",
-		"/usr/lib/llvm-19/lib/libclang.so",
-		"/usr/lib/llvm-19/lib/libclang.so.1",
-		"/usr/lib/x86_64-linux-gnu/libclang-19.so",
-		"/usr/lib/llvm-18/lib/libclang.so",
-		"/usr/lib/libclang.so",
-	}
-	for _, candidate := range candidates {
-		if _, err := os.Stat(candidate); err == nil {
-			return filepath.Dir(candidate), nil
-		}
-	}
-	return "", os.ErrNotExist
-}
-
-func trimSpaceBytes(in []byte) []byte {
-	start, end := 0, len(in)
-	for start < end && (in[start] == ' ' || in[start] == '\n' || in[start] == '\r' || in[start] == '\t') {
-		start++
-	}
-	for end > start && (in[end-1] == ' ' || in[end-1] == '\n' || in[end-1] == '\r' || in[end-1] == '\t') {
-		end--
-	}
-	return in[start:end]
 }

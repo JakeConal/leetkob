@@ -2,17 +2,35 @@ package access
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"strings"
 	"time"
 
 	"github.com/JakeConal/leetkob/backend/internal/identity"
 )
 
-// dummyPasswordHash is a real Argon2id encoding of a password that belongs
-// to no account. Unknown emails still run VerifyPassword so the failure
-// path does the same key derivation as a wrong password. The encoding is
-// not a credential for any synthetic account.
-const dummyPasswordHash = "$argon2id$v=19$m=65536,t=1,p=2$pOFu91vnPf3G+xW0vzwc4A$Vsc23OahMk7+HHZH4MptVpDZZk7+je250SysUf8/4Yo"
+// dummyPasswordHash is an Argon2id encoding created at startup from random
+// bytes. Unknown emails still run VerifyPassword so that path does the same
+// key derivation as a wrong password. Nothing in the repository is the
+// password for this hash, and it matches no synthetic account.
+var (
+	dummyLoginSecret  string
+	dummyPasswordHash string
+)
+
+func init() {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		panic("access: read dummy login secret: " + err.Error())
+	}
+	dummyLoginSecret = base64.RawStdEncoding.EncodeToString(raw)
+	hash, err := identity.HashPassword(dummyLoginSecret)
+	if err != nil {
+		panic("access: encode dummy login hash: " + err.Error())
+	}
+	dummyPasswordHash = hash
+}
 
 // LoginInput is one password sign-in. Origin is the raw Origin header,
 // empty when the client sent none. RemoteHost is the client address with

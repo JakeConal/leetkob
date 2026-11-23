@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,15 +13,76 @@ import (
 	"strings"
 )
 
+// ErrToolMissing means clang or libclang is not installed. Callers skip
+// the native analyzer instead of treating that as a product failure.
+var ErrToolMissing = errors.New("hardrule: analyzer tool missing")
+
+// CompileAnalyzer builds analyzer.c into destDir and returns the binary path.
+func CompileAnalyzer(destDir, sourcePath string) (string, error) {
+	libdir, err := libclangDir()
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", ErrToolMissing, err.Error())
+	}
+	clang, err := commandPath("clang")
+	if err != nil {
+		return "", fmt.Errorf("%w: %s", ErrToolMissing, err.Error())
+	}
+	out := filepath.Join(destDir, "cpp-analyzer")
+	cmd := exec.Command(clang, "-std=c11", sourcePath, "-o", out, "-lclang", "-L"+libdir, "-Wl,-rpath,"+libdir)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("hardrule: compile analyzer: %w\n%s", err, output)
+	}
+	return out, nil
+}
+
+func libclangDir() (string, error) {
+	clang, err := commandPath("clang")
+	if err != nil {
+		return "", err
+	}
+	if out, err := exec.Command(clang, "-print-file-name=libclang.dylib").Output(); err == nil {
+		path := strings.TrimSpace(string(out))
+		if path != "" && filepath.IsAbs(path) {
+			return filepath.Dir(path), nil
+		}
+	}
+	candidates := []string{
+		"/Library/Developer/CommandLineTools/usr/lib/libclang.dylib",
+		"/usr/lib/llvm-19/lib/libclang.so",
+		"/usr/lib/llvm-19/lib/libclang.so.1",
+		"/usr/lib/x86_64-linux-gnu/libclang-19.so",
+		"/usr/lib/llvm-18/lib/libclang.so",
+		"/usr/lib/libclang.so",
+	}
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err == nil {
+			return filepath.Dir(candidate), nil
+		}
+	}
+	return "", os.ErrNotExist
+}
+
 // CompilerArgs returns C++17 flags, including the system include paths
 // reported by the local compiler. libclang does not run the driver, so
 // those paths have to be passed through or standard-library names stay
 // unresolved and the analysis is unsure.
+func commandPath(name string) (string, error) {
+	if filepath.IsAbs(name) {
+		return name, nil
+	}
+	found, err := exec.LookPath(name)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Abs(found)
+}
+
 func CompilerArgs(ctx context.Context) ([]string, error) {
-	compiler := "clang++"
-	if _, err := exec.LookPath(compiler); err != nil {
-		compiler = "clang"
-		if _, err := exec.LookPath(compiler); err != nil {
+	compiler, err := commandPath("clang++")
+	if err != nil {
+		compiler, err = commandPath("clang")
+		if err != nil {
 			return nil, fmt.Errorf("hardrule: clang is not on PATH")
 		}
 	}

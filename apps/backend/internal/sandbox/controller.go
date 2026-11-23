@@ -29,10 +29,27 @@ func New() *Controller {
 }
 
 func (c *Controller) dockerBin() string {
+	name := "docker"
 	if c != nil && c.Docker != "" {
-		return c.Docker
+		name = c.Docker
 	}
-	return "docker"
+	if abs, err := CommandPath(name); err == nil {
+		return abs
+	}
+	return name
+}
+
+// CommandPath resolves a tool to an absolute path so execution does not
+// search PATH again.
+func CommandPath(name string) (string, error) {
+	if filepath.IsAbs(name) {
+		return name, nil
+	}
+	found, err := exec.LookPath(name)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Abs(found)
 }
 
 func (c *Controller) imageRef() string {

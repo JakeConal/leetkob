@@ -56,7 +56,7 @@ func TestOriginRule(t *testing.T) {
 }
 
 func TestDummyHashIsARealArgon2Encoding(t *testing.T) {
-	ok, err := identity.VerifyPassword(dummyPasswordHash, "not-a-real-account")
+	ok, err := identity.VerifyPassword(dummyPasswordHash, dummyLoginSecret)
 	if err != nil || !ok {
 		t.Fatalf("dummy encoding must verify its own input: ok=%v err=%v", ok, err)
 	}

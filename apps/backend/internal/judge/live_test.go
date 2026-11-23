@@ -18,7 +18,11 @@ func TestLiveTinyProgramsWhenDockerIsAvailable(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	if err := exec.CommandContext(ctx, "docker", "info").Run(); err != nil {
+	docker, err := sandbox.CommandPath("docker")
+	if err != nil {
+		t.Skipf("docker not available: %v", err)
+	}
+	if err := exec.CommandContext(ctx, docker, "info").Run(); err != nil {
 		t.Skipf("docker daemon not available: %v", err)
 	}
 
