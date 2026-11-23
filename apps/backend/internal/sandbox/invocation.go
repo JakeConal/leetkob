@@ -36,6 +36,9 @@ type profile struct {
 	Privileged  bool
 	Binds       []bind
 	Env         []string
+	// OpenStdin keeps the container stdin open so ExecuteInput can pass
+	// one test's bytes. It adds no capability, mount, or environment.
+	OpenStdin bool
 }
 
 func (p profile) relaxForNegativeControl(reason string) (profile, error) {
@@ -56,8 +59,11 @@ func createArgs(name, image string, p profile, command []string) ([]string, erro
 	if err := validateCommand(command); err != nil {
 		return nil, err
 	}
-	args := []string{
-		"create",
+	args := []string{"create"}
+	if p.OpenStdin {
+		args = append(args, "-i")
+	}
+	args = append(args,
 		"--name", name,
 		"--network", p.Network,
 		"--user", p.User,
@@ -65,7 +71,7 @@ func createArgs(name, image string, p profile, command []string) ([]string, erro
 		"--log-driver", "json-file",
 		"--log-opt", "max-size=1m",
 		"--log-opt", "max-file=1",
-	}
+	)
 	if p.CapDropAll {
 		args = append(args, "--cap-drop", "ALL")
 	}

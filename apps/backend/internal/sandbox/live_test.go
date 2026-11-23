@@ -107,7 +107,7 @@ func TestNetworkIsolation(t *testing.T) {
 		t.Fatal(err)
 	}
 	openProfile.Network = networkName
-	open, err := controller.executeWith(ctx, binary, openProfile, openPolicy.Wall, openPolicy.OutputLimit, []string{address, "8080"})
+	open, err := controller.executeWith(ctx, binary, openProfile, openPolicy.Wall, openPolicy.OutputLimit, []string{address, "8080"}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestNetworkIsolation(t *testing.T) {
 	if bytes.Contains(closed.Stdout, []byte("network_open")) || !bytes.Contains(closed.Stdout, []byte("network_denied")) {
 		failOutput(t, "network isolation", closed)
 	}
-	stillOpen, err := controller.executeWith(ctx, binary, openProfile, openPolicy.Wall, openPolicy.OutputLimit, []string{address, "8080"})
+	stillOpen, err := controller.executeWith(ctx, binary, openProfile, openPolicy.Wall, openPolicy.OutputLimit, []string{address, "8080"}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +162,7 @@ func TestCPULimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	profile.CPUSeconds = 0
-	negative, err := controller.executeWith(ctx, binary, profile, policy.Wall, policy.OutputLimit, nil)
+	negative, err := controller.executeWith(ctx, binary, profile, policy.Wall, policy.OutputLimit, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +294,7 @@ func TestProcessCeilingDoesNotAffectAnotherRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	profile.Pids = 256
-	negative, err := controller.executeWith(ctx, flood, profile, policy.Wall, policy.OutputLimit, nil)
+	negative, err := controller.executeWith(ctx, flood, profile, policy.Wall, policy.OutputLimit, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +359,7 @@ func TestNonRootIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 	profile.User = "0:0"
-	negative, err := controller.executeWith(ctx, binary, profile, policy.Wall, policy.OutputLimit, nil)
+	negative, err := controller.executeWith(ctx, binary, profile, policy.Wall, policy.OutputLimit, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,7 +409,7 @@ func TestNoHostMountOrDockerSocket(t *testing.T) {
 		t.Fatal(err)
 	}
 	profile.Binds = []bind{{Source: dir, Target: "/host-canary"}}
-	negative, err := controller.executeWith(ctx, binary, profile, policy.Wall, policy.OutputLimit, nil)
+	negative, err := controller.executeWith(ctx, binary, profile, policy.Wall, policy.OutputLimit, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -464,7 +464,7 @@ func TestSecretsStayOutOfEnvFilesAndIncludes(t *testing.T) {
 		t.Fatal(err)
 	}
 	envProfile.Env = []string{"LEETKOB_SYNTHETIC_CANARY=" + canary}
-	envHit, err := controller.executeWith(ctx, compiled.Binary, envProfile, policy.Wall, policy.OutputLimit, nil)
+	envHit, err := controller.executeWith(ctx, compiled.Binary, envProfile, policy.Wall, policy.OutputLimit, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
