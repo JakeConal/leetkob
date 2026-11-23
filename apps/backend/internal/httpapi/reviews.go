@@ -26,8 +26,9 @@ var (
 // Identity is the authenticated user. The role is read from the user
 // record by the review store, not from this value or from a header.
 type Identity struct {
-	UserID string
-	CSRF   string
+	UserID   string
+	CSRF     string
+	CSRFHash []byte
 }
 
 // Authenticator resolves the session cookie. Implementations must ignore
@@ -68,11 +69,11 @@ func (h *ReviewsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	labID, findingID, decision, ok := parseReviewPath(r.URL.Path)
 	if !ok {
-		writeNotFound(w, r.URL.Path)
+		reviewWriteNotFound(w, r.URL.Path)
 		return
 	}
 	if !validUUID(labID) || (decision && !validUUID(findingID)) {
-		writeInvalid(w, r.URL.Path)
+		reviewWriteInvalid(w, r.URL.Path)
 		return
 	}
 	if decision {
@@ -103,7 +104,7 @@ func (h *ReviewsHandler) list(w http.ResponseWriter, r *http.Request, labID stri
 		return
 	}
 	if h.Reviews == nil {
-		writeInternal(w, r.URL.Path)
+		reviewWriteInternal(w, r.URL.Path)
 		return
 	}
 	page, err := h.Reviews.List(r.Context(), labID, limit, cursor)
@@ -114,7 +115,7 @@ func (h *ReviewsHandler) list(w http.ResponseWriter, r *http.Request, labID stri
 	if page.Items == nil {
 		page.Items = []review.Finding{}
 	}
-	writeJSON(w, http.StatusOK, page)
+	reviewWriteJSON(w, http.StatusOK, page)
 }
 
 func (h *ReviewsHandler) decide(w http.ResponseWriter, r *http.Request, labID, findingID string) {
@@ -125,17 +126,17 @@ func (h *ReviewsHandler) decide(w http.ResponseWriter, r *http.Request, labID, f
 	if !h.allow(w, r, labID, identity.UserID) {
 		return
 	}
-	if !tokenEqual(r.Header.Get("X-CSRF-Token"), identity.CSRF) {
-		writeRole(w, r.URL.Path)
+	if !csrfProofOK(r.Header.Get("X-CSRF-Token"), identity) {
+		reviewWriteRole(w, r.URL.Path)
 		return
 	}
 	if origin := r.Header.Get("Origin"); origin != "" && h.WebOrigin != "" && origin != h.WebOrigin {
-		writeRole(w, r.URL.Path)
+		reviewWriteRole(w, r.URL.Path)
 		return
 	}
 	key := r.Header.Get("Idempotency-Key")
 	if !idempotencyPattern.MatchString(key) {
-		writeInvalid(w, r.URL.Path)
+		reviewWriteInvalid(w, r.URL.Path)
 		return
 	}
 	body, ok := readBody(w, r)
@@ -146,16 +147,16 @@ func (h *ReviewsHandler) decide(w http.ResponseWriter, r *http.Request, labID, f
 	dec := json.NewDecoder(strings.NewReader(string(body)))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&decoded); err != nil {
-		writeInvalid(w, r.URL.Path)
+		reviewWriteInvalid(w, r.URL.Path)
 		return
 	}
 	var trailing struct{}
 	if err := dec.Decode(&trailing); !errors.Is(err, io.EOF) {
-		writeInvalid(w, r.URL.Path)
+		reviewWriteInvalid(w, r.URL.Path)
 		return
 	}
 	if h.Reviews == nil {
-		writeInternal(w, r.URL.Path)
+		reviewWriteInternal(w, r.URL.Path)
 		return
 	}
 	sum := sha256.Sum256(body)
@@ -176,14 +177,14 @@ func (h *ReviewsHandler) decide(w http.ResponseWriter, r *http.Request, labID, f
 		return
 	}
 	if result.Mismatch {
-		writeConflict(w, r.URL.Path, "idempotency-content-mismatch", "The idempotency key was already used with different request content.", nil, nil)
+		reviewWriteConflict(w, r.URL.Path, "idempotency-content-mismatch", "The idempotency key was already used with different request content.", nil, nil)
 		return
 	}
 	if result.Stale != nil {
-		writeConflict(w, r.URL.Path, "stale-revision", "The item changed before this request was applied.", &result.Stale.Expected, &result.Stale.Current)
+		reviewWriteConflict(w, r.URL.Path, "stale-revision", "The item changed before this request was applied.", &result.Stale.Expected, &result.Stale.Current)
 		return
 	}
-	writeJSON(w, http.StatusOK, result.Finding)
+	reviewWriteJSON(w, http.StatusOK, result.Finding)
 }
 
 func (h *ReviewsHandler) now() time.Time {
@@ -195,12 +196,12 @@ func (h *ReviewsHandler) now() time.Time {
 
 func (h *ReviewsHandler) identify(w http.ResponseWriter, r *http.Request) (Identity, bool) {
 	if h.Auth == nil {
-		writeAuth(w, r.URL.Path)
+		reviewWriteAuth(w, r.URL.Path)
 		return Identity{}, false
 	}
 	identity, ok := h.Auth.Identify(r)
 	if !ok || !validUUID(identity.UserID) {
-		writeAuth(w, r.URL.Path)
+		reviewWriteAuth(w, r.URL.Path)
 		return Identity{}, false
 	}
 	return identity, true
@@ -208,20 +209,20 @@ func (h *ReviewsHandler) identify(w http.ResponseWriter, r *http.Request) (Ident
 
 func (h *ReviewsHandler) allow(w http.ResponseWriter, r *http.Request, labID, userID string) bool {
 	if h.Reviews == nil {
-		writeInternal(w, r.URL.Path)
+		reviewWriteInternal(w, r.URL.Path)
 		return false
 	}
 	access, err := h.Reviews.Access(r.Context(), labID, userID)
 	if err != nil {
-		writeInternal(w, r.URL.Path)
+		reviewWriteInternal(w, r.URL.Path)
 		return false
 	}
 	if !access.UserExists {
-		writeAuth(w, r.URL.Path)
+		reviewWriteAuth(w, r.URL.Path)
 		return false
 	}
 	if !review.Allowed(access) {
-		writeNotFound(w, r.URL.Path)
+		reviewWriteNotFound(w, r.URL.Path)
 		return false
 	}
 	return true
@@ -231,11 +232,11 @@ func listQuery(w http.ResponseWriter, r *http.Request) (int, string, bool) {
 	query := r.URL.Query()
 	for key, values := range query {
 		if key != "limit" && key != "cursor" {
-			writeInvalid(w, r.URL.Path)
+			reviewWriteInvalid(w, r.URL.Path)
 			return 0, "", false
 		}
 		if len(values) > 1 {
-			writeInvalid(w, r.URL.Path)
+			reviewWriteInvalid(w, r.URL.Path)
 			return 0, "", false
 		}
 	}
@@ -243,7 +244,7 @@ func listQuery(w http.ResponseWriter, r *http.Request) (int, string, bool) {
 	if raw := query.Get("limit"); raw != "" {
 		parsed, err := strconv.Atoi(raw)
 		if err != nil || parsed < 1 || parsed > 100 {
-			writeInvalid(w, r.URL.Path)
+			reviewWriteInvalid(w, r.URL.Path)
 			return 0, "", false
 		}
 		limit = parsed
@@ -254,7 +255,7 @@ func listQuery(w http.ResponseWriter, r *http.Request) (int, string, bool) {
 func readBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 	media := r.Header.Get("Content-Type")
 	if media != "application/json" && !strings.HasPrefix(media, "application/json;") {
-		writeInvalid(w, r.URL.Path)
+		reviewWriteInvalid(w, r.URL.Path)
 		return nil, false
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxDecisionBody)
@@ -265,11 +266,11 @@ func readBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 			writeProblem(w, http.StatusRequestEntityTooLarge, "payload-too-large", "Payload too large", "The request body exceeds the accepted size limit.", r.URL.Path)
 			return nil, false
 		}
-		writeInvalid(w, r.URL.Path)
+		reviewWriteInvalid(w, r.URL.Path)
 		return nil, false
 	}
 	if len(body) == 0 {
-		writeInvalid(w, r.URL.Path)
+		reviewWriteInvalid(w, r.URL.Path)
 		return nil, false
 	}
 	return body, true
@@ -293,6 +294,17 @@ func validUUID(value string) bool {
 	return uuidPattern.MatchString(value)
 }
 
+func csrfProofOK(got string, identity Identity) bool {
+	if got == "" {
+		return false
+	}
+	if len(identity.CSRFHash) == sha256.Size {
+		sum := sha256.Sum256([]byte(got))
+		return subtle.ConstantTimeCompare(sum[:], identity.CSRFHash) == 1
+	}
+	return tokenEqual(got, identity.CSRF)
+}
+
 func tokenEqual(got, want string) bool {
 	if want == "" {
 		return false
@@ -305,31 +317,31 @@ func tokenEqual(got, want string) bool {
 func writeStoreError(w http.ResponseWriter, instance string, err error) {
 	switch {
 	case errors.Is(err, review.ErrInvalid), errors.Is(err, review.ErrBadCursor):
-		writeInvalid(w, instance)
+		reviewWriteInvalid(w, instance)
 	case errors.Is(err, review.ErrNotFound), errors.Is(err, review.ErrNotAssigned):
-		writeNotFound(w, instance)
+		reviewWriteNotFound(w, instance)
 	default:
-		writeInternal(w, instance)
+		reviewWriteInternal(w, instance)
 	}
 }
 
-func writeAuth(w http.ResponseWriter, instance string) {
+func reviewWriteAuth(w http.ResponseWriter, instance string) {
 	writeProblem(w, http.StatusUnauthorized, "authentication-required", "Authentication required", "Authentication is required to access this resource.", instance)
 }
 
-func writeRole(w http.ResponseWriter, instance string) {
+func reviewWriteRole(w http.ResponseWriter, instance string) {
 	writeProblem(w, http.StatusForbidden, "role-required", "Role required", "Your account is not permitted to perform this operation.", instance)
 }
 
-func writeNotFound(w http.ResponseWriter, instance string) {
+func reviewWriteNotFound(w http.ResponseWriter, instance string) {
 	writeProblem(w, http.StatusNotFound, "resource-not-found", "Resource not found", "The requested resource does not exist.", instance)
 }
 
-func writeInvalid(w http.ResponseWriter, instance string) {
+func reviewWriteInvalid(w http.ResponseWriter, instance string) {
 	writeProblem(w, http.StatusBadRequest, "invalid-request", "Invalid request", "The request is not valid for this operation.", instance)
 }
 
-func writeInternal(w http.ResponseWriter, instance string) {
+func reviewWriteInternal(w http.ResponseWriter, instance string) {
 	writeProblem(w, http.StatusInternalServerError, "internal-error", "Internal server error", "An unexpected error occurred. The request can be safely retried.", instance)
 }
 
@@ -337,7 +349,7 @@ func writeMethodNotAllowed(w http.ResponseWriter, instance string) {
 	writeProblem(w, http.StatusMethodNotAllowed, "route-not-found", "Route not found", "The requested route does not exist.", instance)
 }
 
-func writeConflict(w http.ResponseWriter, instance, kind, detail string, expected, current *int) {
+func reviewWriteConflict(w http.ResponseWriter, instance, kind, detail string, expected, current *int) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(http.StatusConflict)
 	body := contractProblem{
@@ -355,7 +367,7 @@ func writeConflict(w http.ResponseWriter, instance, kind, detail string, expecte
 	_ = enc.Encode(body)
 }
 
-func writeJSON(w http.ResponseWriter, status int, body any) {
+func reviewWriteJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)

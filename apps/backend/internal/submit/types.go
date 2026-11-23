@@ -51,6 +51,10 @@ func (IdempotencyMismatch) Error() string { return "submit: idempotency mismatch
 type Principal struct {
 	UserID    string
 	CSRFToken string
+	// CSRFHash is the stored digest. When it is set, the header is checked
+	// against the hash. CSRFToken remains for tests that supply the proof
+	// itself.
+	CSRFHash []byte
 }
 
 // Admission is a committed lease taken before the body is consumed.

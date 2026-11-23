@@ -2,6 +2,7 @@ package submit
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
@@ -230,7 +231,14 @@ func originOK(r *http.Request, allowed string) bool {
 
 func csrfOK(r *http.Request, principal Principal) bool {
 	got := r.Header.Get("X-CSRF-Token")
-	if got == "" || len(got) != len(principal.CSRFToken) {
+	if got == "" {
+		return false
+	}
+	if len(principal.CSRFHash) == sha256.Size {
+		sum := sha256.Sum256([]byte(got))
+		return subtle.ConstantTimeCompare(sum[:], principal.CSRFHash) == 1
+	}
+	if len(got) != len(principal.CSRFToken) {
 		return false
 	}
 	return subtle.ConstantTimeCompare([]byte(got), []byte(principal.CSRFToken)) == 1
