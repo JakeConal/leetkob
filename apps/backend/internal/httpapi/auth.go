@@ -31,14 +31,14 @@ const (
 
 // Dependencies is the set Register wires into the /v2 session and lab routes.
 // Now is the server clock. WebOrigin is the only Origin accepted on a
-// mutation; an empty Origin is allowed. SecureCookies sets the Secure
-// attribute, which deployed HTTPS enables and loopback HTTP leaves off.
+// mutation; an empty Origin is allowed. Session cookies are always Secure.
+// Current browsers still store a Secure cookie on http://localhost and
+// http://127.0.0.1.
 type Dependencies struct {
-	Accounts      access.Repository
-	Labs          labs.Repository
-	Now           func() time.Time
-	WebOrigin     string
-	SecureCookies bool
+	Accounts  access.Repository
+	Labs      labs.Repository
+	Now       func() time.Time
+	WebOrigin string
 }
 
 type api struct {
@@ -103,7 +103,7 @@ func (h *api) login(w http.ResponseWriter, r *http.Request) {
 		writeAccessError(w, r, err)
 		return
 	}
-	setSessionCookie(w, result.CookieToken, result.ExpiresAt, h.deps.SecureCookies)
+	setSessionCookie(w, result.CookieToken, result.ExpiresAt)
 	writeJSON(w, http.StatusOK, userSessionBody{
 		User: userBody{
 			ID:          result.User.ID,
@@ -143,7 +143,7 @@ func (h *api) logout(w http.ResponseWriter, r *http.Request) {
 		writeAccessError(w, r, err)
 		return
 	}
-	clearSessionCookie(w, h.deps.SecureCookies)
+	clearSessionCookie(w)
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -441,7 +441,7 @@ func readBounded(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, b
 	return nil, false, err
 }
 
-func setSessionCookie(w http.ResponseWriter, token string, expires time.Time, secure bool) {
+func setSessionCookie(w http.ResponseWriter, token string, expires time.Time) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     access.SessionCookieName,
 		Value:    token,
@@ -449,11 +449,11 @@ func setSessionCookie(w http.ResponseWriter, token string, expires time.Time, se
 		Expires:  expires.UTC(),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   secure,
+		Secure:   true,
 	})
 }
 
-func clearSessionCookie(w http.ResponseWriter, secure bool) {
+func clearSessionCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     access.SessionCookieName,
 		Value:    "",
@@ -461,7 +461,7 @@ func clearSessionCookie(w http.ResponseWriter, secure bool) {
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   secure,
+		Secure:   true,
 	})
 }
 

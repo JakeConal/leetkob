@@ -24,7 +24,11 @@ func dockerAvailable(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	if err := exec.CommandContext(ctx, "docker", "info").Run(); err != nil {
+	docker, err := CommandPath("docker")
+	if err != nil {
+		t.Skipf("docker not available: %v", err)
+	}
+	if err := exec.CommandContext(ctx, docker, "info").Run(); err != nil {
 		t.Skipf("docker daemon not available: %v", err)
 	}
 }
@@ -613,7 +617,11 @@ func controllerGone(t *testing.T, name string) bool {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	return exec.CommandContext(ctx, "docker", "inspect", name).Run() != nil
+	docker, err := CommandPath("docker")
+	if err != nil {
+		return true
+	}
+	return exec.CommandContext(ctx, docker, "inspect", name).Run() != nil
 }
 
 func failOutput(t *testing.T, label string, observed Observation) {

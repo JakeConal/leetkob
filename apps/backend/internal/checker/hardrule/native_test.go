@@ -108,8 +108,12 @@ func buildAnalyzer(t *testing.T) string {
 	if err != nil {
 		t.Skipf("libclang is not available; native analyzer was not executed: %v", err)
 	}
+	clang, err := commandPath("clang")
+	if err != nil {
+		t.Skipf("clang is not available; native analyzer was not executed: %v", err)
+	}
 	out := filepath.Join(t.TempDir(), "cpp-analyzer")
-	cmd := exec.Command("clang", "-std=c11", src, "-o", out, "-lclang", "-L"+libdir, "-Wl,-rpath,"+libdir)
+	cmd := exec.Command(clang, "-std=c11", src, "-o", out, "-lclang", "-L"+libdir, "-Wl,-rpath,"+libdir)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("compile analyzer: %v\n%s", err, output)
@@ -118,7 +122,11 @@ func buildAnalyzer(t *testing.T) string {
 }
 
 func libclangDir() (string, error) {
-	if out, err := exec.Command("clang", "-print-file-name=libclang.dylib").Output(); err == nil {
+	clang, err := commandPath("clang")
+	if err != nil {
+		return "", err
+	}
+	if out, err := exec.Command(clang, "-print-file-name=libclang.dylib").Output(); err == nil {
 		path := string(trimSpaceBytes(out))
 		if len(path) > 0 && filepath.IsAbs(path) {
 			return filepath.Dir(path), nil

@@ -14,7 +14,7 @@ import (
 func TestSessionCookieIsHttpOnlyAndHostOnly(t *testing.T) {
 	rec := httptest.NewRecorder()
 	expires := time.Date(2026, 11, 24, 12, 0, 0, 0, time.UTC)
-	setSessionCookie(rec, "opaque-token", expires, false)
+	setSessionCookie(rec, "opaque-token", expires)
 	response := rec.Result()
 	cookies := response.Cookies()
 	if len(cookies) != 1 {
@@ -24,17 +24,11 @@ func TestSessionCookieIsHttpOnlyAndHostOnly(t *testing.T) {
 	if cookie.Name != access.SessionCookieName || cookie.Value != "opaque-token" {
 		t.Fatalf("cookie = %#v", cookie)
 	}
-	if !cookie.HttpOnly || cookie.Secure || cookie.Domain != "" || cookie.Path != "/" || cookie.SameSite != http.SameSiteLaxMode {
+	if !cookie.HttpOnly || !cookie.Secure || cookie.Domain != "" || cookie.Path != "/" || cookie.SameSite != http.SameSiteLaxMode {
 		t.Fatalf("attributes = HttpOnly:%v Secure:%v Domain:%q Path:%q SameSite:%v", cookie.HttpOnly, cookie.Secure, cookie.Domain, cookie.Path, cookie.SameSite)
 	}
 	if strings.Contains(cookie.String(), "Domain=") {
 		t.Fatalf("cookie must be host-only: %s", cookie.String())
-	}
-
-	secure := httptest.NewRecorder()
-	setSessionCookie(secure, "opaque-token", expires, true)
-	if !secure.Result().Cookies()[0].Secure {
-		t.Fatal("deployed HTTPS must set Secure")
 	}
 }
 

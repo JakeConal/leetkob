@@ -16,11 +16,22 @@ import (
 // reported by the local compiler. libclang does not run the driver, so
 // those paths have to be passed through or standard-library names stay
 // unresolved and the analysis is unsure.
+func commandPath(name string) (string, error) {
+	if filepath.IsAbs(name) {
+		return name, nil
+	}
+	found, err := exec.LookPath(name)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Abs(found)
+}
+
 func CompilerArgs(ctx context.Context) ([]string, error) {
-	compiler := "clang++"
-	if _, err := exec.LookPath(compiler); err != nil {
-		compiler = "clang"
-		if _, err := exec.LookPath(compiler); err != nil {
+	compiler, err := commandPath("clang++")
+	if err != nil {
+		compiler, err = commandPath("clang")
+		if err != nil {
 			return nil, fmt.Errorf("hardrule: clang is not on PATH")
 		}
 	}
