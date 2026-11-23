@@ -1,0 +1,5 @@
+[
+  { "id": "C1", "text": "Do not call `std::sort`.", "deduction": 3 },
+  { "id": "C2", "text": "Implement an in-place partition.", "deduction": 4 },
+  { "id": "C3", "text": "Do not use `malloc` or `std::vector`.", "deduction": 2 }
+]

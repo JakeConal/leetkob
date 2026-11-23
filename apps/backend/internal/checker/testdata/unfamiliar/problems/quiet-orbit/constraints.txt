@@ -1,0 +1,3 @@
+K1: Do not use `std::map` or `std::set`.
+K2 Keep every operation worst-case O(1).
+Do not call `exit`.

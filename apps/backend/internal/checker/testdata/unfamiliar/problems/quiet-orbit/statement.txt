@@ -1,0 +1,3 @@
+Quiet orbit
+
+Print the number of distinct values seen on standard input.

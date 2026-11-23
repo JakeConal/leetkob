@@ -1,0 +1,6 @@
+{
+  "constraints": [
+    { "id": "B1", "text": "Do not use `goto`." },
+    { "id": "B2", "text": "Return the count." }
+  ]
+}

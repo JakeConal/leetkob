@@ -1,12 +1,19 @@
 // Command checker is the dataset-independent marking command required by
-// the PA#3 assignment: `checker --data <dir> --predictions <file>` with a
-// Dockerfile (built with the sandbox image in issue #38 task 7.1). This
-// scaffold pins the command line, the exit-code contract and the
-// MODEL_OFF=1 selection point; generic dataset discovery lands with task
-// 7.1 and never reads labels or scorer data.
+// the PA#3 assignment: `checker --data <dir> --predictions <file>`, packaged
+// by the Dockerfile in apps/backend/checker. It discovers problem, statement,
+// constraint and solution files generically and writes one JSONL prediction per
+// solution/constraint pair. It never reads labels, scorer programs, test data
+// or tags.
 //
-// Exit codes: 2 invalid invocation; 0/1 valid PA#3 run outcomes (the
-// unmodified scorer decides between them); never fabricate a run.
+// Task 7.1 delivers discovery and output validity. The hard-rule analyzer
+// (task 5.1) and semantic model pipeline (tasks 5.3, 5.4 and 7.2) are not wired
+// yet, so every prediction is honestly "unsure" with empty evidence until task
+// 7.2 supplies verdicts. MODEL_OFF=1 is selected before any provider could
+// exist, and this command performs no network access in any mode.
+//
+// Exit codes: 2 invalid invocation or invalid dataset input; 0 valid PA#3 run
+// (the unmodified scorer decides 0/1 for the run outcome); never fabricate a
+// run.
 package main
 
 import (
@@ -37,11 +44,25 @@ func main() {
 	)
 	if args.ModelOff {
 		logger.Info("MODEL_OFF=1 selected before provider initialization; no network or credential access will occur")
+	} else {
+		logger.Info("model pipeline is not wired in task 7.1; run is network-free and verdicts are unsure")
 	}
 
-	// The shared checker core (generic statement/constraint/source
-	// discovery and prediction output) arrives with issue #38 task 7.1.
-	logger.Warn("checker core not implemented yet (issue #38 task 7.1); arguments validated only, no predictions written")
+	summary, err := checker.Run(args.DataDir, args.PredictionsPath)
+	if err != nil {
+		logger.Error("checker run failed", "error", err)
+		fmt.Fprintf(os.Stderr, "checker: %v\n", err)
+		os.Exit(2)
+	}
+
+	logger.Info("checker run complete",
+		"problems", summary.Problems,
+		"solutions", summary.Solutions,
+		"constraints", summary.Constraints,
+		"predictions", summary.Predictions,
+		"unsure", summary.Unsure,
+		"verdictSource", "task-7.1-unsure-only; hard rules task 5.1 and model task 7.2 pending",
+	)
 	os.Exit(0)
 }
 
