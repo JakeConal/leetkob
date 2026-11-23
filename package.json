@@ -14,6 +14,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:api": "npm run dev --workspace @leetkob/api",
     "dev:web": "npm run dev --workspace @leetkob/web",
+    "compare:backends": "TSX_TSCONFIG_PATH=apps/api/tsconfig.json node --import tsx scripts/compare-backends.mjs",
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint . --max-warnings=0 && node scripts/go-check.mjs vet",
     "format": "prettier --write .",

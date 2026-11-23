@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-11-23T09:05:21.210Z",
+  "gitRevision": "d52700990aadb74b41b09fcd410ce24f45faa412",
+  "hardware": {
+    "platform": "linux x64",
+    "cpuModel": "11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz",
+    "totalMemoryBytes": 13601320960
+  },
+  "toolchain": {
+    "node": "v22.23.4",
+    "go": "go version go1.27.4 linux/amd64"
+  },
+  "configuration": {
+    "warmup": 200,
+    "rounds": 5,
+    "concurrency": 50,
+    "labs": 200
+  },
+  "workloads": "identical seeded publication sequence per side: warmup replays; per round, publish + replay + concealed cross-class 404 + forbidden 403 per lab, then a concurrent different-key pair wave on one fresh lab",
+  "caveat": "Both sides run in-process with their own HTTP stack on loopback; latency includes the client fetch. Build times are warm-cache single runs, not cold-cache measurements.",
+  "results": [
+    {
+      "implementation": "nestjs-pa2",
+      "requests": 4680,
+      "errors": 0,
+      "warmup": 200,
+      "rounds": 5,
+      "concurrency": 50,
+      "labs": 200,
+      "latencyMs": {
+        "mean": 4.9639100665178555,
+        "p50": 0.849065000000337,
+        "p95": 27.106549000000086,
+        "max": 101.04536399999961
+      },
+      "throughputPerSecond": 1047.0739796585494,
+      "measuredMs": 4278.589753,
+      "startupMs": 175.07671400000004,
+      "memoryRssBytes": 179064832
+    },
+    {
+      "concurrency": 50,
+      "errors": 0,
+      "implementation": "go-compatpub",
+      "labs": 200,
+      "latencyMs": {
+        "max": 60.236,
+        "mean": 1.825849553571429,
+        "p50": 0.343,
+        "p95": 8.811
+      },
+      "measuredMs": 1566.687,
+      "requests": 4680,
+      "rounds": 5,
+      "startupMs": 21.524,
+      "throughputPerSecond": 2859.535896596333,
+      "warmup": 200
+    }
+  ],
+  "builds": [
+    {
+      "label": "npm run build --workspace @leetkob/api (warm cache)",
+      "milliseconds": 2057.613305
+    },
+    {
+      "label": "go build ./... (warm cache)",
+      "milliseconds": 640.7397380000002
+    }
+  ],
+  "artifacts": {
+    "nestjsDistBytes": 36544
+  },
+  "reviewAcceptance": "pending; this comparison does not switch the default backend, and the Go production routes stay on their explicit development port"
+}
