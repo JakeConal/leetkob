@@ -1,0 +1,1243 @@
+{
+  "family": "labs",
+  "scenarios": [
+    {
+      "id": "labs.create",
+      "operationId": "createLab",
+      "decision": "D01",
+      "covers": ["lab-authoring/Configurable execution limits"],
+      "effects": [
+        "2 seconds of CPU yields 6000 ms of wall time; every fixed limit keeps its value."
+      ],
+      "given": {
+        "now": "2026-11-18T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "executionPolicy": {
+            "cpuTimeLimitMs": 2000,
+            "memoryLimitBytes": 536870912
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/v2/labs/1ab00000-0000-4000-8000-000000000002"
+        },
+        "body": {
+          "view": "ta",
+          "id": "1ab00000-0000-4000-8000-000000000002",
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "status": "scheduled",
+          "revision": 1,
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 2000,
+            "wallTimeLimitMs": 6000,
+            "memoryLimitBytes": 536870912,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "activeTestRevision": null,
+          "gradingGeneration": 1,
+          "constraintsRevisedAt": null,
+          "modelBudget": {
+            "capMicroUsd": 250000,
+            "reservedMicroUsd": 0,
+            "settledMicroUsd": 0
+          },
+          "publication": null,
+          "createdAt": "2026-11-18T04:00:00.000Z",
+          "updatedAt": "2026-11-18T04:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "labs.create.schedule-invalid",
+      "operationId": "createLab",
+      "covers": ["lab-authoring/Lab schedule and ownership"],
+      "effects": ["No lab is created."],
+      "given": {
+        "now": "2026-11-18T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The deadline equals the opening time."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-20T02:00:00.000Z",
+          "executionPolicy": {
+            "cpuTimeLimitMs": 2000,
+            "memoryLimitBytes": 536870912
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs",
+          "errors": [
+            {
+              "in": "body",
+              "name": "/submissionDeadline",
+              "code": "inconsistent"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "labs.create.policy-out-of-range",
+      "operationId": "createLab",
+      "requestSchemaValid": false,
+      "decision": "D01",
+      "covers": ["lab-authoring/Configurable execution limits"],
+      "given": {
+        "now": "2026-11-18T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "executionPolicy": {
+            "cpuTimeLimitMs": 6000,
+            "memoryLimitBytes": 536870912
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs",
+          "errors": [
+            {
+              "in": "body",
+              "name": "/executionPolicy/cpuTimeLimitMs",
+              "code": "out-of-range"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "labs.create.compiler-member-rejected",
+      "operationId": "createLab",
+      "requestSchemaValid": false,
+      "covers": ["lab-authoring/Configurable execution limits"],
+      "given": {
+        "now": "2026-11-18T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "executionPolicy": {
+            "compileProfile": "gxx-std-cpp20-o3"
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs",
+          "errors": [
+            {
+              "in": "body",
+              "name": "/executionPolicy/compileProfile",
+              "code": "unknown-member"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "labs.create.foreign-class",
+      "operationId": "createLab",
+      "covers": ["lab-authoring/Lab schedule and ownership"],
+      "effects": ["No lab is created."],
+      "given": {
+        "now": "2026-11-18T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["Class B exists but the TA is not assigned to it."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "classId": "c1a55000-0000-4000-8000-000000000002",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "executionPolicy": {
+            "cpuTimeLimitMs": 2000,
+            "memoryLimitBytes": 536870912
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/class-not-found",
+          "title": "Class not found",
+          "status": 404,
+          "detail": "No such class is available to you.",
+          "instance": "/v2/labs"
+        }
+      }
+    },
+    {
+      "id": "labs.list.student",
+      "operationId": "listLabs",
+      "effects": ["The unopened lab is absent from the list."],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The class has one open lab and one lab that has not opened."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs?classId=c1a55000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "view": "student",
+              "id": "1ab00000-0000-4000-8000-000000000001",
+              "classId": "c1a55000-0000-4000-8000-000000000001",
+              "title": "Lab 3 - Merge sort",
+              "statementMarkdown": "# Merge sort\n\nSort N integers.",
+              "opensAt": "2026-11-20T02:00:00.000Z",
+              "submissionDeadline": "2026-11-25T15:00:00.000Z",
+              "status": "open",
+              "executionPolicy": {
+                "language": "cpp17",
+                "compileProfile": "gxx-std-cpp17-o2",
+                "sourceLimitBytes": 65536,
+                "compileTimeLimitMs": 10000,
+                "cpuTimeLimitMs": 1000,
+                "wallTimeLimitMs": 3000,
+                "memoryLimitBytes": 268435456,
+                "processLimit": 16,
+                "outputLimitBytes": 1048576
+              },
+              "constraintsRevisedAt": "2026-11-19T09:00:00.000Z",
+              "publishedAt": null
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "labs.get.ta",
+      "operationId": "getLab",
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "view": "ta",
+          "id": "1ab00000-0000-4000-8000-000000000001",
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "status": "open",
+          "revision": 4,
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "activeTestRevision": 1,
+          "gradingGeneration": 7,
+          "constraintsRevisedAt": "2026-11-19T09:00:00.000Z",
+          "modelBudget": {
+            "capMicroUsd": 250000,
+            "reservedMicroUsd": 18000,
+            "settledMicroUsd": 42000
+          },
+          "publication": null,
+          "createdAt": "2026-11-18T04:00:00.000Z",
+          "updatedAt": "2026-11-19T09:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "labs.get.student-before-open",
+      "operationId": "getLab",
+      "covers": ["lab-authoring/Lab schedule and ownership"],
+      "given": {
+        "now": "2026-11-20T01:59:59.999Z",
+        "actor": "student-enrolled",
+        "state": ["Server time is one millisecond before opensAt."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-not-found",
+          "title": "Lab not found",
+          "status": 404,
+          "detail": "No such lab is available to you.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "labs.get.student-at-open",
+      "operationId": "getLab",
+      "covers": ["lab-authoring/Lab schedule and ownership"],
+      "given": {
+        "now": "2026-11-20T02:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["Server time equals opensAt."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "view": "student",
+          "id": "1ab00000-0000-4000-8000-000000000001",
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers.",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "status": "open",
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "constraintsRevisedAt": "2026-11-19T09:00:00.000Z",
+          "publishedAt": null
+        }
+      }
+    },
+    {
+      "id": "labs.update",
+      "operationId": "updateLab",
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is open at revision 4."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 4,
+          "statementMarkdown": "# Merge sort\n\nSort N integers (N <= 10^5)."
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "view": "ta",
+          "id": "1ab00000-0000-4000-8000-000000000001",
+          "classId": "c1a55000-0000-4000-8000-000000000001",
+          "title": "Lab 3 - Merge sort",
+          "statementMarkdown": "# Merge sort\n\nSort N integers (N <= 10^5).",
+          "opensAt": "2026-11-20T02:00:00.000Z",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z",
+          "status": "open",
+          "revision": 5,
+          "executionPolicy": {
+            "language": "cpp17",
+            "compileProfile": "gxx-std-cpp17-o2",
+            "sourceLimitBytes": 65536,
+            "compileTimeLimitMs": 10000,
+            "cpuTimeLimitMs": 1000,
+            "wallTimeLimitMs": 3000,
+            "memoryLimitBytes": 268435456,
+            "processLimit": 16,
+            "outputLimitBytes": 1048576
+          },
+          "activeTestRevision": 1,
+          "gradingGeneration": 7,
+          "constraintsRevisedAt": "2026-11-19T09:00:00.000Z",
+          "modelBudget": {
+            "capMicroUsd": 250000,
+            "reservedMicroUsd": 18000,
+            "settledMicroUsd": 42000
+          },
+          "publication": null,
+          "createdAt": "2026-11-18T04:00:00.000Z",
+          "updatedAt": "2026-11-21T04:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "labs.update.locked",
+      "operationId": "updateLab",
+      "decision": "D07",
+      "covers": ["lab-authoring/Lab schedule and ownership"],
+      "effects": ["The deadline and the lab revision are unchanged."],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab opened at opensAt."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 4,
+          "submissionDeadline": "2026-11-26T15:00:00.000Z"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-configuration-locked",
+          "title": "Lab configuration locked",
+          "status": 409,
+          "detail": "This setting cannot change after the lab has opened.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+          "lockedFields": ["submissionDeadline"],
+          "opensAt": "2026-11-20T02:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "labs.update.stale",
+      "operationId": "updateLab",
+      "effects": ["The other TA's change is not overwritten."],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["Another TA already moved the lab to revision 5."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 4,
+          "title": "Lab 3 - Merge sort (v2)"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/revision-conflict",
+          "title": "Revision conflict",
+          "status": 409,
+          "detail": "The resource changed after it was read. Refresh and try again.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001",
+          "conflicts": [
+            {
+              "resource": "lab",
+              "id": "1ab00000-0000-4000-8000-000000000001",
+              "currentRevision": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "labs.sample-tests",
+      "operationId": "listSampleTests",
+      "covers": ["lab-authoring/Test bundle validation"],
+      "effects": ["No hidden test name, input, or output appears."],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The active bundle has one sample test and nine hidden tests."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/sample-tests",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "testRevision": 1,
+          "items": [
+            {
+              "ordinal": 1,
+              "name": "01",
+              "input": "5\n5 3 1 4 2\n",
+              "expectedOutput": "1 2 3 4 5\n"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "labs.tests.upload",
+      "operationId": "uploadTestBundle",
+      "given": {
+        "now": "2026-11-19T10:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab has not opened and is at revision 1."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions?expectedRevision=1",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/zip"
+        },
+        "bodyDescription": "ZIP with sample/01.in, sample/01.out, and hidden/01..09 pairs."
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "body": {
+          "labId": "1ab00000-0000-4000-8000-000000000002",
+          "testRevision": 1,
+          "active": true,
+          "sampleCount": 1,
+          "hiddenCount": 9,
+          "bundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "compressedBytes": 18234,
+          "expandedBytes": 90512,
+          "labRevision": 2,
+          "createdAt": "2026-11-19T10:00:00.000Z",
+          "createdBy": "7a000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "labs.tests.upload.unsafe-paths",
+      "operationId": "uploadTestBundle",
+      "covers": ["lab-authoring/Test bundle validation"],
+      "effects": [
+        "Nothing is written outside isolated staging storage.",
+        "No test revision is created and the active revision is unchanged."
+      ],
+      "given": {
+        "now": "2026-11-19T10:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions?expectedRevision=1",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/zip"
+        },
+        "bodyDescription": "ZIP containing ../../etc/passwd, /abs/01.in, and a symbolic link hidden/02.in -> /etc/hostname."
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/test-bundle-invalid",
+          "title": "Test bundle invalid",
+          "status": 400,
+          "detail": "The test bundle was rejected and nothing was activated.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions",
+          "violations": ["absolute-path", "parent-traversal", "symbolic-link"]
+        }
+      }
+    },
+    {
+      "id": "labs.tests.upload.at-compressed-limit",
+      "operationId": "uploadTestBundle",
+      "decision": "D07",
+      "given": {
+        "now": "2026-11-19T10:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions?expectedRevision=1",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/zip"
+        },
+        "bodyDescription": "Valid ZIP of exactly 10,485,760 bytes that expands to 20 MiB in 10 entries."
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "body": {
+          "labId": "1ab00000-0000-4000-8000-000000000002",
+          "testRevision": 1,
+          "active": true,
+          "sampleCount": 1,
+          "hiddenCount": 4,
+          "bundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "compressedBytes": 10485760,
+          "expandedBytes": 20971520,
+          "labRevision": 2,
+          "createdAt": "2026-11-19T10:00:00.000Z",
+          "createdBy": "7a000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "labs.tests.upload.too-large",
+      "operationId": "uploadTestBundle",
+      "decision": "D07",
+      "given": {
+        "now": "2026-11-19T10:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions?expectedRevision=1",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/zip"
+        },
+        "bodyDescription": "Body of 10,485,761 bytes."
+      },
+      "response": {
+        "status": 413,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/payload-too-large",
+          "title": "Payload too large",
+          "status": 413,
+          "detail": "The request body exceeds the documented limit.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions",
+          "maximumBytes": 10485760
+        }
+      }
+    },
+    {
+      "id": "labs.tests.upload.expansion-limits",
+      "operationId": "uploadTestBundle",
+      "decision": "D07",
+      "covers": ["lab-authoring/Test bundle validation"],
+      "effects": ["Expansion stops as soon as a limit is exceeded."],
+      "given": {
+        "now": "2026-11-19T10:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions?expectedRevision=1",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/zip"
+        },
+        "bodyDescription": "ZIP of 1,001 entries whose declared expanded size is 104,857,601 bytes."
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/test-bundle-invalid",
+          "title": "Test bundle invalid",
+          "status": 400,
+          "detail": "The test bundle was rejected and nothing was activated.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions",
+          "violations": ["entry-limit-exceeded", "expanded-size-exceeded"]
+        }
+      }
+    },
+    {
+      "id": "labs.tests.list",
+      "operationId": "listTestRevisions",
+      "given": {
+        "now": "2026-11-19T10:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000002/test-revisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "labId": "1ab00000-0000-4000-8000-000000000002",
+              "testRevision": 1,
+              "active": true,
+              "sampleCount": 1,
+              "hiddenCount": 9,
+              "bundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "compressedBytes": 18234,
+              "expandedBytes": 90512,
+              "labRevision": 2,
+              "createdAt": "2026-11-19T10:00:00.000Z",
+              "createdBy": "7a000000-0000-4000-8000-000000000001"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.list.student",
+      "operationId": "listConstraints",
+      "covers": ["lab-authoring/Visible constraints and submission notice"],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "labId": "1ab00000-0000-4000-8000-000000000001",
+              "key": "C1",
+              "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+              "deduction": "3.00",
+              "revision": 1,
+              "revisedAt": "2026-11-19T09:00:00.000Z"
+            },
+            {
+              "id": "c0000000-0000-4000-8000-000000000002",
+              "labId": "1ab00000-0000-4000-8000-000000000001",
+              "key": "C2",
+              "text": "Sort with a merge sort you wrote yourself.",
+              "deduction": "4.00",
+              "revision": 1,
+              "revisedAt": "2026-11-19T09:00:00.000Z"
+            }
+          ],
+          "constraintsRevisedAt": "2026-11-19T09:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.create",
+      "operationId": "createConstraint",
+      "given": {
+        "now": "2026-11-19T10:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab has not opened."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000002/constraints",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "key": "C1",
+          "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+          "deduction": "3.00"
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "body": {
+          "id": "c0000000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000002",
+          "key": "C1",
+          "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+          "deduction": "3.00",
+          "revision": 1,
+          "revisedAt": "2026-11-19T10:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.create.after-opening",
+      "operationId": "createConstraint",
+      "covers": ["lab-authoring/Constraint revision restrictions"],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is open."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "key": "C3",
+          "text": "Do not use `goto`.",
+          "deduction": "1.00"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/constraint-change-not-allowed",
+          "title": "Constraint change not allowed",
+          "status": 409,
+          "detail": "This constraint change is not allowed after the lab has opened.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints",
+          "rule": "addition-after-opening"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.revise.reduce",
+      "operationId": "reviseConstraint",
+      "covers": [
+        "lab-authoring/Constraint revision restrictions",
+        "constraint-checking/Required rechecking after constraint changes"
+      ],
+      "effects": [
+        "Findings and decisions for C1 revision 1 are superseded, including for a deduction-only edit.",
+        "The lab's gradingGeneration increases and current Accepted submissions are rechecked.",
+        "Readiness is false until the new obligations are complete."
+      ],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is open. C1 deducts 3.00 at revision 1 and has reviewed findings."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "deduction": "2.00",
+          "reason": "Aligning with the announced rubric."
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "c0000000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "key": "C1",
+          "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+          "deduction": "2.00",
+          "revision": 2,
+          "revisedAt": "2026-11-21T04:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.revise.increase",
+      "operationId": "reviseConstraint",
+      "covers": ["lab-authoring/Constraint revision restrictions"],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is open. C1 deducts 3.00."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "deduction": "3.01",
+          "reason": "Stricter penalty."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/constraint-change-not-allowed",
+          "title": "Constraint change not allowed",
+          "status": 409,
+          "detail": "This constraint change is not allowed after the lab has opened.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000001",
+          "rule": "deduction-increase-after-opening"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.revise.meaning-not-confirmed",
+      "operationId": "reviseConstraint",
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is open."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`, `qsort`.",
+          "reason": "Clarification."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/constraint-change-not-allowed",
+          "title": "Constraint change not allowed",
+          "status": 409,
+          "detail": "This constraint change is not allowed after the lab has opened.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000001",
+          "rule": "meaning-not-confirmed"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.revise.not-found",
+      "operationId": "reviseConstraint",
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The constraint id does not exist in this lab, or was deleted."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000099",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "deduction": "1.00",
+          "reason": "x"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/constraint-not-found",
+          "title": "Constraint not found",
+          "status": 404,
+          "detail": "No such constraint is available to you.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000099"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.revise.published",
+      "operationId": "reviseConstraint",
+      "covers": ["lab-authoring/Constraint revision restrictions"],
+      "effects": ["Published grades change only through an individual adjustment or an appeal."],
+      "given": {
+        "now": "2026-11-27T01:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab was published."]
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/constraints/c0000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "deduction": "2.00",
+          "reason": "Too harsh."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-already-published",
+          "title": "Lab already published",
+          "status": 409,
+          "detail": "This lab has already been published.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000004/constraints/c0000000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000004",
+          "publishedAt": "2026-11-26T03:00:00.000Z",
+          "publishedBy": "7a000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "labs.constraints.delete",
+      "operationId": "deleteConstraint",
+      "covers": ["constraint-checking/Required rechecking after constraint changes"],
+      "effects": [
+        "C1 leaves active deductions and review obligations; its history stays readable.",
+        "No recheck is requested for a deleted constraint."
+      ],
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is open."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000001/delete",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "reason": "The statement no longer requires it."
+        }
+      },
+      "response": {
+        "status": 204,
+        "contentType": null,
+        "body": null
+      }
+    },
+    {
+      "id": "labs.constraints.revisions",
+      "operationId": "listConstraintRevisions",
+      "given": {
+        "now": "2026-11-21T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/constraints/c0000000-0000-4000-8000-000000000001/revisions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "revision": 1,
+              "change": "created",
+              "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+              "deduction": "3.00",
+              "reason": null,
+              "revisedAt": "2026-11-19T09:00:00.000Z",
+              "revisedBy": "7a000000-0000-4000-8000-000000000001"
+            },
+            {
+              "revision": 2,
+              "change": "revised",
+              "text": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+              "deduction": "2.00",
+              "reason": "Aligning with the announced rubric.",
+              "revisedAt": "2026-11-21T04:00:00.000Z",
+              "revisedBy": "7a000000-0000-4000-8000-000000000001"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "labs.readiness.processing",
+      "operationId": "getLabReadiness",
+      "covers": ["review-dashboard/Publication gate presentation"],
+      "given": {
+        "now": "2026-11-25T15:05:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "The deadline has passed and the review queue is empty, but two counted submissions are still being judged."
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/readiness",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "labId": "1ab00000-0000-4000-8000-000000000003",
+          "gradingGeneration": 7,
+          "publishable": false,
+          "blockers": ["judging-incomplete", "sampling-not-finalized"],
+          "deadlinePassed": true,
+          "admissionsInFlight": 0,
+          "rosterFrozen": true,
+          "judgingIncomplete": 2,
+          "judgingFailed": 0,
+          "checkingIncomplete": 0,
+          "checkingFailed": 0,
+          "samplingFinalized": false,
+          "pendingReviews": 0,
+          "computedAt": "2026-11-25T15:05:00.000Z"
+        }
+      }
+    }
+  ]
+}

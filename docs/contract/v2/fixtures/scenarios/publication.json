@@ -1,0 +1,473 @@
+{
+  "family": "publication",
+  "scenarios": [
+    {
+      "id": "publication.success-at-deadline",
+      "operationId": "publishLab",
+      "decision": "D02",
+      "covers": ["lab-publishing/Durable atomic grade visibility"],
+      "effects": [
+        "Publication metadata, every roster member's grade version 1, deductions, the audit event, the stored replay response, and notification intents commit in one transaction.",
+        "Students without a submission and students with non-Accepted work have grade 0.00."
+      ],
+      "given": {
+        "now": "2026-11-25T15:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "Server time equals the deadline. No admission lease is outstanding, the roster is frozen, every counted submission is non-Accepted or fully reviewed."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0001-aaaa"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "labId": "1ab00000-0000-4000-8000-000000000003",
+          "status": "published",
+          "publishedAt": "2026-11-25T15:00:00.000Z",
+          "publishedBy": "7a000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "publication.still-open",
+      "operationId": "publishLab",
+      "decision": "D02",
+      "effects": ["No grade is visible."],
+      "given": {
+        "now": "2026-11-25T14:59:59.999Z",
+        "actor": "ta-assigned",
+        "state": ["Server time is one millisecond before the deadline."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0002-bbbb"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-still-open",
+          "title": "Submissions still open",
+          "status": 409,
+          "detail": "Marks cannot be published before the submission deadline.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "publication.processing-incomplete",
+      "operationId": "publishLab",
+      "covers": [
+        "lab-publishing/Complete processing before production publication",
+        "quality-gate/Contract-first production evolution"
+      ],
+      "effects": ["No grade is visible. The body holds counts only."],
+      "given": {
+        "now": "2026-11-25T15:05:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "The review queue is empty, but two counted submissions are still being judged and one check job exhausted its retries."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0003-cccc"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-processing-incomplete",
+          "title": "Lab processing incomplete",
+          "status": 409,
+          "detail": "Judging, checking, or sampling for this lab has not finished.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+          "admissionsInFlight": 0,
+          "judgingIncomplete": 2,
+          "judgingFailed": 0,
+          "checkingIncomplete": 0,
+          "checkingFailed": 1,
+          "samplingFinalized": false
+        }
+      }
+    },
+    {
+      "id": "publication.reviews-pending",
+      "operationId": "publishLab",
+      "covers": ["lab-publishing/Complete processing before production publication"],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["Processing is complete; two required findings lack a TA decision."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0004-dddd"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/reviews-pending",
+          "title": "Reviews pending",
+          "status": 409,
+          "detail": "All required reviews must be resolved before marks can be published.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+          "pendingReviews": 2
+        }
+      }
+    },
+    {
+      "id": "publication.replay-rejection-after-resolution",
+      "operationId": "publishLab",
+      "covers": ["lab-publishing/Production retry and irreversible publication"],
+      "effects": ["The lab stays unpublished. A deliberate new attempt needs a new key."],
+      "given": {
+        "now": "2026-11-25T17:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "publish-0004-dddd completed with reviews-pending; both reviews have since been resolved."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0004-dddd"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/reviews-pending",
+          "title": "Reviews pending",
+          "status": 409,
+          "detail": "All required reviews must be resolved before marks can be published.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+          "pendingReviews": 2
+        }
+      }
+    },
+    {
+      "id": "publication.replay-success",
+      "operationId": "publishLab",
+      "covers": ["service-operations/Recoverable durable state"],
+      "effects": ["No second publication and no second grade version exist."],
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["publish-0001-aaaa completed with 200; the service restarted since."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0001-aaaa"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "labId": "1ab00000-0000-4000-8000-000000000003",
+          "status": "published",
+          "publishedAt": "2026-11-25T15:00:00.000Z",
+          "publishedBy": "7a000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "publication.already-published",
+      "operationId": "publishLab",
+      "covers": ["lab-publishing/Durable atomic grade visibility"],
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab was published with another key, possibly by another process."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0005-eeee"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-already-published",
+          "title": "Lab already published",
+          "status": 409,
+          "detail": "This lab has already been published.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+          "labId": "1ab00000-0000-4000-8000-000000000003",
+          "publishedAt": "2026-11-25T15:00:00.000Z",
+          "publishedBy": "7a000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "publication.former-ta-replay",
+      "operationId": "publishLab",
+      "covers": ["lab-publishing/Current authorization before production replay"],
+      "effects": ["The stored publication metadata is not disclosed."],
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "ta-removed",
+        "state": [
+          "publish-0001-aaaa completed with 200 for this TA, who has since lost the class assignment but still holds an unexpired access token."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-removed>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0001-aaaa"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-not-found",
+          "title": "Lab not found",
+          "status": 404,
+          "detail": "No such lab is available to you.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish"
+        }
+      }
+    },
+    {
+      "id": "publication.student",
+      "operationId": "publishLab",
+      "covers": ["identity-and-classes/Verified and current authorization"],
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The student sends X-Role: ta; the header is ignored."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0006-ffff",
+          "X-Role": "ta"
+        }
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/ta-role-required",
+          "title": "TA role required",
+          "status": 403,
+          "detail": "This operation requires the TA role.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish"
+        }
+      }
+    },
+    {
+      "id": "publication.body-rejected",
+      "operationId": "publishLab",
+      "effects": ["Nothing is stored for the key."],
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The body is `{}`; any body is invalid."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0007-0000",
+          "Content-Type": "application/json"
+        },
+        "bodyText": "{}"
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+          "errors": [
+            {
+              "in": "body",
+              "name": "",
+              "code": "not-allowed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "publication.key-missing",
+      "operationId": "publishLab",
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef"
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+          "errors": [
+            {
+              "in": "header",
+              "name": "Idempotency-Key",
+              "code": "missing"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "publication.unauthenticated",
+      "operationId": "publishLab",
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "anonymous",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Idempotency-Key": "publish-0008-1111"
+        }
+      },
+      "response": {
+        "status": 401,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/authentication-required",
+          "title": "Authentication required",
+          "status": 401,
+          "detail": "A valid session is required.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish"
+        }
+      }
+    },
+    {
+      "id": "publication.internal-error",
+      "operationId": "publishLab",
+      "covers": ["lab-publishing/Durable atomic grade visibility"],
+      "effects": [
+        "No partial grade, publication metadata, replay response, or notification intent is visible.",
+        "The key is not completed; a retry with the same key is evaluated again."
+      ],
+      "given": {
+        "now": "2026-11-25T16:30:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["Storage fails inside the publication transaction."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0009-2222"
+        }
+      },
+      "response": {
+        "status": 500,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/internal-error",
+          "title": "Internal server error",
+          "status": 500,
+          "detail": "The server could not complete the request.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/publish"
+        }
+      }
+    },
+    {
+      "id": "publication.legacy-route-absent",
+      "operationId": null,
+      "covers": ["lab-publishing/Versioned production publication boundary"],
+      "effects": ["The unversioned v1.1 route cannot publish or read a production lab."],
+      "given": {
+        "now": "2026-11-26T08:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The production process is running."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/labs/1ab00000-0000-4000-8000-000000000003/publish",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Idempotency-Key": "publish-0010-3333"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/route-not-found",
+          "title": "Route not found",
+          "status": 404,
+          "detail": "No operation exists for this method and path.",
+          "instance": "/labs/1ab00000-0000-4000-8000-000000000003/publish"
+        }
+      }
+    }
+  ]
+}

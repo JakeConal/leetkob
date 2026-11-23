@@ -1,0 +1,490 @@
+{
+  "family": "appeals",
+  "scenarios": [
+    {
+      "id": "appeals.create.just-before-window-end",
+      "operationId": "createAppeal",
+      "decision": "D03",
+      "covers": ["grading-and-appeals/Single deduction appeal within seven days"],
+      "given": {
+        "now": "2026-12-03T02:59:59.999Z",
+        "actor": "student-enrolled",
+        "state": ["Server time is one millisecond before publishedAt + 7 days."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0001-aaaa"
+        },
+        "body": {
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function."
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "a99ea100-0000-4000-8000-000000000001",
+          "deductionId": "ded00000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000004",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "status": "pending",
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function.",
+          "revision": 1,
+          "createdAt": "2026-12-03T02:59:59.999Z",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "id": "appeals.create.at-window-end",
+      "operationId": "createAppeal",
+      "decision": "D03",
+      "covers": ["grading-and-appeals/Single deduction appeal within seven days"],
+      "effects": ["No appeal is created."],
+      "given": {
+        "now": "2026-12-03T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["Server time equals publishedAt + 7 days."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0002-bbbb"
+        },
+        "body": {
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/appeal-window-closed",
+          "title": "Appeal window closed",
+          "status": 409,
+          "detail": "The appeal window for this lab has closed.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+          "appealDeadline": "2026-12-03T03:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "appeals.create.window-not-restarted-by-correction",
+      "operationId": "createAppeal",
+      "decision": "D03",
+      "given": {
+        "now": "2026-12-04T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["A TA adjusted this student's grade on December 2. publishedAt is unchanged."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0003-cccc"
+        },
+        "body": {
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/appeal-window-closed",
+          "title": "Appeal window closed",
+          "status": 409,
+          "detail": "The appeal window for this lab has closed.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+          "appealDeadline": "2026-12-03T03:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "appeals.create.replay-after-window",
+      "operationId": "createAppeal",
+      "decision": "D03",
+      "effects": ["Exactly one appeal exists for the deduction."],
+      "given": {
+        "now": "2026-12-03T03:00:05.000Z",
+        "actor": "student-enrolled",
+        "state": [
+          "appeal-0001-aaaa was accepted inside the window; the client retries the same request after it closed."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0001-aaaa"
+        },
+        "body": {
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function."
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "a99ea100-0000-4000-8000-000000000001",
+          "deductionId": "ded00000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000004",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "status": "pending",
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function.",
+          "revision": 1,
+          "createdAt": "2026-12-03T02:59:59.999Z",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "id": "appeals.create.duplicate",
+      "operationId": "createAppeal",
+      "covers": ["grading-and-appeals/Single deduction appeal within seven days"],
+      "given": {
+        "now": "2026-12-01T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The deduction already has an appeal created with another key."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0004-dddd"
+        },
+        "body": {
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/appeal-already-exists",
+          "title": "Appeal already exists",
+          "status": 409,
+          "detail": "This deduction has already been appealed.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+          "appealId": "a99ea100-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "appeals.create.key-reused",
+      "operationId": "createAppeal",
+      "given": {
+        "now": "2026-12-01T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["appeal-0001-aaaa was used with a different explanation."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0001-aaaa"
+        },
+        "body": {
+          "explanation": "A different explanation."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/idempotency-key-reused",
+          "title": "Idempotency key reused",
+          "status": 409,
+          "detail": "This idempotency key was already used with a different request.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals"
+        }
+      }
+    },
+    {
+      "id": "appeals.create.blank-explanation",
+      "operationId": "createAppeal",
+      "requestSchemaValid": false,
+      "covers": ["grading-and-appeals/Single deduction appeal within seven days"],
+      "effects": ["No appeal is created and nothing is stored for the key."],
+      "given": {
+        "now": "2026-12-01T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0006-ffff"
+        },
+        "body": {
+          "explanation": "   "
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+          "errors": [
+            {
+              "in": "body",
+              "name": "/explanation",
+              "code": "malformed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "appeals.create.other-student",
+      "operationId": "createAppeal",
+      "covers": ["identity-and-classes/Resource and event isolation"],
+      "given": {
+        "now": "2026-12-01T03:00:00.000Z",
+        "actor": "student-other",
+        "state": ["The deduction belongs to a classmate. An absent id returns this exact body."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-other>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "appeal-0005-eeee"
+        },
+        "body": {
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function."
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/deduction-not-found",
+          "title": "Deduction not found",
+          "status": 404,
+          "detail": "No such deduction is available to you.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals"
+        }
+      }
+    },
+    {
+      "id": "appeals.get",
+      "operationId": "getAppeal",
+      "given": {
+        "now": "2026-12-03T04:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "a99ea100-0000-4000-8000-000000000001",
+          "deductionId": "ded00000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000004",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "status": "pending",
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function.",
+          "revision": 1,
+          "createdAt": "2026-12-03T02:59:59.999Z",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "id": "appeals.get.not-found",
+      "operationId": "getAppeal",
+      "given": {
+        "now": "2026-12-03T04:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000099",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/appeal-not-found",
+          "title": "Appeal not found",
+          "status": 404,
+          "detail": "No such appeal is available to you.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000099"
+        }
+      }
+    },
+    {
+      "id": "appeals.list.pending",
+      "operationId": "listLabAppeals",
+      "given": {
+        "now": "2026-12-03T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/appeals?status=pending",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "a99ea100-0000-4000-8000-000000000001",
+              "deductionId": "ded00000-0000-4000-8000-000000000001",
+              "labId": "1ab00000-0000-4000-8000-000000000004",
+              "studentId": "57000000-0000-4000-8000-000000000001",
+              "status": "pending",
+              "explanation": "Line 12 is inside my own helper named stable_sort, not the library function.",
+              "revision": 1,
+              "createdAt": "2026-12-03T02:59:59.999Z",
+              "resolution": null
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "appeals.resolve.accepted-with-adjustment",
+      "operationId": "resolveAppeal",
+      "decision": "D08",
+      "covers": ["grading-and-appeals/Atomic reasoned appeal resolution"],
+      "effects": [
+        "The C1 deduction becomes removed; formulaGrade is 6.00.",
+        "The adjustment of -1.00 is kept: grade = clamp(6.00 - 1.00, 0, 10) = 5.00 at version 3.",
+        "Deduction, grade version, appeal, audit event, and notification intent commit together."
+      ],
+      "given": {
+        "now": "2026-12-05T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": [
+          "Grade version 2: formulaGrade 3.00 (C1 3.00 and C2 4.00), manual adjustment -1.00, grade 2.00."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000001/resolution",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 1,
+          "outcome": "accepted",
+          "reason": "Line 12 calls the student's own helper; C1 is not violated."
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "a99ea100-0000-4000-8000-000000000001",
+          "deductionId": "ded00000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000004",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "status": "accepted",
+          "explanation": "Line 12 is inside my own helper named stable_sort, not the library function.",
+          "revision": 2,
+          "createdAt": "2026-12-03T02:59:59.999Z",
+          "resolution": {
+            "outcome": "accepted",
+            "reason": "Line 12 calls the student's own helper; C1 is not violated.",
+            "resolvedAt": "2026-12-05T02:00:00.000Z",
+            "gradeVersion": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "appeals.resolve.already-resolved",
+      "operationId": "resolveAppeal",
+      "covers": ["grading-and-appeals/Atomic reasoned appeal resolution"],
+      "effects": ["The appeal cannot be reopened; the TA uses an individual adjustment instead."],
+      "given": {
+        "now": "2026-12-06T02:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The appeal was rejected earlier; the TA now believes that was an error."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000001/resolution",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedRevision": 2,
+          "outcome": "accepted",
+          "reason": "Reconsidered."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/appeal-already-resolved",
+          "title": "Appeal already resolved",
+          "status": 409,
+          "detail": "This appeal has already been resolved.",
+          "instance": "/v2/deductions/ded00000-0000-4000-8000-000000000001/appeals/a99ea100-0000-4000-8000-000000000001/resolution"
+        }
+      }
+    }
+  ]
+}

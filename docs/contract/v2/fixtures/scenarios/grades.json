@@ -1,0 +1,544 @@
+{
+  "family": "grades",
+  "scenarios": [
+    {
+      "id": "grades.list.provisional",
+      "operationId": "listLabGrades",
+      "effects": ["Every row is labelled provisional; a student without a submission has 0.00."],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is closed and unpublished."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/grades",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "state": "provisional",
+          "items": [
+            {
+              "studentId": "57000000-0000-4000-8000-000000000001",
+              "displayName": "Student One",
+              "studentCode": "23120001",
+              "state": "provisional",
+              "gradeVersion": null,
+              "grade": "3.00",
+              "formulaGrade": "3.00",
+              "manualAdjustmentAmount": null,
+              "countedSubmissionId": "5b000000-0000-4000-8000-000000000001",
+              "judgeVerdict": "AC"
+            },
+            {
+              "studentId": "57000000-0000-4000-8000-000000000002",
+              "displayName": "Student Two",
+              "studentCode": "23120002",
+              "state": "provisional",
+              "gradeVersion": null,
+              "grade": "0.00",
+              "formulaGrade": "0.00",
+              "manualAdjustmentAmount": null,
+              "countedSubmissionId": null,
+              "judgeVerdict": null
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "grades.me.published",
+      "operationId": "getMyGrade",
+      "covers": [
+        "grading-and-appeals/Deterministic grade calculation",
+        "grading-and-appeals/Student grade visibility"
+      ],
+      "effects": [
+        "C1 is deducted once although it has two evidence lines: 10 - 3 - 4 = 3.00.",
+        "No rejected proposal, unsure verdict, sample membership, or review history appears."
+      ],
+      "given": {
+        "now": "2026-11-27T01:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["C1 (3.00) is violated on two lines and C2 (4.00) on one line."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/me",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "labId": "1ab00000-0000-4000-8000-000000000004",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "gradeVersion": 1,
+          "grade": "3.00",
+          "formulaGrade": "3.00",
+          "manualAdjustment": null,
+          "countedSubmissionId": "5b000000-0000-4000-8000-000000000001",
+          "judgeVerdict": "AC",
+          "deductions": [
+            {
+              "id": "ded00000-0000-4000-8000-000000000001",
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintText": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+              "constraintRevision": 1,
+              "amount": "3.00",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                },
+                {
+                  "line": 27,
+                  "text": "std::sort(v.begin(), v.end());"
+                }
+              ],
+              "status": "confirmed",
+              "appeal": null
+            },
+            {
+              "id": "ded00000-0000-4000-8000-000000000002",
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintText": "Sort with a merge sort you wrote yourself.",
+              "constraintRevision": 1,
+              "amount": "4.00",
+              "reason": "The sort delegates to the standard library instead of merging.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "status": "confirmed",
+              "appeal": null
+            }
+          ],
+          "publishedAt": "2026-11-26T03:00:00.000Z",
+          "appealDeadline": "2026-12-03T03:00:00.000Z",
+          "updatedAt": "2026-11-26T03:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "grades.me.unpublished",
+      "operationId": "getMyGrade",
+      "covers": ["grading-and-appeals/Student grade visibility"],
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The lab is closed and unpublished."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/grades/me",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/grade-not-found",
+          "title": "Grade not found",
+          "status": 404,
+          "detail": "No published grade is available to you for this lab.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/grades/me"
+        }
+      }
+    },
+    {
+      "id": "grades.student.detail",
+      "operationId": "getStudentGrade",
+      "given": {
+        "now": "2026-11-27T01:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "row": {
+            "studentId": "57000000-0000-4000-8000-000000000001",
+            "displayName": "Student One",
+            "studentCode": "23120001",
+            "state": "published",
+            "gradeVersion": 2,
+            "grade": "8.50",
+            "formulaGrade": "3.00",
+            "manualAdjustmentAmount": "5.50",
+            "countedSubmissionId": "5b000000-0000-4000-8000-000000000001",
+            "judgeVerdict": "AC"
+          },
+          "deductions": [
+            {
+              "id": "ded00000-0000-4000-8000-000000000001",
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintText": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+              "constraintRevision": 1,
+              "amount": "3.00",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                },
+                {
+                  "line": 27,
+                  "text": "std::sort(v.begin(), v.end());"
+                }
+              ],
+              "status": "confirmed",
+              "appeal": null
+            },
+            {
+              "id": "ded00000-0000-4000-8000-000000000002",
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintText": "Sort with a merge sort you wrote yourself.",
+              "constraintRevision": 1,
+              "amount": "4.00",
+              "reason": "The sort delegates to the standard library instead of merging.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "status": "confirmed",
+              "appeal": null
+            }
+          ],
+          "manualAdjustment": {
+            "amount": "5.50",
+            "targetGrade": "8.50",
+            "previousGrade": "3.00",
+            "reason": "C2 was applied to the wrong submission during review.",
+            "adjustedAt": "2026-11-27T01:00:00.000Z"
+          },
+          "versions": [
+            {
+              "gradeVersion": 1,
+              "grade": "3.00",
+              "formulaGrade": "3.00",
+              "cause": "publication",
+              "actorId": "7a000000-0000-4000-8000-000000000001",
+              "reason": null,
+              "createdAt": "2026-11-26T03:00:00.000Z"
+            },
+            {
+              "gradeVersion": 2,
+              "grade": "8.50",
+              "formulaGrade": "3.00",
+              "cause": "manual-adjustment",
+              "actorId": "7a000000-0000-4000-8000-000000000001",
+              "reason": "C2 was applied to the wrong submission during review.",
+              "createdAt": "2026-11-27T01:00:00.000Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "grades.adjust",
+      "operationId": "adjustStudentGrade",
+      "decision": "D08",
+      "covers": ["grading-and-appeals/Audited individual grade adjustments"],
+      "effects": [
+        "manualAdjustment.amount = 8.50 - 3.00 = 5.50.",
+        "publishedAt, the appeal deadline, and every other student's grade are unchanged."
+      ],
+      "given": {
+        "now": "2026-11-27T01:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The grade is at version 1 with formulaGrade 3.00 and no adjustment."]
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001/adjustment",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedGradeVersion": 1,
+          "targetGrade": "8.50",
+          "reason": "C2 was applied to the wrong submission during review."
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "row": {
+            "studentId": "57000000-0000-4000-8000-000000000001",
+            "displayName": "Student One",
+            "studentCode": "23120001",
+            "state": "published",
+            "gradeVersion": 2,
+            "grade": "8.50",
+            "formulaGrade": "3.00",
+            "manualAdjustmentAmount": "5.50",
+            "countedSubmissionId": "5b000000-0000-4000-8000-000000000001",
+            "judgeVerdict": "AC"
+          },
+          "deductions": [
+            {
+              "id": "ded00000-0000-4000-8000-000000000001",
+              "constraintId": "c0000000-0000-4000-8000-000000000001",
+              "constraintKey": "C1",
+              "constraintText": "Do not call a library sort function: `std::sort`, `std::stable_sort`.",
+              "constraintRevision": 1,
+              "amount": "3.00",
+              "reason": "Calls std::stable_sort inside the merge step.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                },
+                {
+                  "line": 27,
+                  "text": "std::sort(v.begin(), v.end());"
+                }
+              ],
+              "status": "confirmed",
+              "appeal": null
+            },
+            {
+              "id": "ded00000-0000-4000-8000-000000000002",
+              "constraintId": "c0000000-0000-4000-8000-000000000002",
+              "constraintKey": "C2",
+              "constraintText": "Sort with a merge sort you wrote yourself.",
+              "constraintRevision": 1,
+              "amount": "4.00",
+              "reason": "The sort delegates to the standard library instead of merging.",
+              "evidence": [
+                {
+                  "line": 12,
+                  "text": "stable_sort(a.begin() + lo, a.begin() + hi);"
+                }
+              ],
+              "status": "confirmed",
+              "appeal": null
+            }
+          ],
+          "manualAdjustment": {
+            "amount": "5.50",
+            "targetGrade": "8.50",
+            "previousGrade": "3.00",
+            "reason": "C2 was applied to the wrong submission during review.",
+            "adjustedAt": "2026-11-27T01:00:00.000Z"
+          },
+          "versions": [
+            {
+              "gradeVersion": 1,
+              "grade": "3.00",
+              "formulaGrade": "3.00",
+              "cause": "publication",
+              "actorId": "7a000000-0000-4000-8000-000000000001",
+              "reason": null,
+              "createdAt": "2026-11-26T03:00:00.000Z"
+            },
+            {
+              "gradeVersion": 2,
+              "grade": "8.50",
+              "formulaGrade": "3.00",
+              "cause": "manual-adjustment",
+              "actorId": "7a000000-0000-4000-8000-000000000001",
+              "reason": "C2 was applied to the wrong submission during review.",
+              "createdAt": "2026-11-27T01:00:00.000Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "grades.adjust.out-of-range",
+      "operationId": "adjustStudentGrade",
+      "requestSchemaValid": false,
+      "covers": ["grading-and-appeals/Audited individual grade adjustments"],
+      "effects": ["No grade version and no audit event are written."],
+      "given": {
+        "now": "2026-11-27T01:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001/adjustment",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedGradeVersion": 1,
+          "targetGrade": "10.50",
+          "reason": "Bonus."
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001/adjustment",
+          "errors": [
+            {
+              "in": "body",
+              "name": "/targetGrade",
+              "code": "malformed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "grades.adjust.blank-reason",
+      "operationId": "adjustStudentGrade",
+      "requestSchemaValid": false,
+      "covers": ["grading-and-appeals/Audited individual grade adjustments"],
+      "given": {
+        "now": "2026-11-27T01:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001/adjustment",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedGradeVersion": 1,
+          "targetGrade": "8.50",
+          "reason": "   "
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001/adjustment",
+          "errors": [
+            {
+              "in": "body",
+              "name": "/reason",
+              "code": "malformed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "grades.adjust.stale",
+      "operationId": "adjustStudentGrade",
+      "covers": ["grading-and-appeals/Atomic reasoned appeal resolution"],
+      "effects": ["The appeal outcome is not overwritten."],
+      "given": {
+        "now": "2026-11-27T01:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["An accepted appeal already moved the grade to version 2."]
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001/adjustment",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedGradeVersion": 1,
+          "targetGrade": "8.50",
+          "reason": "Fix."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/revision-conflict",
+          "title": "Revision conflict",
+          "status": 409,
+          "detail": "The resource changed after it was read. Refresh and try again.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000004/grades/57000000-0000-4000-8000-000000000001/adjustment",
+          "conflicts": [
+            {
+              "resource": "grade",
+              "id": "57000000-0000-4000-8000-000000000001",
+              "currentRevision": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "grades.adjust.unpublished",
+      "operationId": "adjustStudentGrade",
+      "given": {
+        "now": "2026-11-25T16:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": ["The lab is closed and unpublished."]
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000003/grades/57000000-0000-4000-8000-000000000001/adjustment",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "expectedGradeVersion": 1,
+          "targetGrade": "8.50",
+          "reason": "Fix."
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/grades-not-published",
+          "title": "Grades not published",
+          "status": 409,
+          "detail": "Grades for this lab have not been published.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000003/grades/57000000-0000-4000-8000-000000000001/adjustment"
+        }
+      }
+    }
+  ]
+}

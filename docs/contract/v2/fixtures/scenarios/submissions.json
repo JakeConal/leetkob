@@ -1,0 +1,625 @@
+{
+  "family": "submissions",
+  "scenarios": [
+    {
+      "id": "submissions.create.just-before-deadline",
+      "operationId": "createSubmission",
+      "decision": "D02",
+      "covers": ["submission-judging/Submission acceptance window"],
+      "effects": [
+        "Source, submission, counted selection, and judge job are committed together.",
+        "The submission stays eligible although judging finishes after the deadline."
+      ],
+      "given": {
+        "now": "2026-11-25T14:59:59.999Z",
+        "actor": "student-enrolled",
+        "state": ["The complete body arrives one millisecond before the deadline."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0001-aaaa"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/v2/submissions/5b000000-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "5b000000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "receivedAt": "2026-11-25T14:59:59.999Z",
+          "acceptanceSequence": 118,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceBytes": 45,
+          "counted": true,
+          "judge": {
+            "status": "queued",
+            "verdict": null,
+            "testRevision": null,
+            "compilerMessage": null,
+            "tests": [],
+            "completedAt": null
+          }
+        }
+      }
+    },
+    {
+      "id": "submissions.create.at-deadline",
+      "operationId": "createSubmission",
+      "decision": "D02",
+      "covers": ["submission-judging/Submission acceptance window"],
+      "effects": ["No submission is created and the previous counted submission is unchanged."],
+      "given": {
+        "now": "2026-11-25T15:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The complete body arrives exactly at the deadline."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0002-bbbb"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/submission-deadline-passed",
+          "title": "Submission deadline passed",
+          "status": 409,
+          "detail": "The submission deadline has passed.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "submissions.create.just-after-deadline",
+      "operationId": "createSubmission",
+      "decision": "D02",
+      "covers": ["submission-judging/Submission acceptance window"],
+      "given": {
+        "now": "2026-11-25T15:00:00.001Z",
+        "actor": "student-enrolled",
+        "state": [
+          "The body completes one millisecond late although the request started before the deadline."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0003-cccc"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/submission-deadline-passed",
+          "title": "Submission deadline passed",
+          "status": 409,
+          "detail": "The submission deadline has passed.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+          "submissionDeadline": "2026-11-25T15:00:00.000Z"
+        }
+      }
+    },
+    {
+      "id": "submissions.create.replay-after-deadline",
+      "operationId": "createSubmission",
+      "decision": "D02",
+      "covers": ["submission-judging/Idempotent durable acceptance"],
+      "effects": ["No second submission and no second judge job exist."],
+      "given": {
+        "now": "2026-11-25T15:00:30.000Z",
+        "actor": "student-enrolled",
+        "state": [
+          "submit-0001-aaaa was accepted before the deadline; the client lost the response and retries the same bytes."
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0001-aaaa"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/v2/submissions/5b000000-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "5b000000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "receivedAt": "2026-11-25T14:59:59.999Z",
+          "acceptanceSequence": 118,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceBytes": 45,
+          "counted": true,
+          "judge": {
+            "status": "queued",
+            "verdict": null,
+            "testRevision": null,
+            "compilerMessage": null,
+            "tests": [],
+            "completedAt": null
+          }
+        }
+      }
+    },
+    {
+      "id": "submissions.create.key-reused",
+      "operationId": "createSubmission",
+      "covers": ["submission-judging/Idempotent durable acceptance"],
+      "effects": ["The counted submission is unchanged."],
+      "given": {
+        "now": "2026-11-25T14:30:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["submit-0001-aaaa was accepted with different bytes."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0001-aaaa"
+        },
+        "bodyText": "int main() { return 1; }\n"
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/idempotency-key-reused",
+          "title": "Idempotency key reused",
+          "status": 409,
+          "detail": "This idempotency key was already used with a different request.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions"
+        }
+      }
+    },
+    {
+      "id": "submissions.create.at-size-limit",
+      "operationId": "createSubmission",
+      "decision": "D01",
+      "covers": ["submission-judging/Submission acceptance window"],
+      "given": {
+        "now": "2026-11-24T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The body is exactly 65,536 bytes of valid UTF-8."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0004-dddd"
+        },
+        "bodyRepeat": {
+          "text": "/",
+          "count": 65536
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/v2/submissions/5b000000-0000-4000-8000-000000000002"
+        },
+        "body": {
+          "id": "5b000000-0000-4000-8000-000000000002",
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "receivedAt": "2026-11-24T03:00:00.000Z",
+          "acceptanceSequence": 57,
+          "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sourceBytes": 65536,
+          "counted": true,
+          "judge": {
+            "status": "queued",
+            "verdict": null,
+            "testRevision": null,
+            "compilerMessage": null,
+            "tests": [],
+            "completedAt": null
+          }
+        }
+      }
+    },
+    {
+      "id": "submissions.create.over-size-limit",
+      "operationId": "createSubmission",
+      "decision": "D01",
+      "covers": ["submission-judging/Submission acceptance window"],
+      "effects": ["The request does not count as a submission."],
+      "given": {
+        "now": "2026-11-24T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The body is 65,537 bytes."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0005-eeee"
+        },
+        "bodyRepeat": {
+          "text": "/",
+          "count": 65537
+        }
+      },
+      "response": {
+        "status": 413,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/payload-too-large",
+          "title": "Payload too large",
+          "status": 413,
+          "detail": "The request body exceeds the documented limit.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+          "maximumBytes": 65536
+        }
+      }
+    },
+    {
+      "id": "submissions.create.empty-body",
+      "operationId": "createSubmission",
+      "decision": "D01",
+      "covers": ["submission-judging/Submission acceptance window"],
+      "effects": ["The request does not count as a submission and nothing is stored for the key."],
+      "given": {
+        "now": "2026-11-24T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["The body has zero bytes."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0008-1111"
+        },
+        "bodyText": ""
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/invalid-request",
+          "title": "Invalid request",
+          "status": 400,
+          "detail": "The request does not satisfy the documented input rules.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+          "errors": [
+            {
+              "in": "body",
+              "name": "",
+              "code": "missing"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "submissions.create.teaching-assistant",
+      "operationId": "createSubmission",
+      "given": {
+        "now": "2026-11-24T03:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0009-2222"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/student-role-required",
+          "title": "Student role required",
+          "status": 403,
+          "detail": "This operation requires the student role.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions"
+        }
+      }
+    },
+    {
+      "id": "submissions.create.before-open",
+      "operationId": "createSubmission",
+      "decision": "D02",
+      "given": {
+        "now": "2026-11-20T01:59:59.999Z",
+        "actor": "student-enrolled",
+        "state": ["Server time is one millisecond before opensAt."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0006-ffff"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/lab-not-found",
+          "title": "Lab not found",
+          "status": 404,
+          "detail": "No such lab is available to you.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions"
+        }
+      }
+    },
+    {
+      "id": "submissions.create.storage-failure",
+      "operationId": "createSubmission",
+      "covers": ["submission-judging/Idempotent durable acceptance"],
+      "effects": [
+        "Nothing is acknowledged, stored, or counted.",
+        "The key is not completed, so a retry with the same key is evaluated again."
+      ],
+      "given": {
+        "now": "2026-11-24T03:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["Source storage fails before the transaction commits."]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>",
+          "X-CSRF-Token": "csrf-token-0123456789abcdef0123456789abcdef",
+          "Content-Type": "text/plain; charset=utf-8",
+          "Idempotency-Key": "submit-0007-0000"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      },
+      "response": {
+        "status": 503,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/service-unavailable",
+          "title": "Service unavailable",
+          "status": 503,
+          "detail": "The service is temporarily unable to complete the request.",
+          "instance": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions"
+        }
+      }
+    },
+    {
+      "id": "submissions.list.own",
+      "operationId": "listSubmissions",
+      "covers": ["identity-and-classes/Resource and event isolation"],
+      "effects": ["Only the caller's own submissions are returned."],
+      "given": {
+        "now": "2026-11-24T04:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": ["Other students also submitted to this lab."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/labs/1ab00000-0000-4000-8000-000000000001/submissions?counted=true",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "5b000000-0000-4000-8000-000000000001",
+              "labId": "1ab00000-0000-4000-8000-000000000001",
+              "studentId": "57000000-0000-4000-8000-000000000001",
+              "receivedAt": "2026-11-24T03:10:00.000Z",
+              "acceptanceSequence": 58,
+              "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceBytes": 412,
+              "counted": true,
+              "judge": {
+                "status": "completed",
+                "verdict": "WA",
+                "testRevision": 1,
+                "compilerMessage": null,
+                "tests": [
+                  {
+                    "ordinal": 1,
+                    "kind": "sample",
+                    "verdict": "AC",
+                    "cpuTimeMs": 3,
+                    "peakMemoryBytes": 3485696
+                  },
+                  {
+                    "ordinal": 2,
+                    "kind": "hidden",
+                    "verdict": "WA",
+                    "cpuTimeMs": 4,
+                    "peakMemoryBytes": 3489792
+                  },
+                  {
+                    "ordinal": 3,
+                    "kind": "hidden",
+                    "verdict": "TLE",
+                    "cpuTimeMs": 1000,
+                    "peakMemoryBytes": 3489792
+                  }
+                ],
+                "completedAt": "2026-11-24T03:10:07.412Z"
+              }
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "id": "submissions.get.completed",
+      "operationId": "getSubmission",
+      "covers": [
+        "submission-judging/Judge verdicts and limits",
+        "submission-judging/Private realtime results and history"
+      ],
+      "effects": [
+        "The aggregate verdict is the first non-AC test in stable order (WA, not TLE).",
+        "No test input, expected output, actual output, or finding appears."
+      ],
+      "given": {
+        "now": "2026-11-24T04:00:00.000Z",
+        "actor": "student-enrolled",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/submissions/5b000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-enrolled>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "5b000000-0000-4000-8000-000000000001",
+          "labId": "1ab00000-0000-4000-8000-000000000001",
+          "studentId": "57000000-0000-4000-8000-000000000001",
+          "receivedAt": "2026-11-24T03:10:00.000Z",
+          "acceptanceSequence": 58,
+          "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceBytes": 412,
+          "counted": true,
+          "judge": {
+            "status": "completed",
+            "verdict": "WA",
+            "testRevision": 1,
+            "compilerMessage": null,
+            "tests": [
+              {
+                "ordinal": 1,
+                "kind": "sample",
+                "verdict": "AC",
+                "cpuTimeMs": 3,
+                "peakMemoryBytes": 3485696
+              },
+              {
+                "ordinal": 2,
+                "kind": "hidden",
+                "verdict": "WA",
+                "cpuTimeMs": 4,
+                "peakMemoryBytes": 3489792
+              },
+              {
+                "ordinal": 3,
+                "kind": "hidden",
+                "verdict": "TLE",
+                "cpuTimeMs": 1000,
+                "peakMemoryBytes": 3489792
+              }
+            ],
+            "completedAt": "2026-11-24T03:10:07.412Z"
+          }
+        }
+      }
+    },
+    {
+      "id": "submissions.get.other-student",
+      "operationId": "getSubmission",
+      "covers": ["identity-and-classes/Resource and event isolation"],
+      "given": {
+        "now": "2026-11-24T04:00:00.000Z",
+        "actor": "student-other",
+        "state": ["The submission belongs to a classmate. An absent id returns this exact body."]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/submissions/5b000000-0000-4000-8000-000000000001",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:student-other>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/problem+json",
+        "body": {
+          "type": "https://leetkob.example/problems/submission-not-found",
+          "title": "Submission not found",
+          "status": 404,
+          "detail": "No such submission is available to you.",
+          "instance": "/v2/submissions/5b000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "id": "submissions.source",
+      "operationId": "getSubmissionSource",
+      "given": {
+        "now": "2026-11-24T04:00:00.000Z",
+        "actor": "ta-assigned",
+        "state": []
+      },
+      "request": {
+        "method": "GET",
+        "path": "/v2/submissions/5b000000-0000-4000-8000-000000000001/source",
+        "headers": {
+          "Cookie": "__Host-lk_access=<access:ta-assigned>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "text/plain",
+        "headers": {
+          "X-Content-Type-Options": "nosniff"
+        },
+        "bodyText": "#include <iostream>\nint main() { return 0; }\n"
+      }
+    }
+  ]
+}
