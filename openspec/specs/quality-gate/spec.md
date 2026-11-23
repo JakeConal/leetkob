@@ -7,11 +7,15 @@ Defines the reproducible repository checks, secret-safety controls, protected-br
 ## Requirements
 
 ### Requirement: Reproducible local checks
-The repository SHALL document one root command each for lint, format verification, static type checking, and automated tests, and each command SHALL cover the API and web workspaces and succeed in a fresh supported environment after documented setup.
+The repository SHALL document one root command each for lint, format verification, static type checking, and automated tests. Each SHALL cover the API and web workspaces and the Go API, worker, and checker packages, and succeed in a fresh supported environment after documented setup. Go formatting, vet, builds, tests, supported race checks, and pinned vulnerability scanning SHALL have explicit coverage without weakening existing checks.
 
 #### Scenario: Contributor runs the documented harness
 - **WHEN** a contributor follows the README setup and runs each documented check command
 - **THEN** lint, format verification, type checking, and tests cover both applications and complete successfully without undocumented preparation
+
+#### Scenario: PA3-GATE-01 Go package fails
+- **WHEN** an API, worker, or checker package has a compile, test, or static-check failure
+- **THEN** the applicable root command fails rather than silently checking only the Node workspaces
 
 ### Requirement: CI command parity
 Pull-request CI SHALL install from the lockfile and execute the same four commands documented for local use.
