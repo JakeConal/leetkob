@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leetkob.example/schemas/analyzer-result.v1.json",
+  "title": "LeeTKOB C++ analyzer result, version 1",
+  "description": "Bounded JSON written by the native libclang analyzer and consumed by the Go checker. Go does not link libclang. status unsure means the analysis is unsupported; references must then be ignored and must not be turned into a violation. Locations are lines in the submitted source, never a system header.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "status", "references"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ok", "unsure"]
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Short machine reason when status is unsure. Empty when status is ok."
+    },
+    "references": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "name",
+          "qualifiedName",
+          "header",
+          "resolved",
+          "userDeclared",
+          "line",
+          "column"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["call", "using", "include", "reference"]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Unqualified identifier as resolved, or the header spelling for an include."
+          },
+          "qualifiedName": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Resolved declaration name with inline standard-library namespaces removed, such as std::sort."
+          },
+          "header": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Header the declaration was reached through from the submitted file, such as algorithm. Empty for a user declaration."
+          },
+          "resolved": {
+            "type": "boolean"
+          },
+          "userDeclared": {
+            "type": "boolean",
+            "description": "True when the resolved declaration is written in the submitted file."
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "One-based line in the submitted source."
+          },
+          "column": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}
