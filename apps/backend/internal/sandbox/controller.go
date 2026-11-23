@@ -129,16 +129,32 @@ func (c *Controller) compileWith(ctx context.Context, source []byte, prof profil
 
 // Execute runs a binary produced by Compile. argv is appended after the
 // program and is never interpreted by a shell. The returned error is only
-// an infrastructure or policy failure.
+// an infrastructure or policy failure. Execute passes no stdin; judging
+// passes each test through ExecuteInput.
 func (c *Controller) Execute(ctx context.Context, program []byte, policy RunPolicy, argv []string) (Observation, error) {
 	prof, err := runProfile(policy)
 	if err != nil {
 		return Observation{}, err
 	}
-	return c.executeWith(ctx, program, prof, policy.Wall, policy.OutputLimit, argv)
+	return c.executeWith(ctx, program, prof, policy.Wall, policy.OutputLimit, argv, nil)
 }
 
-func (c *Controller) executeWith(ctx context.Context, program []byte, prof profile, wall time.Duration, outputLimit int, argv []string) (Observation, error) {
+// ExecuteInput runs a binary with stdin set to one test input. A nil stdin
+// is the same as Execute. An empty slice still attaches stdin so the
+// program observes EOF. The bytes are copied into the container process,
+// not mounted from the host and not placed in the environment.
+func (c *Controller) ExecuteInput(ctx context.Context, program []byte, policy RunPolicy, argv []string, stdin []byte) (Observation, error) {
+	prof, err := runProfile(policy)
+	if err != nil {
+		return Observation{}, err
+	}
+	if stdin == nil {
+		stdin = []byte{}
+	}
+	return c.executeWith(ctx, program, prof, policy.Wall, policy.OutputLimit, argv, stdin)
+}
+
+func (c *Controller) executeWith(ctx context.Context, program []byte, prof profile, wall time.Duration, outputLimit int, argv []string, stdin []byte) (Observation, error) {
 	if len(program) == 0 || len(program) > maxExtract {
 		return Observation{}, fmt.Errorf("%w: program is %d bytes", ErrPolicy, len(program))
 	}
@@ -151,6 +167,7 @@ func (c *Controller) executeWith(ctx context.Context, program []byte, prof profi
 		wall:        wall,
 		outputLimit: outputLimit,
 		profile:     prof,
+		stdin:       stdin,
 	})
 	return obs, err
 }
@@ -162,6 +179,7 @@ type runRequest struct {
 	outputLimit int
 	profile     profile
 	extract     string
+	stdin       []byte
 }
 
 func (c *Controller) run(ctx context.Context, req runRequest) (Observation, []byte, error) {
@@ -171,6 +189,9 @@ func (c *Controller) run(ctx context.Context, req runRequest) (Observation, []by
 	name, err := newName()
 	if err != nil {
 		return Observation{}, nil, err
+	}
+	if req.stdin != nil {
+		req.profile.OpenStdin = true
 	}
 	args, err := createArgs(name, c.imageRef(), req.profile, req.command)
 	if err != nil {
@@ -188,7 +209,7 @@ func (c *Controller) run(ctx context.Context, req runRequest) (Observation, []by
 	if err := c.copyFiles(ctx, name, req.files); err != nil {
 		return Observation{Name: name, Invocation: args}, nil, err
 	}
-	stdout, stderr, wallHit, outputHit, attachErr := c.attach(ctx, name, req.wall, req.outputLimit)
+	stdout, stderr, wallHit, outputHit, attachErr := c.attach(ctx, name, req.wall, req.outputLimit, req.stdin)
 	obs := Observation{
 		Name:          name,
 		Stdout:        stdout,
@@ -262,8 +283,18 @@ func fillObservation(obs *Observation, doc inspectDoc) {
 	}
 }
 
-func (c *Controller) attach(ctx context.Context, name string, wall time.Duration, limit int) (stdout, stderr []byte, wallHit, outputHit bool, err error) {
-	cmd := exec.Command(c.dockerBin(), "start", "-a", name)
+func (c *Controller) attach(ctx context.Context, name string, wall time.Duration, limit int, stdin []byte) (stdout, stderr []byte, wallHit, outputHit bool, err error) {
+	startArgs := []string{"start", "-a"}
+	if stdin != nil {
+		startArgs = append(startArgs, "-i")
+	}
+	startArgs = append(startArgs, name)
+	cmd := exec.Command(c.dockerBin(), startArgs...)
+	if stdin != nil {
+		// os/exec copies this in the background. The wall kill unblocks a
+		// program that never reads it. The bytes are the test input only.
+		cmd.Stdin = bytes.NewReader(stdin)
+	}
 	outPipe, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil, false, false, err
