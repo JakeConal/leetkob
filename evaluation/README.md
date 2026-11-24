@@ -115,3 +115,41 @@ is presented as an approved team dataset here.
 Run `node --test scripts/evaluation/sources.test.mjs` (also included in `npm test`).
 Verify the real pinned checkout with the command above. These are deterministic,
 free checks, with no provider access and no manipulation of upstream ground truth.
+
+## PA#3 reconciliation: in-repository bytes vs the no-license source
+
+The PA#3 rubric expects the published dev-set bytes to be preserved in the
+submitted repository. The pinned upstream tree has no redistribution
+license, so vendoring its bytes would violate the provenance policy above.
+The resolution recorded here (and in AI-LOG D14) is:
+
+- the repository commits the byte-hash manifest (`official-source.json`), the
+  verifier/stager, and the team's committed prediction run referenced by the
+  manifest revision, problem IDs and input hashes;
+- the marker re-fetches the pinned commit and verifies all 128 files before
+  and after scoring;
+- no upstream bytes are redistributed here. If the lecturer requires literal
+  in-repository bytes, that needs explicit upstream permission or a
+  marker-supplied dataset; the policy is not silently changed.
+
+Verification (2026-11-24): cloning the pinned commit and running
+`verifyOfficial` reported 128 files verified byte-identically.
+
+## Team cases (task 7.3)
+
+`evaluation/team-cases/` holds five team-authored cases (ten solutions) in
+the layout the checker discovers, plus `tests/` for Accepted validation and
+`labels/labels.jsonl` for independent labels. Tags cover traps (a student
+function named `sort`, correct-output violations) and injection (prompt text
+in comments and a string literal). Labels were written by reading each
+solution before running any tool and cover only deterministic ban-list pairs.
+
+```bash
+node --test scripts/evaluation/team-cases.test.mjs
+```
+
+The test compiles every solution with `g++ -std=c++17 -O2` and compares output
+tokens. On 2026-11-24 the checker image under `--network none` with
+`MODEL_OFF=1` produced 10 predictions that matched the labels exactly, so the
+labels are not tuned to predictions. The image test in
+`apps/backend/internal/checker/image_test.go` repeats this comparison.

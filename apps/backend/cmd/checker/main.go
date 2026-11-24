@@ -1,21 +1,29 @@
 // Command checker is the dataset-independent marking command required by
 // the PA#3 assignment: `checker --data <dir> --predictions <file>` with a
-// Dockerfile (built with the sandbox image in issue #38 task 7.1). This
-// scaffold pins the command line, the exit-code contract and the
-// MODEL_OFF=1 selection point; generic dataset discovery lands with task
-// 7.1 and never reads labels or scorer data.
+// Dockerfile and the MODEL_OFF=1 switch. It never reads labels, tags,
+// tests or the scorer, and the offline image never calls a model: ban-list
+// constraints are decided by the bundled libclang analyzer and semantic
+// constraints are written as unsure.
 //
-// Exit codes: 2 invalid invocation; 0/1 valid PA#3 run outcomes (the
-// unmodified scorer decides between them); never fabricate a run.
+// Exit codes: 2 invalid invocation or dataset; 0 a valid run (the marker
+// runs the unmodified scorer separately; its exit 0 or 1 is valid, 2 is
+// invalid input). No run is ever fabricated.
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/JakeConal/leetkob/backend/internal/checker"
 )
+
+const defaultRunTimeout = 10 * time.Minute
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("command", "checker")
@@ -30,19 +38,78 @@ func main() {
 		os.Exit(2)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, runTimeoutFromEnv())
+	defer cancel()
+
 	logger.Info("checker invocation validated",
 		"data", args.DataDir,
 		"predictions", args.PredictionsPath,
 		"modelOff", args.ModelOff,
 	)
 	if args.ModelOff {
-		logger.Info("MODEL_OFF=1 selected before provider initialization; no network or credential access will occur")
+		logger.Info("MODEL_OFF=1 selected before any provider configuration; no network or credential access occurs")
 	}
 
-	// The shared checker core (generic statement/constraint/source
-	// discovery and prediction output) arrives with issue #38 task 7.1.
-	logger.Warn("checker core not implemented yet (issue #38 task 7.1); arguments validated only, no predictions written")
-	os.Exit(0)
+	engine, err := checker.NewNativeAnalyzer(ctx)
+	if err != nil {
+		// A missing compiler configuration makes hard rules unsure; it is
+		// not a fabrication and not a crash.
+		logger.Warn("hard-rule analyzer unavailable; ban-list pairs will be unsure", "error", err)
+	}
+	var hardRules checker.HardRuleEngine
+	if engine != nil {
+		hardRules = engine
+	} else {
+		logger.Warn("CHECKER_ANALYZER is not set; ban-list pairs will be unsure")
+	}
+
+	semanticEngine, err := checker.NewSemanticEngineFromEnv()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(2)
+	}
+	if semanticEngine == nil {
+		logger.Info("semantic pairs stay unsure (MODEL_OFF=1)")
+	} else {
+		logger.Info("semantic engine configured; prices and cap enforced before each call")
+	}
+
+	summary, err := checker.Run(ctx, checker.RunOptions{
+		Root:        args.DataDir,
+		Predictions: args.PredictionsPath,
+		Engine:      hardRules,
+		Semantic:    semanticEngine,
+	})
+	if err != nil {
+		logger.Error("checker run failed", "error", err)
+		os.Exit(2)
+	}
+	logger.Info("checker run complete",
+		"problems", summary.Problems,
+		"solutions", summary.Solutions,
+		"constraints", summary.Constraints,
+		"predictions", summary.Predictions,
+		"pass", summary.Pass,
+		"violation", summary.Violation,
+		"unsure", summary.Unsure,
+	)
+}
+
+// runTimeoutFromEnv bounds one run. The default keeps the marker's offline
+// image run inside ten minutes; an explicitly authorized real-model
+// evaluation may raise it.
+func runTimeoutFromEnv() time.Duration {
+	raw := os.Getenv("RUN_TIMEOUT_SECONDS")
+	if raw == "" {
+		return defaultRunTimeout
+	}
+	seconds, err := strconv.Atoi(raw)
+	if err != nil || seconds < 1 {
+		return defaultRunTimeout
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 func flagString(name, fallback string) string {

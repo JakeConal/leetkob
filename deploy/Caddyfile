@@ -1,0 +1,9 @@
+# TLS terminator for the public deployment. Replace the site address with the
+# real domain; Caddy obtains and renews certificates automatically.
+{$LEETKOB_DOMAIN:leetkob.example} {
+	encode zstd gzip
+	reverse_proxy web:3000
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+}
