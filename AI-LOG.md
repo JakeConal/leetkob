@@ -218,3 +218,11 @@
 - **Rejected:** reconciling two complete implementations days before the deadline, and silently reticking or unticking issue #38 tasks without a mapping.
 - **Why:** the rubric's "checker command with a Dockerfile and MODEL_OFF=1" was genuinely missing on `main`, while everything else the team needs is already there and green.
 - **Evidence:** the checker image run on `evaluation/team-cases` matched all 10 independent labels with 0 mismatches under `--network none`; the official pinned tree verified 128/128 byte-identical files; the port branch is `codex/port-pa3-unique-evidence`.
+
+### 2026-11-24 — Adopted main, ported unique evidence, first real evaluation
+
+- Tools: local repository inspection, GitHub API, the user's authorized NVIDIA NIM key supplied outside the repository, the pinned official dataset (fetched, verified, never vendored). No deployment was provisioned (owner decision) and no credential was written to the repository, logs or evidence.
+- Changed: adopted the merged PA#3 implementation (D14) and ported the missing pieces — a real checker CLI with digest-pinned image around the existing `hardrule` analyzer (tasks 7.1/7.2), labelled team cases with Accepted validation and the official byte-integrity reconciliation (7.3), a repeatable `cmd/provision` and `deploy/` artifacts verified by local staging (8.2), and the `pa3` tag attack gate in CI (8.1).
+- Changed: ran the authorized first dev-set evaluation with `minimaxai/minimax-m3.1-flash` through the checker image: 102 predictions, 0 wrongful deductions, 78.4 % recall, 3.9 % unsure, unmodified scorer exit 1. Committed predictions, scorer report and a call log with provider request IDs, tokens, elapsed time and cost; documented the 80-submission arithmetic at the free-tier price (7.4/7.5). A rate-limit retry and a missing CA bundle were found during the run and fixed before the committed run.
+- Rejected: inventing a deployment URL or tag-run evidence after the owner chose to skip hosting; counting the online worker's offline semantic results as real model calls; committing any part of the API key.
+- Evidence: `evaluation/dev-run/`, `docs/evidence/pa3-walkthrough.md`, `deploy/README.md`, CI run 45306355723, and PR #44.

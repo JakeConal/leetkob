@@ -11,6 +11,7 @@ import (
 
 	"github.com/JakeConal/leetkob/backend/internal/checker/hardrule"
 	"github.com/JakeConal/leetkob/backend/internal/checker/schema"
+	"github.com/JakeConal/leetkob/backend/internal/semantic"
 )
 
 // AnalyzeTimeout bounds one native analyzer invocation.
@@ -74,6 +75,9 @@ type RunOptions struct {
 	Predictions string
 	// Engine runs hard rules; nil yields unsure ban-list verdicts.
 	Engine HardRuleEngine
+	// Semantic runs semantic constraints; nil yields unsure semantic
+	// verdicts. MODEL_OFF runs pass nil here.
+	Semantic SemanticEngine
 }
 
 // Summary reports one run's bounded counts.
@@ -105,6 +109,10 @@ func Run(ctx context.Context, options RunOptions) (Summary, error) {
 	predictions := make([]schema.Prediction, 0, 64)
 	for _, problem := range problems {
 		summary.Constraints += len(problem.Constraints)
+		statement, err := readText(problem.StatementPath, maxStatementBytes, ErrStatementTooLarge)
+		if err != nil {
+			return Summary{}, err
+		}
 		for _, solution := range problem.Solutions {
 			summary.Solutions++
 			source, err := readSolutionSource(solution.Path)
@@ -112,8 +120,40 @@ func Run(ctx context.Context, options RunOptions) (Summary, error) {
 				return Summary{}, err
 			}
 			raw, analyzerErr := analyze(ctx, options.Engine, source)
+
+			decisions := make(map[string]hardrule.Decision, len(problem.Constraints))
+			semanticConstraints := make([]semantic.Constraint, 0, len(problem.Constraints))
+			if analyzerErr == nil {
+				for _, constraint := range problem.Constraints {
+					decision := hardrule.Evaluate(constraint.Text, source, raw)
+					if decision.HardRule {
+						decisions[constraint.ID] = decision
+					} else {
+						semanticConstraints = append(semanticConstraints, semantic.Constraint{ID: constraint.ID, Text: constraint.Text})
+					}
+				}
+			} else {
+				for _, constraint := range problem.Constraints {
+					if !hardrule.Evaluate(constraint.Text, source, nil).HardRule {
+						semanticConstraints = append(semanticConstraints, semantic.Constraint{ID: constraint.ID, Text: constraint.Text})
+					}
+				}
+			}
+
+			semanticFindings := map[string]semantic.Finding{}
+			if options.Semantic != nil && len(semanticConstraints) > 0 {
+				result, err := options.Semantic.Check(ctx, semantic.Input{
+					LabID: problem.ID, Statement: statement,
+					Constraints: semanticConstraints, Source: source,
+				})
+				if err == nil {
+					for _, finding := range result.Findings {
+						semanticFindings[finding.ConstraintID] = finding
+					}
+				}
+			}
+
 			for _, constraint := range problem.Constraints {
-				decision := hardrule.Evaluate(constraint.Text, source, raw)
 				prediction := schema.Prediction{
 					Solution:   solution.ID,
 					Constraint: constraint.ID,
@@ -121,14 +161,20 @@ func Run(ctx context.Context, options RunOptions) (Summary, error) {
 				}
 				switch {
 				case analyzerErr != nil:
-					prediction.Verdict = schema.VerdictUnsure
-				case decision.HardRule:
-					prediction.Verdict = decision.Verdict
-					prediction.Evidence = decision.Evidence
+					if finding, ok := semanticFindings[constraint.ID]; ok {
+						applySemanticFinding(&prediction, finding)
+					} else {
+						prediction.Verdict = schema.VerdictUnsure
+					}
 				default:
-					// Semantic pairs need the guarded online model; the
-					// offline command never calls a provider.
-					prediction.Verdict = schema.VerdictUnsure
+					if decision, ok := decisions[constraint.ID]; ok {
+						prediction.Verdict = decision.Verdict
+						prediction.Evidence = decision.Evidence
+					} else if finding, ok := semanticFindings[constraint.ID]; ok {
+						applySemanticFinding(&prediction, finding)
+					} else {
+						prediction.Verdict = schema.VerdictUnsure
+					}
 				}
 				if prediction.Evidence == nil {
 					prediction.Evidence = []schema.Evidence{}
@@ -170,6 +216,44 @@ func readSolutionSource(path string) (string, error) {
 	}
 	if !utf8.Valid(data) {
 		return "", fmt.Errorf("%w: %s", ErrInvalidSource, path)
+	}
+	return string(data), nil
+}
+
+// applySemanticFinding copies one semantic verdict and its restored
+// evidence into a prediction. Any non-violation outcome without evidence
+// stays an unsure-compatible empty list.
+func applySemanticFinding(prediction *schema.Prediction, finding semantic.Finding) {
+	switch finding.Verdict {
+	case semantic.VerdictPass:
+		prediction.Verdict = schema.VerdictPass
+	case semantic.VerdictViolation:
+		prediction.Verdict = schema.VerdictViolation
+		evidence := make([]schema.Evidence, 0, len(finding.Evidence))
+		for _, item := range finding.Evidence {
+			evidence = append(evidence, schema.Evidence{Line: item.Line, Text: item.Text})
+		}
+		prediction.Evidence = evidence
+	default:
+		prediction.Verdict = schema.VerdictUnsure
+	}
+}
+
+// readText loads one bounded UTF-8 text file.
+func readText(path string, limit int64, tooLarge error) (string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("checker: read text: %w", err)
+	}
+	if info.Size() > limit {
+		return "", fmt.Errorf("%w: %s", tooLarge, path)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("checker: read text: %w", err)
+	}
+	if !utf8.Valid(data) {
+		return "", fmt.Errorf("%w: %s", ErrInvalidStatement, path)
 	}
 	return string(data), nil
 }

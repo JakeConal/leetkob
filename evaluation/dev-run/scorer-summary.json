@@ -1,0 +1,28 @@
+{
+  "pairs": 102,
+  "passLabels": 65,
+  "violationLabels": 37,
+  "wrongful": 0,
+  "caught": 29,
+  "recall": 0.7837837837837838,
+  "unsure": 4,
+  "unsureRate": 0.0392156862745098,
+  "missing": 0,
+  "thresholds": {
+    "maxWrongful": 0,
+    "minRecall": 0.9,
+    "maxUnsure": 0.2
+  },
+  "pass": false,
+  "wrongfulPairs": [],
+  "missedPairs": [
+    "sort-merge/s05 C2",
+    "reverse-recursive/s04 C1",
+    "reverse-recursive/s05 C1",
+    "reverse-recursive/s06 C1",
+    "dynamic-array/s04 C1",
+    "dynamic-array/s05 C1",
+    "dynamic-array/s05 C2",
+    "gcd-euclid/s06 C2"
+  ]
+}

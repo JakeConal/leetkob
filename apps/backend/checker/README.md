@@ -36,3 +36,15 @@ Behavior:
 Scoring stays separate: run the unmodified `eval.mjs` from the pinned official
 tree against the prediction file. Exit 0 or 1 is a valid run outcome; exit 2
 means invalid input. No scorer result is produced or claimed by this image.
+
+## Real-model evaluation mode
+
+The image defaults to `MODEL_OFF=1` (semantic pairs unsure). For the
+separately authorized dev-set evaluation, provide `MODEL_OFF=0` plus
+`MODEL_URL`, `MODEL_NAME`, `MODEL_TOKEN`, optional
+`MODEL_INPUT_MICRO_USD_PER_TOKEN`/`MODEL_OUTPUT_MICRO_USD_PER_TOKEN` and
+`MODEL_CALL_LOG`. Every dispatch is preceded by an atomic reservation
+against the USD 0.25 lab cap; HTTP 429 responses are retried a bounded
+number of times; provenance goes to the call log (request ID, tokens,
+elapsed, cost, prompt hash). The image carries CA certificates so the
+provider can be reached over TLS, and it never logs or commits the token.

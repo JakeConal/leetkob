@@ -1,0 +1,17 @@
+# Builds the Go API binary from apps/backend.
+FROM golang:1.27.4-bookworm@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea AS build
+WORKDIR /src
+ENV CGO_ENABLED=0 GOOS=linux GOFLAGS=-mod=readonly GOTOOLCHAIN=local
+COPY apps/backend/go.mod apps/backend/go.sum ./
+COPY apps/backend/cmd ./cmd
+COPY apps/backend/internal ./internal
+COPY apps/backend/db ./db
+RUN go build -o /api ./cmd/api
+
+FROM debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=build /api /usr/local/bin/api
+USER 65534:65534
+ENTRYPOINT ["/usr/local/bin/api"]

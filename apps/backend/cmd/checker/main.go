@@ -16,13 +16,14 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/JakeConal/leetkob/backend/internal/checker"
 )
 
-const runTimeout = 10 * time.Minute
+const defaultRunTimeout = 10 * time.Minute
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("command", "checker")
@@ -39,7 +40,7 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	ctx, cancel := context.WithTimeout(ctx, runTimeout)
+	ctx, cancel := context.WithTimeout(ctx, runTimeoutFromEnv())
 	defer cancel()
 
 	logger.Info("checker invocation validated",
@@ -64,10 +65,22 @@ func main() {
 		logger.Warn("CHECKER_ANALYZER is not set; ban-list pairs will be unsure")
 	}
 
+	semanticEngine, err := checker.NewSemanticEngineFromEnv()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(2)
+	}
+	if semanticEngine == nil {
+		logger.Info("semantic pairs stay unsure (MODEL_OFF=1)")
+	} else {
+		logger.Info("semantic engine configured; prices and cap enforced before each call")
+	}
+
 	summary, err := checker.Run(ctx, checker.RunOptions{
 		Root:        args.DataDir,
 		Predictions: args.PredictionsPath,
 		Engine:      hardRules,
+		Semantic:    semanticEngine,
 	})
 	if err != nil {
 		logger.Error("checker run failed", "error", err)
@@ -82,6 +95,21 @@ func main() {
 		"violation", summary.Violation,
 		"unsure", summary.Unsure,
 	)
+}
+
+// runTimeoutFromEnv bounds one run. The default keeps the marker's offline
+// image run inside ten minutes; an explicitly authorized real-model
+// evaluation may raise it.
+func runTimeoutFromEnv() time.Duration {
+	raw := os.Getenv("RUN_TIMEOUT_SECONDS")
+	if raw == "" {
+		return defaultRunTimeout
+	}
+	seconds, err := strconv.Atoi(raw)
+	if err != nil || seconds < 1 {
+		return defaultRunTimeout
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 func flagString(name, fallback string) string {
