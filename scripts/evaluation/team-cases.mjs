@@ -1,3 +1,4 @@
+/* global URL */
 // Validation helpers for the team-authored evaluation cases.
 // Compiles each solution with the fixed C++17 settings and runs the case
 // tests, comparing output tokens. No network access.
