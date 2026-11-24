@@ -12,6 +12,11 @@ import (
 	"github.com/JakeConal/leetkob/backend/internal/checker/schema"
 )
 
+const (
+	stdSortCall     = "std::sort"
+	predictionsFile = "predictions.jsonl"
+)
+
 // fakeEngine returns a fixed analyzer-result.v1 document per source marker.
 // It never runs a process.
 type fakeEngine struct {
@@ -19,11 +24,11 @@ type fakeEngine struct {
 }
 
 func (f fakeEngine) Analyze(_ context.Context, source string) ([]byte, error) {
-	if !strings.Contains(source, "std::sort") {
+	if !strings.Contains(source, stdSortCall) {
 		return []byte(`{"version":1,"status":"ok","references":[]}`), nil
 	}
 	reference := map[string]any{
-		"kind": "call", "name": "sort", "qualifiedName": "std::sort",
+		"kind": "call", "name": "sort", "qualifiedName": stdSortCall,
 		"header": "algorithm", "resolved": true, "userDeclared": false,
 		"line": f.referenceLine, "column": 3,
 	}
@@ -98,7 +103,7 @@ func readPredictions(t *testing.T, path string) []schema.Prediction {
 
 func TestRunDecidesBanListsAndWritesValidJSONL(t *testing.T) {
 	root := writeDataset(t, 4)
-	output := filepath.Join(t.TempDir(), "predictions.jsonl")
+	output := filepath.Join(t.TempDir(), predictionsFile)
 
 	summary, err := checker.Run(context.Background(), checker.RunOptions{
 		Root: root, Predictions: output, Engine: fakeEngine{referenceLine: 4},
@@ -133,7 +138,7 @@ func TestRunDecidesBanListsAndWritesValidJSONL(t *testing.T) {
 
 func TestRunWithoutAnalyzerNeverGuesses(t *testing.T) {
 	root := writeDataset(t, 4)
-	output := filepath.Join(t.TempDir(), "predictions.jsonl")
+	output := filepath.Join(t.TempDir(), predictionsFile)
 
 	if _, err := checker.Run(context.Background(), checker.RunOptions{Root: root, Predictions: output, Engine: nil}); err != nil {
 		t.Fatalf("run: %v", err)
@@ -151,7 +156,7 @@ func TestRunRejectsOversizedSource(t *testing.T) {
 	if err := os.WriteFile(huge, []byte(strings.Repeat("a", 65537)), 0o644); err != nil {
 		t.Fatalf("huge solution: %v", err)
 	}
-	output := filepath.Join(t.TempDir(), "predictions.jsonl")
+	output := filepath.Join(t.TempDir(), predictionsFile)
 	if _, err := checker.Run(context.Background(), checker.RunOptions{
 		Root: root, Predictions: output, Engine: fakeEngine{referenceLine: 4},
 	}); err == nil {

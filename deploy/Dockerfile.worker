@@ -1,6 +1,6 @@
 # Judging worker image. It needs the libclang analyzer and a Docker daemon
 # to create sandbox containers, so it carries clang/libclang itself.
-FROM golang:1.27.4-bookworm@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea AS build
+FROM golang@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea AS build
 WORKDIR /src
 ENV CGO_ENABLED=0 GOOS=linux GOFLAGS=-mod=readonly GOTOOLCHAIN=local
 COPY apps/backend/go.mod apps/backend/go.sum ./

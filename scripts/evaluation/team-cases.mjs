@@ -1,12 +1,37 @@
-/* global URL */
+/* global process, URL */
 // Validation helpers for the team-authored evaluation cases.
 // Compiles each solution with the fixed C++17 settings and runs the case
 // tests, comparing output tokens. No network access.
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  accessSync,
+  constants as fsConstants,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+// resolveCompiler returns an absolute C++ compiler path by scanning PATH
+// directly, avoiding a PATH-dependent subprocess lookup.
+export function resolveCompiler(name = "g++") {
+  for (const directory of (process.env.PATH ?? "").split(":").filter(Boolean)) {
+    const candidate = join(directory, name);
+    try {
+      if (statSync(candidate).isFile()) {
+        accessSync(candidate, fsConstants.X_OK);
+        return candidate;
+      }
+    } catch {
+      // Not executable here; try the next directory.
+    }
+  }
+  return null;
+}
 
 export const teamCasesRoot = new URL("../../evaluation/team-cases", import.meta.url).pathname;
 
@@ -41,7 +66,9 @@ export function runCase(problem, solution, root = teamCasesRoot) {
   try {
     const source = join(root, "problems", problem, "solutions", solution);
     const binary = join(workDir, "program");
-    execFileSync("g++", ["-std=c++17", "-O2", "-o", binary, source], { stdio: "pipe" });
+    const compiler = resolveCompiler();
+    if (compiler === null) throw new Error("g++ is unavailable");
+    execFileSync(compiler, ["-std=c++17", "-O2", "-o", binary, source], { stdio: "pipe" });
     const testsDir = join(root, "problems", problem, "tests");
     const inputs = readdirSync(testsDir)
       .filter((name) => name.endsWith(".in"))

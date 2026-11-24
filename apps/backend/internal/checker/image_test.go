@@ -3,6 +3,7 @@ package checker_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,13 +14,28 @@ import (
 	"github.com/JakeConal/leetkob/backend/internal/checker/schema"
 )
 
+// resolveDocker returns an absolute docker path by scanning PATH directly,
+// so no subprocess is spawned through a PATH lookup.
+func resolveDocker(t *testing.T) string {
+	t.Helper()
+	for _, directory := range strings.Split(os.Getenv("PATH"), ":") {
+		if directory == "" {
+			continue
+		}
+		candidate := filepath.Join(directory, "docker")
+		if info, err := os.Stat(candidate); err == nil && info.Mode().IsRegular() {
+			return candidate
+		}
+	}
+	t.Skip("docker is unavailable")
+	return ""
+}
+
 // TestImageMatchesTeamCaseLabels builds the real checker image and runs it
 // with no network on the labelled team cases, comparing every verdict with
 // the independently authored labels. It skips only when Docker is absent.
 func TestImageMatchesTeamCaseLabels(t *testing.T) {
-	if _, err := exec.LookPath("docker"); err != nil {
-		t.Skip("docker is unavailable")
-	}
+	docker := resolveDocker(t)
 	root, err := filepath.Abs(filepath.Join("..", "..", "..", ".."))
 	if err != nil {
 		t.Fatalf("repo root: %v", err)
@@ -34,7 +50,7 @@ func TestImageMatchesTeamCaseLabels(t *testing.T) {
 	defer cancel()
 
 	image := "leetkob-checker:test"
-	build := exec.CommandContext(ctx, "docker", "build", "-q",
+	build := exec.CommandContext(ctx, docker, "build", "-q",
 		"-f", filepath.Join(root, "apps", "backend", "checker", "Dockerfile"),
 		"-t", image, filepath.Join(root, "apps", "backend"))
 	if output, err := build.CombinedOutput(); err != nil {
@@ -42,16 +58,13 @@ func TestImageMatchesTeamCaseLabels(t *testing.T) {
 	}
 
 	outputDir := t.TempDir()
-	if err := os.Chmod(outputDir, 0o777); err != nil {
-		t.Fatalf("chmod output: %v", err)
-	}
 	predictionsPath := filepath.Join(outputDir, "predictions.jsonl")
-	run := exec.CommandContext(ctx, "docker", "run", "--rm",
+	run := exec.CommandContext(ctx, docker, "run", "--rm",
 		"--network", "none", "--read-only",
 		"--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
 		"--cap-drop", "ALL", "--security-opt", "no-new-privileges",
 		"--pids-limit", "64", "--memory", "768m", "--memory-swap", "768m",
-		"--user", "65534:65534",
+		"--user", fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
 		"-v", cases+":/data:ro", "-v", outputDir+":/out",
 		"-e", "MODEL_OFF=1", image,
 		"--data", "/data", "--predictions", "/out/predictions.jsonl")

@@ -13,6 +13,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -22,19 +23,9 @@ import (
 )
 
 func main() {
-	databaseURL := os.Getenv("DATABASE_URL")
-	rawPasswords := os.Getenv("ASSESSMENT_PASSWORDS")
-	if databaseURL == "" {
-		fmt.Fprintln(os.Stderr, "provision: DATABASE_URL is required")
-		os.Exit(2)
-	}
-	if rawPasswords == "" {
-		fmt.Fprintln(os.Stderr, "provision: ASSESSMENT_PASSWORDS is required (JSON, not committed)")
-		os.Exit(2)
-	}
-	var passwords access.Passwords
-	if err := json.Unmarshal([]byte(rawPasswords), &passwords); err != nil {
-		fmt.Fprintf(os.Stderr, "provision: ASSESSMENT_PASSWORDS is not valid JSON: %v\n", err)
+	databaseURL, passwords, err := assessmentConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "provision: %v\n", err)
 		os.Exit(2)
 	}
 	plan, err := access.BuildPlan(passwords)
@@ -54,7 +45,34 @@ func main() {
 		fmt.Fprintf(os.Stderr, "provision: %v\n", err)
 		os.Exit(1)
 	}
+	if err := applyPlan(ctx, store, plan); err != nil {
+		fmt.Fprintf(os.Stderr, "provision: %v\n", err)
+		os.Exit(1)
+	}
+	printPlan(plan)
+}
 
+// assessmentConfig reads the database URL and the operator-supplied
+// passwords. Passwords never come from a file in the repository.
+func assessmentConfig() (string, access.Passwords, error) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		return "", access.Passwords{}, errors.New("DATABASE_URL is required")
+	}
+	rawPasswords := os.Getenv("ASSESSMENT_PASSWORDS")
+	if rawPasswords == "" {
+		return "", access.Passwords{}, errors.New("ASSESSMENT_PASSWORDS is required (JSON, not committed)")
+	}
+	var passwords access.Passwords
+	if err := json.Unmarshal([]byte(rawPasswords), &passwords); err != nil {
+		return "", access.Passwords{}, fmt.Errorf("ASSESSMENT_PASSWORDS is not valid JSON: %w", err)
+	}
+	return databaseURL, passwords, nil
+}
+
+// applyPlan hashes the passwords and writes the synthetic directory in one
+// idempotent call.
+func applyPlan(ctx context.Context, store *postgres.Store, plan access.Plan) error {
 	rows := access.AssessmentRows{
 		Classes:     plan.Classes,
 		Memberships: plan.Memberships,
@@ -62,32 +80,34 @@ func main() {
 	for _, account := range plan.Accounts {
 		hash, err := identity.HashPassword(account.Password)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "provision: hash %s: %v\n", account.Email, err)
-			os.Exit(1)
+			return fmt.Errorf("hash %s: %w", account.Email, err)
 		}
 		rows.Users = append(rows.Users, access.UserInsert{
 			ID: account.ID, Email: account.Email, DisplayName: account.DisplayName,
 			Role: account.Role, PasswordHash: hash,
 		})
 	}
-	if err := store.ApplyAssessment(ctx, rows); err != nil {
-		fmt.Fprintf(os.Stderr, "provision: %v\n", err)
-		os.Exit(1)
-	}
+	return store.ApplyAssessment(ctx, rows)
+}
 
+func printPlan(plan access.Plan) {
 	fmt.Println("Provisioned synthetic assessment directory:")
 	for _, account := range plan.Accounts {
-		class := "(no class)"
-		for _, membership := range plan.Memberships {
-			if membership.UserID == account.ID {
-				for _, item := range plan.Classes {
-					if item.ID == membership.ClassID {
-						class = item.Name
-					}
-				}
-			}
-		}
-		fmt.Printf("  %-34s %-8s %s\n", account.Email, account.Role, class)
+		fmt.Printf("  %-34s %-8s %s\n", account.Email, account.Role, classOf(plan, account.ID))
 	}
 	fmt.Println("Passwords were read from ASSESSMENT_PASSWORDS and only hashes were stored.")
+}
+
+func classOf(plan access.Plan, userID string) string {
+	for _, membership := range plan.Memberships {
+		if membership.UserID != userID {
+			continue
+		}
+		for _, item := range plan.Classes {
+			if item.ID == membership.ClassID {
+				return item.Name
+			}
+		}
+	}
+	return "(no class)"
 }

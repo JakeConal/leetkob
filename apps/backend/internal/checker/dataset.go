@@ -139,7 +139,29 @@ func Discover(root string) ([]Problem, error) {
 
 func discoverDataset(root string, ops fileOps) ([]Problem, error) {
 	root = filepath.Clean(root)
+	roots, err := problemRoots(root, ops)
+	if err != nil {
+		return nil, err
+	}
+	seen := make(map[string]bool)
+	problems := make([]Problem, 0, len(roots))
+	for _, problemRoot := range roots {
+		found, err := problemsIn(problemRoot, root, seen, ops)
+		if err != nil {
+			return nil, err
+		}
+		problems = append(problems, found...)
+	}
+	if len(problems) == 0 {
+		return nil, ErrDatasetEmpty
+	}
+	sort.Slice(problems, func(i, j int) bool { return problems[i].ID < problems[j].ID })
+	return problems, nil
+}
 
+// problemRoots lists the dataset root plus optional problems/ and labs/
+// containers, in the documented discovery order.
+func problemRoots(root string, ops fileOps) ([]string, error) {
 	roots := []string{root}
 	for _, container := range []string{"problems", "labs"} {
 		dir := filepath.Join(root, container)
@@ -147,74 +169,81 @@ func discoverDataset(root string, ops fileOps) ([]Problem, error) {
 			roots = append(roots, dir)
 		}
 	}
+	return roots, nil
+}
 
-	seen := make(map[string]bool)
-	var problems []Problem
-	for _, problemRoot := range roots {
-		entries, err := ops.readDir(problemRoot)
+// problemsIn loads every problem directory directly under one root.
+func problemsIn(problemRoot, root string, seen map[string]bool, ops fileOps) ([]Problem, error) {
+	entries, err := ops.readDir(problemRoot)
+	if err != nil {
+		return nil, fmt.Errorf("checker: read dataset directory %s: %w", problemRoot, err)
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
+	problems := make([]Problem, 0, len(entries))
+	for _, entry := range entries {
+		problem, ok, err := loadProblemAt(problemRoot, root, entry, seen, ops)
 		if err != nil {
-			return nil, fmt.Errorf("checker: read dataset directory %s: %w", problemRoot, err)
+			return nil, err
 		}
-		sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
-		for _, entry := range entries {
-			if !entry.IsDir() || entry.Type()&fs.ModeSymlink != 0 {
-				continue
-			}
-			name := entry.Name()
-			if strings.HasPrefix(name, ".") || containerDirs[name] {
-				continue
-			}
-			dir := filepath.Join(problemRoot, name)
-			statementPath, hasStatement, err := findNamedFile(dir, "statement", statementExts, ops)
-			if err != nil {
-				return nil, err
-			}
-			constraintsPath, hasConstraints, err := findNamedFile(dir, "constraints", constraintsExts, ops)
-			if err != nil {
-				return nil, err
-			}
-			if !hasStatement && !hasConstraints {
-				continue
-			}
-			if seen[name] {
-				return nil, fmt.Errorf("%w: %s", ErrDuplicateProblem, name)
-			}
-			seen[name] = true
-
-			problem := Problem{
-				ID:              name,
-				Dir:             dir,
-				StatementPath:   statementPath,
-				ConstraintsPath: constraintsPath,
-			}
-			if problem.StatementPath == "" {
-				return nil, fmt.Errorf("%w: %s", ErrProblemMissingStatement, name)
-			}
-			if problem.ConstraintsPath == "" {
-				return nil, fmt.Errorf("%w: %s", ErrProblemMissingConstraints, name)
-			}
-
-			solutions, err := discoverSolutions(root, problem.ID, problem.Dir, ops)
-			if err != nil {
-				return nil, err
-			}
-			if len(solutions) == 0 {
-				return nil, fmt.Errorf("%w: %s", ErrProblemHasNoSolutions, name)
-			}
-			problem.Solutions = solutions
-
-			if err := loadProblemConstraints(&problem, ops); err != nil {
-				return nil, err
-			}
+		if ok {
 			problems = append(problems, problem)
 		}
 	}
-
-	if len(problems) == 0 {
-		return nil, ErrDatasetEmpty
-	}
-	sort.Slice(problems, func(i, j int) bool { return problems[i].ID < problems[j].ID })
 	return problems, nil
+}
+
+// loadProblemAt loads one candidate directory as a problem, or reports that
+// the entry is not a problem.
+func loadProblemAt(problemRoot, root string, entry fs.DirEntry, seen map[string]bool, ops fileOps) (Problem, bool, error) {
+	if !entry.IsDir() || entry.Type()&fs.ModeSymlink != 0 {
+		return Problem{}, false, nil
+	}
+	name := entry.Name()
+	if strings.HasPrefix(name, ".") || containerDirs[name] {
+		return Problem{}, false, nil
+	}
+	dir := filepath.Join(problemRoot, name)
+	statementPath, hasStatement, err := findNamedFile(dir, "statement", statementExts, ops)
+	if err != nil {
+		return Problem{}, false, err
+	}
+	constraintsPath, hasConstraints, err := findNamedFile(dir, "constraints", constraintsExts, ops)
+	if err != nil {
+		return Problem{}, false, err
+	}
+	if !hasStatement && !hasConstraints {
+		return Problem{}, false, nil
+	}
+	if seen[name] {
+		return Problem{}, false, fmt.Errorf("%w: %s", ErrDuplicateProblem, name)
+	}
+	seen[name] = true
+
+	problem := Problem{
+		ID:              name,
+		Dir:             dir,
+		StatementPath:   statementPath,
+		ConstraintsPath: constraintsPath,
+	}
+	if problem.StatementPath == "" {
+		return Problem{}, false, fmt.Errorf("%w: %s", ErrProblemMissingStatement, name)
+	}
+	if problem.ConstraintsPath == "" {
+		return Problem{}, false, fmt.Errorf("%w: %s", ErrProblemMissingConstraints, name)
+	}
+
+	solutions, err := discoverSolutions(root, problem.ID, problem.Dir, ops)
+	if err != nil {
+		return Problem{}, false, err
+	}
+	if len(solutions) == 0 {
+		return Problem{}, false, fmt.Errorf("%w: %s", ErrProblemHasNoSolutions, name)
+	}
+	problem.Solutions = solutions
+	if err := loadProblemConstraints(&problem, ops); err != nil {
+		return Problem{}, false, err
+	}
+	return problem, true, nil
 }
 
 // findNamedFile returns the preferred "<base>" or "<base><ext>" regular file in
@@ -238,23 +267,11 @@ func findNamedFile(dir, base string, exts map[string]bool, ops fileOps) (string,
 		if strings.HasPrefix(name, ".") {
 			continue
 		}
-		lower := strings.ToLower(name)
-		if !strings.HasPrefix(lower, base) {
+		rank, ok := namedFileCandidate(name, base, exts)
+		if !ok {
 			continue
 		}
-		// Require the documented base name or a separated suffix such as
-		// "statement-final.md". A bare prefix like "statementless" is not a
-		// statement file.
-		suffix := lower[len(base):]
-		if suffix != "" && !strings.HasPrefix(suffix, ".") &&
-			!strings.HasPrefix(suffix, "-") && !strings.HasPrefix(suffix, "_") {
-			continue
-		}
-		ext := strings.ToLower(filepath.Ext(lower))
-		if !exts[ext] {
-			continue
-		}
-		candidates = append(candidates, candidate{name: name, rank: extensionRank(ext)})
+		candidates = append(candidates, candidate{name: name, rank: rank})
 	}
 	if len(candidates) == 0 {
 		return "", false, nil
@@ -268,6 +285,64 @@ func findNamedFile(dir, base string, exts map[string]bool, ops fileOps) (string,
 	return filepath.Join(dir, candidates[0].name), true, nil
 }
 
+// namedFileCandidate reports whether name is an accepted "<base>" file and
+// its extension rank. A base name may carry a separated suffix such as
+// "statement-final.md"; a bare prefix like "statementless" is rejected.
+func namedFileCandidate(name, base string, exts map[string]bool) (int, bool) {
+	lower := strings.ToLower(name)
+	if !strings.HasPrefix(lower, base) {
+		return 0, false
+	}
+	suffix := lower[len(base):]
+	if suffix != "" && !strings.HasPrefix(suffix, ".") &&
+		!strings.HasPrefix(suffix, "-") && !strings.HasPrefix(suffix, "_") {
+		return 0, false
+	}
+	ext := strings.ToLower(filepath.Ext(lower))
+	if !exts[ext] {
+		return 0, false
+	}
+	return extensionRank(ext), true
+}
+
+// collectSolutionsInDir adds the solution files of one directory to byID.
+func collectSolutionsInDir(dir, problemID string, ops fileOps, byID map[string]Solution) error {
+	info, err := ops.stat(dir)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return fmt.Errorf("checker: stat solutions directory %s: %w", dir, err)
+	}
+	if !info.IsDir() {
+		return nil
+	}
+	entries, err := ops.readDir(dir)
+	if err != nil {
+		return fmt.Errorf("checker: read solutions directory %s: %w", dir, err)
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
+	for _, entry := range entries {
+		if entry.IsDir() || entry.Type()&fs.ModeSymlink != 0 {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasPrefix(name, ".") {
+			continue
+		}
+		if !solutionExts[strings.ToLower(filepath.Ext(name))] {
+			continue
+		}
+		base := strings.TrimSuffix(name, filepath.Ext(name))
+		id := problemID + "/" + base
+		if previous, exists := byID[id]; exists {
+			return fmt.Errorf("%w: %s (%s and %s)", ErrDuplicateSolution, id, previous.Path, filepath.Join(dir, name))
+		}
+		byID[id] = Solution{ID: id, FileName: name, Path: filepath.Join(dir, name)}
+	}
+	return nil
+}
+
 func discoverSolutions(root, problemID, problemDir string, ops fileOps) ([]Solution, error) {
 	dirs := []string{
 		filepath.Join(problemDir, "solutions"),
@@ -275,38 +350,8 @@ func discoverSolutions(root, problemID, problemDir string, ops fileOps) ([]Solut
 	}
 	byID := make(map[string]Solution)
 	for _, dir := range dirs {
-		info, err := ops.stat(dir)
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				continue
-			}
-			return nil, fmt.Errorf("checker: stat solutions directory %s: %w", dir, err)
-		}
-		if !info.IsDir() {
-			continue
-		}
-		entries, err := ops.readDir(dir)
-		if err != nil {
-			return nil, fmt.Errorf("checker: read solutions directory %s: %w", dir, err)
-		}
-		sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
-		for _, entry := range entries {
-			if entry.IsDir() || entry.Type()&fs.ModeSymlink != 0 {
-				continue
-			}
-			name := entry.Name()
-			if strings.HasPrefix(name, ".") {
-				continue
-			}
-			if !solutionExts[strings.ToLower(filepath.Ext(name))] {
-				continue
-			}
-			base := strings.TrimSuffix(name, filepath.Ext(name))
-			id := problemID + "/" + base
-			if previous, exists := byID[id]; exists {
-				return nil, fmt.Errorf("%w: %s (%s and %s)", ErrDuplicateSolution, id, previous.Path, filepath.Join(dir, name))
-			}
-			byID[id] = Solution{ID: id, FileName: name, Path: filepath.Join(dir, name)}
+		if err := collectSolutionsInDir(dir, problemID, ops, byID); err != nil {
+			return nil, err
 		}
 	}
 	solutions := make([]Solution, 0, len(byID))

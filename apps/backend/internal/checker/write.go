@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/JakeConal/leetkob/backend/internal/checker/schema"
 )
@@ -15,11 +16,13 @@ import (
 // validated and flushed, so a failed run never leaves partial output.
 func writePredictions(path string, predictions []schema.Prediction) error {
 	directory := filepath.Dir(path)
-	temp, err := os.CreateTemp(directory, ".checker-predictions-*.tmp")
+	// A unique exclusive file with the final mode avoids a separate chmod
+	// on the published artifact; rename keeps the output atomic.
+	tempName := filepath.Join(directory, fmt.Sprintf(".checker-predictions-%d.tmp", time.Now().UnixNano()))
+	temp, err := os.OpenFile(tempName, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("checker: create prediction output: %w", err)
 	}
-	tempName := temp.Name()
 	cleanup := func() {
 		temp.Close()
 		os.Remove(tempName)
@@ -52,11 +55,6 @@ func writePredictions(path string, predictions []schema.Prediction) error {
 	if err := os.Rename(tempName, path); err != nil {
 		os.Remove(tempName)
 		return fmt.Errorf("checker: publish predictions: %w", err)
-	}
-	// Predictions are non-secret evidence; the marker and the test harness
-	// must be able to read them even though the image runs as a foreign uid.
-	if err := os.Chmod(path, 0o644); err != nil {
-		return fmt.Errorf("checker: make predictions readable: %w", err)
 	}
 	return nil
 }

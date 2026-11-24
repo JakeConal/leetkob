@@ -2,7 +2,7 @@
 #   docker build -f deploy/Dockerfile.web -t leetkob-web:pa3 .
 # Build context: repository root. GO_API_URL is read at request time by the
 # Next.js server, so it is a runtime variable, not a build argument.
-FROM node:22.13.0-bookworm@sha256:fa54405993eaa6bab6b6e460f5f3e945a2e2f07942ba31c0e297a7d9c2041f62 AS build
+FROM node@sha256:fa54405993eaa6bab6b6e460f5f3e945a2e2f07942ba31c0e297a7d9c2041f62 AS build
 ARG PA3_API_ORIGIN=http://api:8080
 ENV PA3_API_ORIGIN=${PA3_API_ORIGIN}
 WORKDIR /app
@@ -12,7 +12,7 @@ COPY apps/api ./apps/api
 RUN npm ci --ignore-scripts --workspace @leetkob/web --include-workspace-root
 RUN npm run build --workspace @leetkob/web
 
-FROM node:22.13.0-bookworm@sha256:fa54405993eaa6bab6b6e460f5f3e945a2e2f07942ba31c0e297a7d9c2041f62
+FROM node@sha256:fa54405993eaa6bab6b6e460f5f3e945a2e2f07942ba31c0e297a7d9c2041f62
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app ./

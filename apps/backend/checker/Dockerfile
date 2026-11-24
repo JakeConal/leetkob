@@ -8,7 +8,7 @@
 # system include paths; the Go binary is static and the analyzer runs as a
 # child process. No provider keys, no Docker socket and no shell-out to the
 # network are involved.
-FROM golang:1.27.4-bookworm@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea AS build
+FROM golang@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea AS build
 
 WORKDIR /src
 ENV CGO_ENABLED=0 \

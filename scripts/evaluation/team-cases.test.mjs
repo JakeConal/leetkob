@@ -1,18 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { spawnSync } from "node:child_process";
-
 import {
   listProblems,
   listSolutions,
   readConstraints,
   readLabels,
+  resolveCompiler,
   runCase,
   teamCasesRoot,
 } from "./team-cases.mjs";
 import { existsSync } from "node:fs";
 
-const hasCompiler = spawnSync("g++", ["--version"], { stdio: "ignore" }).status === 0;
+const hasCompiler = resolveCompiler() !== null;
 
 test("team case layout is complete", () => {
   assert.ok(existsSync(teamCasesRoot), `missing ${teamCasesRoot}`);

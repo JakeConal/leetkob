@@ -94,8 +94,8 @@ type Summary struct {
 // Run discovers the dataset, decides every pair the offline core can
 // decide and writes one validated JSONL prediction per solution and
 // constraint. Ban-list constraints use the hard-rule analyzer; semantic
-// constraints are unsure because the offline command never calls a model.
-// Labels, tags, tests and scorer files are never read.
+// constraints use the optional engine (nil under MODEL_OFF). Labels, tags,
+// tests and scorer files are never read.
 func Run(ctx context.Context, options RunOptions) (Summary, error) {
 	if options.Root == "" || options.Predictions == "" {
 		return Summary{}, errors.New("checker: dataset root and prediction path are required")
@@ -104,101 +104,132 @@ func Run(ctx context.Context, options RunOptions) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
-
 	summary := Summary{Problems: len(problems)}
 	predictions := make([]schema.Prediction, 0, 64)
 	for _, problem := range problems {
-		summary.Constraints += len(problem.Constraints)
-		statement, err := readText(problem.StatementPath, maxStatementBytes, ErrStatementTooLarge)
+		found, err := analyseProblem(ctx, options, problem)
 		if err != nil {
 			return Summary{}, err
 		}
-		for _, solution := range problem.Solutions {
-			summary.Solutions++
-			source, err := readSolutionSource(solution.Path)
-			if err != nil {
-				return Summary{}, err
-			}
-			raw, analyzerErr := analyze(ctx, options.Engine, source)
-
-			decisions := make(map[string]hardrule.Decision, len(problem.Constraints))
-			semanticConstraints := make([]semantic.Constraint, 0, len(problem.Constraints))
-			if analyzerErr == nil {
-				for _, constraint := range problem.Constraints {
-					decision := hardrule.Evaluate(constraint.Text, source, raw)
-					if decision.HardRule {
-						decisions[constraint.ID] = decision
-					} else {
-						semanticConstraints = append(semanticConstraints, semantic.Constraint{ID: constraint.ID, Text: constraint.Text})
-					}
-				}
-			} else {
-				for _, constraint := range problem.Constraints {
-					if !hardrule.Evaluate(constraint.Text, source, nil).HardRule {
-						semanticConstraints = append(semanticConstraints, semantic.Constraint{ID: constraint.ID, Text: constraint.Text})
-					}
-				}
-			}
-
-			semanticFindings := map[string]semantic.Finding{}
-			if options.Semantic != nil && len(semanticConstraints) > 0 {
-				result, err := options.Semantic.Check(ctx, semantic.Input{
-					LabID: problem.ID, Statement: statement,
-					Constraints: semanticConstraints, Source: source,
-				})
-				if err == nil {
-					for _, finding := range result.Findings {
-						semanticFindings[finding.ConstraintID] = finding
-					}
-				}
-			}
-
-			for _, constraint := range problem.Constraints {
-				prediction := schema.Prediction{
-					Solution:   solution.ID,
-					Constraint: constraint.ID,
-					Evidence:   []schema.Evidence{},
-				}
-				switch {
-				case analyzerErr != nil:
-					if finding, ok := semanticFindings[constraint.ID]; ok {
-						applySemanticFinding(&prediction, finding)
-					} else {
-						prediction.Verdict = schema.VerdictUnsure
-					}
-				default:
-					if decision, ok := decisions[constraint.ID]; ok {
-						prediction.Verdict = decision.Verdict
-						prediction.Evidence = decision.Evidence
-					} else if finding, ok := semanticFindings[constraint.ID]; ok {
-						applySemanticFinding(&prediction, finding)
-					} else {
-						prediction.Verdict = schema.VerdictUnsure
-					}
-				}
-				if prediction.Evidence == nil {
-					prediction.Evidence = []schema.Evidence{}
-				}
-				if err := schema.ValidatePrediction(prediction); err != nil {
-					return Summary{}, fmt.Errorf("checker: %s/%s: %w", prediction.Solution, prediction.Constraint, err)
-				}
-				predictions = append(predictions, prediction)
-				switch prediction.Verdict {
-				case schema.VerdictPass:
-					summary.Pass++
-				case schema.VerdictViolation:
-					summary.Violation++
-				default:
-					summary.Unsure++
-				}
-			}
-		}
+		summary.Solutions += len(problem.Solutions)
+		summary.Constraints += len(problem.Constraints)
+		predictions = append(predictions, found...)
 	}
 	summary.Predictions = len(predictions)
+	summarise(&summary, predictions)
 	if err := writePredictions(options.Predictions, predictions); err != nil {
 		return Summary{}, err
 	}
 	return summary, nil
+}
+
+func summarise(summary *Summary, predictions []schema.Prediction) {
+	for _, prediction := range predictions {
+		switch prediction.Verdict {
+		case schema.VerdictPass:
+			summary.Pass++
+		case schema.VerdictViolation:
+			summary.Violation++
+		default:
+			summary.Unsure++
+		}
+	}
+}
+
+// analyseProblem produces the predictions for every solution of one
+// problem.
+func analyseProblem(ctx context.Context, options RunOptions, problem Problem) ([]schema.Prediction, error) {
+	statement, err := readText(problem.StatementPath, maxStatementBytes, ErrStatementTooLarge)
+	if err != nil {
+		return nil, err
+	}
+	predictions := make([]schema.Prediction, 0, len(problem.Solutions)*len(problem.Constraints))
+	for _, solution := range problem.Solutions {
+		found, err := analyseSolution(ctx, options, problem, statement, solution)
+		if err != nil {
+			return nil, err
+		}
+		predictions = append(predictions, found...)
+	}
+	return predictions, nil
+}
+
+// analyseSolution labels one solution against every constraint.
+func analyseSolution(ctx context.Context, options RunOptions, problem Problem, statement string, solution Solution) ([]schema.Prediction, error) {
+	source, err := readSolutionSource(solution.Path)
+	if err != nil {
+		return nil, err
+	}
+	raw, analyzerErr := analyze(ctx, options.Engine, source)
+	decisions, semanticConstraints := classifyConstraints(problem.Constraints, source, raw, analyzerErr)
+	semanticFindings := checkSemantics(ctx, options.Semantic, problem, statement, source, semanticConstraints)
+
+	predictions := make([]schema.Prediction, 0, len(problem.Constraints))
+	for _, constraint := range problem.Constraints {
+		prediction := predice(solution, constraint, decisions, semanticFindings)
+		if err := schema.ValidatePrediction(prediction); err != nil {
+			return nil, fmt.Errorf("checker: %s/%s: %w", prediction.Solution, prediction.Constraint, err)
+		}
+		predictions = append(predictions, prediction)
+	}
+	return predictions, nil
+}
+
+// classifyConstraints splits the constraints into hard-rule decisions and
+// semantic work. When the analyzer failed, ban-list constraints stay
+// undecided (unsure) and only semantic constraints are collected.
+func classifyConstraints(constraints []Constraint, source string, raw []byte, analyzerErr error) (map[string]hardrule.Decision, []semantic.Constraint) {
+	decisions := make(map[string]hardrule.Decision, len(constraints))
+	semanticConstraints := make([]semantic.Constraint, 0, len(constraints))
+	for _, constraint := range constraints {
+		decision := hardrule.Evaluate(constraint.Text, source, raw)
+		if !decision.HardRule {
+			semanticConstraints = append(semanticConstraints, semantic.Constraint{ID: constraint.ID, Text: constraint.Text})
+			continue
+		}
+		if analyzerErr == nil {
+			decisions[constraint.ID] = decision
+		}
+	}
+	return decisions, semanticConstraints
+}
+
+// checkSemantics runs the optional semantic engine once per solution.
+func checkSemantics(ctx context.Context, engine SemanticEngine, problem Problem, statement, source string, constraints []semantic.Constraint) map[string]semantic.Finding {
+	findings := map[string]semantic.Finding{}
+	if engine == nil || len(constraints) == 0 {
+		return findings
+	}
+	result, err := engine.Check(ctx, semantic.Input{
+		LabID: problem.ID, Statement: statement,
+		Constraints: constraints, Source: source,
+	})
+	if err != nil {
+		return findings
+	}
+	for _, finding := range result.Findings {
+		findings[finding.ConstraintID] = finding
+	}
+	return findings
+}
+
+// predice assembles one prediction from the hard-rule and semantic results.
+func predice(solution Solution, constraint Constraint, decisions map[string]hardrule.Decision, semanticFindings map[string]semantic.Finding) schema.Prediction {
+	prediction := schema.Prediction{
+		Solution: solution.ID, Constraint: constraint.ID, Evidence: []schema.Evidence{},
+	}
+	if decision, ok := decisions[constraint.ID]; ok {
+		prediction.Verdict = decision.Verdict
+		prediction.Evidence = decision.Evidence
+	} else if finding, ok := semanticFindings[constraint.ID]; ok {
+		applySemanticFinding(&prediction, finding)
+	} else {
+		prediction.Verdict = schema.VerdictUnsure
+	}
+	if prediction.Evidence == nil {
+		prediction.Evidence = []schema.Evidence{}
+	}
+	return prediction
 }
 
 // readSolutionSource loads one bounded, valid-UTF-8 solution source.
