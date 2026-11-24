@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* global URL, process */
+/* global URL, console, process */
 
 // Deterministic contract drift check: every route the live web client calls
 // must exist in the published PA#3 OpenAPI document, with the same methods.

@@ -6,14 +6,14 @@ not a rehearsal and no number here is invented.
 
 ## Provenance
 
-| Item | Value |
-| --- | --- |
-| Official data revision | `552c811db2d35a23d641bc4fdffc1ac120be1a28` (6 problems, 47 solutions, 102 labelled pairs) |
-| Data integrity | 128/128 pinned files verified byte-identically before staging; only statement/constraint/solution inputs were staged (59 files) |
-| Checker | `leetkob-checker` image built from this repository at the commit that adds this file; `MODEL_OFF=0`, analyzer bundled, run non-root with no Docker socket |
-| Provider / model | NVIDIA NIM (`https://integrate.api.nvidia.com/v1/chat/completions`), `minimaxai/minimax-m3.1-flash` |
-| Call policy | price schedule configured (free developer tier: 0 micro-USD/token), per-lab cap enforced before every dispatch, at most 4 transport retries for HTTP 429 |
-| Commit | the commit containing this directory; the image was built from the same tree |
+| Item                   | Value                                                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Official data revision | `552c811db2d35a23d641bc4fdffc1ac120be1a28` (6 problems, 47 solutions, 102 labelled pairs)                                                                 |
+| Data integrity         | 128/128 pinned files verified byte-identically before staging; only statement/constraint/solution inputs were staged (59 files)                           |
+| Checker                | `leetkob-checker` image built from this repository at the commit that adds this file; `MODEL_OFF=0`, analyzer bundled, run non-root with no Docker socket |
+| Provider / model       | NVIDIA NIM (`https://integrate.api.nvidia.com/v1/chat/completions`), `minimaxai/minimax-m3.1-flash`                                                       |
+| Call policy            | price schedule configured (free developer tier: 0 micro-USD/token), per-lab cap enforced before every dispatch, at most 4 transport retries for HTTP 429  |
+| Commit                 | the commit containing this directory; the image was built from the same tree                                                                              |
 
 The API key was supplied by the owner in an environment file outside the
 repository and is not present in any committed file, log or artifact.
@@ -37,14 +37,14 @@ node /path/to/pinned/eval.mjs --data /path/to/pinned --predictions predictions.j
 
 ## Result (first run, 2026-11-24)
 
-| Metric | Value |
-| --- | ---: |
-| Pairs | 102 |
-| Wrongful deductions | **0** |
-| Caught violations | 29 / 37 |
-| Recall | **78.4 %** |
-| Unsure pairs | 4 (3.9 %) |
-| Scorer exit | **1** (threshold miss — a valid PA#3 run; exit 2 would mean invalid input) |
+| Metric              |                                                                      Value |
+| ------------------- | -------------------------------------------------------------------------: |
+| Pairs               |                                                                        102 |
+| Wrongful deductions |                                                                      **0** |
+| Caught violations   |                                                                    29 / 37 |
+| Recall              |                                                                 **78.4 %** |
+| Unsure pairs        |                                                                  4 (3.9 %) |
+| Scorer exit         | **1** (threshold miss — a valid PA#3 run; exit 2 would mean invalid input) |
 
 The scorer reports a threshold failure because recall is below the PA#4
 90 % target. PA#3 imposes **no overall eval pass threshold**: the honest
