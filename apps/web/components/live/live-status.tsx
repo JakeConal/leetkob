@@ -21,10 +21,12 @@ export function LiveError({ error }: { readonly error: unknown }) {
 
 export function LiveNotFound() {
   return (
-    <section className="live-card" aria-labelledby="not-found-heading">
+    <section className="live-panel live-not-found" aria-labelledby="not-found-heading">
       <h1 id="not-found-heading">Not found</h1>
-      <p>The requested resource does not exist.</p>
-      <a href="/live">Return to sign in</a>
+      <p className="live-muted">The requested resource does not exist.</p>
+      <a className="live-button" href="/live">
+        Return to sign in
+      </a>
     </section>
   );
 }

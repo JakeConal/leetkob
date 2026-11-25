@@ -187,135 +187,160 @@ export function CreateLabForm({ classId }: { readonly classId: string }) {
   }
 
   if (!session.ready || session.closing || me.isPending) {
-    return <p className="live-muted">Loading…</p>;
+    return <p className="live-loading">Loading…</p>;
   }
   if (signedOut) return <p className="live-muted">Sign in required.</p>;
   if (!me.isSuccess) return <LiveError error={me.error} />;
   if (me.data.user.role !== "ta") {
     return (
-      <section className="live-card">
+      <section className="live-panel live-not-found">
         <h1>Create lab</h1>
-        <p>Only an assigned teaching assistant can create a lab.</p>
+        <p className="live-muted">Only an assigned teaching assistant can create a lab.</p>
       </section>
     );
   }
 
   return (
-    <form className="live-card live-form" onSubmit={(event) => void onSubmit(event)}>
-      <h1>Create lab</h1>
-      <p className="live-muted">
-        The lab is created only when the API accepts it. An error leaves this form in place.
-      </p>
+    <form className="live-page live-form" onSubmit={(event) => void onSubmit(event)}>
+      <nav className="live-crumbs" aria-label="Breadcrumb">
+        <Link href="/live/classes">Classes</Link>
+        <span aria-hidden="true">/</span>
+        <Link href={`/live/classes/${classId}`}>Labs</Link>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Create lab</span>
+      </nav>
+      <header className="live-page-head">
+        <div className="live-heading-group">
+          <h1>Create lab</h1>
+          <p className="live-muted">
+            The lab is created only when the API accepts it. An error leaves this form in place.
+          </p>
+        </div>
+      </header>
       {formError ? <LiveError error={formError} /> : null}
       {created ? (
         <p role="status">
           Created {created.title}. <Link href={`/live/labs/${created.id}`}>Open lab</Link>
         </p>
       ) : null}
-      <label className="live-field" htmlFor="lab-title">
-        Title
-        <input
-          id="lab-title"
-          value={title}
-          required
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      </label>
-      <label className="live-field" htmlFor="lab-statement">
-        Statement
-        <textarea
-          id="lab-statement"
-          value={statement}
-          required
-          rows={8}
-          onChange={(event) => setStatement(event.target.value)}
-        />
-      </label>
-      <div className="live-panels">
-        <label className="live-field" htmlFor="lab-opens">
-          Opens
-          <input
-            id="lab-opens"
-            type="datetime-local"
-            required
-            value={opensAt}
-            onChange={(event) => setOpensAt(event.target.value)}
-          />
-        </label>
-        <label className="live-field" htmlFor="lab-deadline">
-          Deadline
-          <input
-            id="lab-deadline"
-            type="datetime-local"
-            required
-            value={deadline}
-            onChange={(event) => setDeadline(event.target.value)}
-          />
-        </label>
-      </div>
       <fieldset className="live-choice">
-        <legend>Limits</legend>
-        <label className="live-field" htmlFor="lab-cpu">
-          CPU seconds (1–5)
+        <legend>Problem</legend>
+        <label className="live-field" htmlFor="lab-title">
+          Title
           <input
-            id="lab-cpu"
-            inputMode="numeric"
-            value={cpuSeconds}
-            onChange={(event) => setCpuSeconds(event.target.value)}
+            id="lab-title"
+            value={title}
+            required
+            onChange={(event) => setTitle(event.target.value)}
           />
         </label>
-        <label className="live-field" htmlFor="lab-memory">
-          Memory MiB (64–512)
-          <input
-            id="lab-memory"
-            inputMode="numeric"
-            value={memoryMiB}
-            onChange={(event) => setMemoryMiB(event.target.value)}
+        <label className="live-field" htmlFor="lab-statement">
+          Statement
+          <textarea
+            id="lab-statement"
+            value={statement}
+            required
+            rows={8}
+            onChange={(event) => setStatement(event.target.value)}
           />
         </label>
+      </fieldset>
+      <fieldset className="live-choice">
+        <legend>Schedule and limits</legend>
+        <div className="live-panels">
+          <label className="live-field" htmlFor="lab-opens">
+            Opens
+            <input
+              id="lab-opens"
+              type="datetime-local"
+              required
+              value={opensAt}
+              onChange={(event) => setOpensAt(event.target.value)}
+            />
+          </label>
+          <label className="live-field" htmlFor="lab-deadline">
+            Deadline
+            <input
+              id="lab-deadline"
+              type="datetime-local"
+              required
+              value={deadline}
+              onChange={(event) => setDeadline(event.target.value)}
+            />
+          </label>
+        </div>
+        <div className="live-panels">
+          <label className="live-field" htmlFor="lab-cpu">
+            CPU seconds (1–5)
+            <input
+              id="lab-cpu"
+              inputMode="numeric"
+              value={cpuSeconds}
+              onChange={(event) => setCpuSeconds(event.target.value)}
+            />
+          </label>
+          <label className="live-field" htmlFor="lab-memory">
+            Memory MiB (64–512)
+            <input
+              id="lab-memory"
+              inputMode="numeric"
+              value={memoryMiB}
+              onChange={(event) => setMemoryMiB(event.target.value)}
+            />
+          </label>
+        </div>
       </fieldset>
       {constraints.map((row, index) => (
         <fieldset className="live-choice" key={index}>
           <legend>Constraint {index + 1}</legend>
-          <label className="live-field" htmlFor={`constraint-id-${index}`}>
-            Id
-            <input
-              id={`constraint-id-${index}`}
-              value={row.id}
-              onChange={(event) => updateConstraint(index as 0 | 1, { id: event.target.value })}
-            />
-          </label>
-          <label className="live-field" htmlFor={`constraint-text-${index}`}>
-            Text
-            <textarea
-              id={`constraint-text-${index}`}
-              rows={3}
-              value={row.text}
-              onChange={(event) => updateConstraint(index as 0 | 1, { text: event.target.value })}
-            />
-          </label>
-          <label className="live-field" htmlFor={`constraint-deduction-${index}`}>
-            Deduction
-            <input
-              id={`constraint-deduction-${index}`}
-              inputMode="decimal"
-              value={row.deduction}
-              onChange={(event) =>
-                updateConstraint(index as 0 | 1, { deduction: event.target.value })
-              }
-            />
-          </label>
+          <p className="live-hint">
+            Text that starts with “Do not use” or “Do not call”, with banned names in backticks, is
+            decided by code. Any other constraint is checked by the model and confirmed by a TA.
+          </p>
+          <div className="live-constraint-grid">
+            <label className="live-field" htmlFor={`constraint-id-${index}`}>
+              Id
+              <input
+                id={`constraint-id-${index}`}
+                value={row.id}
+                onChange={(event) => updateConstraint(index as 0 | 1, { id: event.target.value })}
+              />
+            </label>
+            <label className="live-field" htmlFor={`constraint-text-${index}`}>
+              Text
+              <textarea
+                id={`constraint-text-${index}`}
+                rows={3}
+                value={row.text}
+                onChange={(event) => updateConstraint(index as 0 | 1, { text: event.target.value })}
+              />
+            </label>
+            <label className="live-field" htmlFor={`constraint-deduction-${index}`}>
+              Deduction
+              <input
+                id={`constraint-deduction-${index}`}
+                inputMode="decimal"
+                value={row.deduction}
+                onChange={(event) =>
+                  updateConstraint(index as 0 | 1, { deduction: event.target.value })
+                }
+              />
+            </label>
+          </div>
         </fieldset>
       ))}
       <TestEditor label="Sample tests" tests={sampleTests} onChange={setSampleTests} />
       <TestEditor label="Hidden tests" tests={hiddenTests} onChange={setHiddenTests} />
-      <button
-        className="live-button"
-        type="submit"
-        disabled={pending || session.csrfToken === null}
-      >
-        {pending ? "Creating…" : "Create lab"}
-      </button>
+      <div className="live-submit-bar">
+        <span className="live-hint">Hidden tests are never shown to students.</span>
+        <button
+          className="live-button"
+          type="submit"
+          disabled={pending || session.csrfToken === null}
+        >
+          {pending ? "Creating…" : "Create lab"}
+        </button>
+      </div>
     </form>
   );
 }
@@ -334,7 +359,7 @@ function TestEditor({
     <fieldset className="live-choice">
       <legend>{label}</legend>
       {tests.map((test, index) => (
-        <div className="live-stack" key={`${prefix}-${index}`}>
+        <div className="live-test-row" key={`${prefix}-${index}`}>
           <label className="live-field" htmlFor={`${prefix}-id-${index}`}>
             Test id
             <input

@@ -42,19 +42,19 @@ export function SignInForm() {
   }
 
   if (!session.ready || session.closing) {
-    return <p className="live-muted">{session.closing ? "Signing out…" : "Loading…"}</p>;
+    return <p className="live-loading">{session.closing ? "Signing out…" : "Loading…"}</p>;
   }
 
   const signedOut = me.error instanceof ApiProblem && me.error.status === 401;
   return (
-    <div className="live-stack">
+    <div className="live-auth">
       {session.banner ? <LiveError error={session.banner} /> : null}
-      {me.isPending ? <p className="live-muted">Checking the current session…</p> : null}
+      {me.isPending ? <p className="live-loading">Checking the current session…</p> : null}
       {me.isError && !signedOut ? <LiveError error={me.error} /> : null}
       {me.data ? (
-        <section className="live-card" aria-labelledby="signed-in-heading">
+        <section className="live-panel live-auth-panel" aria-labelledby="signed-in-heading">
           <h1 id="signed-in-heading">Signed in</h1>
-          <p>
+          <p className="live-muted">
             {me.data.user.displayName} · {me.data.user.role}
           </p>
           <Link className="live-button" href="/live/classes">
@@ -63,9 +63,14 @@ export function SignInForm() {
         </section>
       ) : null}
       {!me.data && !me.isPending ? (
-        <form className="live-card live-form" onSubmit={(event) => void onSubmit(event)}>
-          <h1>Sign in</h1>
-          <p className="live-muted">Use the synthetic assessment account for this class.</p>
+        <form
+          className="live-panel live-auth-panel live-form"
+          onSubmit={(event) => void onSubmit(event)}
+        >
+          <div className="live-heading-group">
+            <h1>Sign in</h1>
+            <p className="live-muted">Use the synthetic assessment account for this class.</p>
+          </div>
           {formError ? <LiveError error={formError} /> : null}
           <label className="live-field" htmlFor="email">
             Email
@@ -93,11 +98,15 @@ export function SignInForm() {
               onChange={(event) => setPassword(event.target.value)}
             />
           </label>
-          <button className="live-button" type="submit" disabled={pending}>
+          <button className="live-button live-button-block" type="submit" disabled={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </button>
         </form>
       ) : null}
+      <p className="live-auth-note">
+        Every deduction suggested by a rule or a model is confirmed by a teaching assistant before
+        marks are published.
+      </p>
     </div>
   );
 }

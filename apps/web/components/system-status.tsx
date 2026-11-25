@@ -5,6 +5,12 @@ import type { ReactNode } from "react";
 
 import { fetchHealth } from "../lib/health";
 
+const STATE_CLASS = {
+  ready: "live-status--ok",
+  loading: "live-status--warn",
+  error: "live-status--bad",
+} as const;
+
 function StatusRow({
   detail,
   label,
@@ -15,13 +21,10 @@ function StatusRow({
   state?: "error" | "loading" | "ready";
 }>) {
   return (
-    <div className="check-row">
-      <span className={`status-mark status-mark--${state}`} aria-hidden="true" />
-      <span>
-        <strong>{label}</strong>
-        <small>{detail}</small>
-      </span>
-    </div>
+    <li>
+      <strong>{label}</strong>
+      <span className={`live-status ${STATE_CLASS[state]}`}>{detail}</span>
+    </li>
   );
 }
 
@@ -42,22 +45,20 @@ export function SystemStatus() {
     apiDetail = "Unavailable";
   }
 
-  let problemDetails: ReactNode = (
-    <div className="problem-message">
-      <p>No system problems detected.</p>
-    </div>
-  );
+  let problemDetails: ReactNode = <p className="live-muted">No system problems detected.</p>;
   if (health.isPending) {
-    problemDetails = (
-      <div className="problem-message">
-        <p>Checking system status…</p>
-      </div>
-    );
+    problemDetails = <p className="live-loading">Checking system status…</p>;
   } else if (health.isError) {
     problemDetails = (
-      <div className="problem-message problem-message--error">
-        <p>Failed to connect to API.</p>
-        <button type="button" onClick={() => void health.refetch()}>
+      <div className="live-stack-sm">
+        <p className="live-alert" role="alert">
+          Failed to connect to API.
+        </p>
+        <button
+          className="live-button live-button-secondary live-button-sm"
+          type="button"
+          onClick={() => void health.refetch()}
+        >
           Retry
         </button>
       </div>
@@ -65,18 +66,14 @@ export function SystemStatus() {
   }
 
   return (
-    <aside className="status-rail" aria-labelledby="system-checks-heading">
-      <div className="rail-index" aria-hidden="true">
-        02
-      </div>
+    <aside className="live-panel live-checks" aria-labelledby="system-checks-heading">
       <h2 id="system-checks-heading">System checks</h2>
-      <div className="check-list" aria-live="polite">
+      <ul aria-live="polite">
         <StatusRow label="API status" detail={apiDetail} state={apiState} />
         <StatusRow label="Contract tests" detail="Configured" />
         <StatusRow label="Identity verification" detail="Signed claims" />
-      </div>
-
-      <section className="problem-region" aria-labelledby="problem-heading">
+      </ul>
+      <section aria-labelledby="problem-heading">
         <h3 id="problem-heading">Problem details</h3>
         {problemDetails}
       </section>
