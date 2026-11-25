@@ -40,13 +40,13 @@ export function ReviewQueue({ labId }: { readonly labId: string }) {
   const [paging, setPaging] = useState(false);
   const [pageError, setPageError] = useState<unknown>(null);
 
-  if (!session.ready || session.closing) return <p className="live-muted">Loading…</p>;
+  if (!session.ready || session.closing) return <p className="live-loading">Loading…</p>;
   if (notFound) return <LiveNotFound />;
   if (reviews.isPending) {
     return (
-      <div className="live-stack">
+      <div className="live-page">
         <PublishControl loading />
-        <p className="live-muted">Loading review queue…</p>
+        <p className="live-loading">Loading review queue…</p>
       </div>
     );
   }
@@ -72,17 +72,55 @@ export function ReviewQueue({ labId }: { readonly labId: string }) {
     }
   }
 
+  const groups = new Map<string, Finding[]>();
+  for (const finding of items) {
+    const group = groups.get(finding.submissionId) ?? [];
+    group.push(finding);
+    groups.set(finding.submissionId, group);
+  }
+
   return (
-    <div className="live-stack">
+    <div className="live-page">
+      {lab.data ? (
+        <nav className="live-crumbs" aria-label="Breadcrumb">
+          <a href="/live/classes">Classes</a>
+          <span aria-hidden="true">/</span>
+          <a href={`/live/labs/${labId}`}>{lab.data.title}</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">Review</span>
+        </nav>
+      ) : null}
+      <header className="live-page-head">
+        <div className="live-heading-group">
+          <h1>Review queue</h1>
+          <p className="live-muted">
+            {groups.size} {groups.size === 1 ? "submission" : "submissions"} · {items.length}{" "}
+            {items.length === 1 ? "finding" : "findings"} loaded
+          </p>
+        </div>
+      </header>
       <PublishControl
         reviewPending={reviews.data.reviewPending}
         processingPending={reviews.data.processingPending}
         deadlinePassed={deadlinePassed}
       />
-      <h1>Review queue</h1>
-      {items.length === 0 ? <p>No findings are in this queue.</p> : null}
-      {items.map((finding) => (
-        <FindingReview key={finding.id} labId={labId} finding={finding} />
+      {items.length === 0 ? <p className="live-empty">No findings are in this queue.</p> : null}
+      {[...groups.entries()].map(([submissionId, findings]) => (
+        <section
+          key={submissionId}
+          className="live-submission-group"
+          aria-label={`Submission ${submissionId}`}
+        >
+          <h2 className="live-group-title">
+            Submission <code>{submissionId}</code>
+            <span className="live-muted">
+              {findings.length} {findings.length === 1 ? "constraint" : "constraints"}
+            </span>
+          </h2>
+          {findings.map((finding) => (
+            <FindingReview key={finding.id} labId={labId} finding={finding} />
+          ))}
+        </section>
       ))}
       {pageError ? <LiveError error={pageError} /> : null}
       {nextCursor !== null ? (
@@ -168,67 +206,105 @@ function FindingReview({ labId, finding }: { readonly labId: string; readonly fi
     }
   }
 
+  const verdictTone =
+    finding.checkerVerdict === "pass"
+      ? "ok"
+      : finding.checkerVerdict === "violation"
+        ? "bad"
+        : "warn";
+  const evidenceLines = new Set(finding.evidence.map((item) => item.line));
+  const sourceLines = finding.source.split("\n");
   return (
-    <article className="live-card live-finding">
+    <article className="live-panel live-finding">
       <header>
-        <h2>
+        <h3>
           {finding.constraintId} · {finding.checkerVerdict}
-        </h2>
-        {finding.unsureCause ? <p>Unsure cause: {finding.unsureCause}</p> : null}
-        <p>{finding.requiredReview ? "Review required." : "Review not required."}</p>
-        <p>Configured deduction: {configured}</p>
+        </h3>
+        <span className={`live-status live-status--${verdictTone}`}>
+          Checker {finding.checkerVerdict}
+        </span>
+        {finding.decision ? (
+          <span className="live-status live-status--info">TA {finding.decision.verdict}</span>
+        ) : null}
+        <span className="live-finding-meta">
+          {finding.requiredReview ? "Review required." : "Review not required."} Configured
+          deduction: <strong className="live-num">{configured}</strong>
+        </span>
       </header>
-      <section aria-label="Evidence lines">
-        <h3>Evidence</h3>
-        {finding.evidence.length === 0 ? <p>No evidence lines were returned.</p> : null}
-        <ol>
-          {finding.evidence.map((item) => (
-            <li key={`${item.line}:${item.text}`}>
-              Line {item.line}: <code>{item.text}</code>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <div className="live-panels">
-        <pre className="live-source" tabIndex={0} aria-label="Submitted source">
-          {finding.source}
-        </pre>
-        <form onSubmit={(event) => void onSubmit(event)}>
-          <fieldset className="live-choice">
-            <legend>Decision</legend>
-            {(["pass", "violation", "unsure"] as const).map((option) => (
-              <label key={option} htmlFor={`${finding.id}-${option}`}>
-                <input
-                  id={`${finding.id}-${option}`}
-                  type="radio"
-                  name={`decision-${finding.id}`}
-                  value={option}
-                  checked={choice === option}
-                  onChange={() => setChoice(option)}
-                />{" "}
-                {option === "pass" ? "Pass" : option === "violation" ? "Violation" : "Unsure"}
-              </label>
+      <div className="live-finding-body">
+        <div className="live-finding-code">
+          {finding.unsureCause ? (
+            <p className="live-callout">Unsure cause: {finding.unsureCause}</p>
+          ) : null}
+          <section aria-label="Evidence lines">
+            <h4 className="live-label">Evidence</h4>
+            {finding.evidence.length === 0 ? (
+              <p className="live-muted">No evidence lines were returned.</p>
+            ) : (
+              <ol className="live-evidence">
+                {finding.evidence.map((item) => (
+                  <li key={`${item.line}:${item.text}`}>
+                    <span>Line {item.line}:</span> <code>{item.text}</code>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+          <pre className="live-source" tabIndex={0} aria-label="Submitted source">
+            {sourceLines.map((line, index) => (
+              <span
+                key={index}
+                className={evidenceLines.has(index + 1) ? "live-source-hit" : undefined}
+              >
+                <span className="live-source-num" aria-hidden="true">
+                  {index + 1}
+                </span>
+                {line}
+                {"\n"}
+              </span>
             ))}
+          </pre>
+        </div>
+        <form onSubmit={(event) => void onSubmit(event)}>
+          <fieldset className="live-fieldset">
+            <legend>Decision</legend>
+            <div className="live-segment">
+              {(["pass", "violation", "unsure"] as const).map((option) => (
+                <label key={option} htmlFor={`${finding.id}-${option}`} data-option={option}>
+                  <input
+                    id={`${finding.id}-${option}`}
+                    type="radio"
+                    name={`decision-${finding.id}`}
+                    value={option}
+                    checked={choice === option}
+                    onChange={() => setChoice(option)}
+                  />
+                  {option === "pass" ? "Pass" : option === "violation" ? "Violation" : "Unsure"}
+                </label>
+              ))}
+            </div>
           </fieldset>
-          <p>{chosen}</p>
+          <p className="live-muted">{chosen}</p>
           {choice === "violation" ? (
-            <fieldset className="live-choice">
+            <fieldset className="live-fieldset">
               <legend>Violation evidence</legend>
-              {finding.evidence.map((item) => {
-                const key = `${item.line}:${item.text}`;
-                return (
-                  <label key={key} htmlFor={`${finding.id}-evidence-${key}`}>
-                    <input
-                      id={`${finding.id}-evidence-${key}`}
-                      type="radio"
-                      name={`evidence-${finding.id}`}
-                      checked={evidenceKey === key}
-                      onChange={() => setEvidenceKey(key)}
-                    />{" "}
-                    Line {item.line}
-                  </label>
-                );
-              })}
+              <div className="live-evidence-pick">
+                {finding.evidence.map((item) => {
+                  const key = `${item.line}:${item.text}`;
+                  return (
+                    <label key={key} htmlFor={`${finding.id}-evidence-${key}`}>
+                      <input
+                        id={`${finding.id}-evidence-${key}`}
+                        type="radio"
+                        name={`evidence-${finding.id}`}
+                        checked={evidenceKey === key}
+                        onChange={() => setEvidenceKey(key)}
+                      />
+                      Line {item.line}
+                    </label>
+                  );
+                })}
+              </div>
             </fieldset>
           ) : null}
           <label className="live-field" htmlFor={`${finding.id}-reason`}>

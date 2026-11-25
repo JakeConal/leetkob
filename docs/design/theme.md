@@ -1,80 +1,66 @@
-<prompt>
-<task>
-Apply this visual style to the user's existing project. Inspect and preserve its stack, copy, routes, and behavior. Follow existing component and styling conventions. Treat framework, library, and page examples in these design instructions as illustrations; they do not require a stack change or new sections. Scope changes to the user's requested work.
+# Press proof
 
-Keep controls keyboard accessible, focus visible, and text legible. Preserve reading order, responsive behavior, and reduced-motion preferences. Verify actual states at the rendered width. The user's stack and content take precedence over illustrative implementation details.
-</task>
+The visual system for every LeeTKOB web screen: the PA#2 home at `/` and the PA#3 workspace under `/live`. It replaces the earlier Swiss Minimalist system.
 
-<design-system>
-# Swiss Minimalist
+The tokens and rules live in code. This page explains the intent; when it and the code disagree, the code wins and this page is updated.
 
-## Identity
+| Layer          | File                                                               | Owns                                                         |
+| -------------- | ------------------------------------------------------------------ | ------------------------------------------------------------ |
+| Base           | [`apps/web/app/live/live.css`](../../apps/web/app/live/live.css)   | Token names, spacing scale, component structure, breakpoints |
+| Theme          | [`apps/web/app/live/theme.css`](../../apps/web/app/live/theme.css) | Press proof values and treatments, scoped to `.live-press`   |
+| Shell and type | [`apps/web/app/layout.tsx`](../../apps/web/app/layout.tsx)         | Fonts, `.live-workspace.live-press` wrapper, shared shell    |
 
-Use a continuous typographic grid in white, black, and pale grey, with small red signals. Large heavy headings, exposed rules, and a persistent index rail carry the composition. Keep content aligned across sections so the page reads as one organized document.
+## Idea
+
+Marks are proofed before they go to press. A teaching assistant reads submitted code the way a proofreader reads a galley: find the line, mark it, decide. The palette is the four process inks, and each ink has one job.
+
+## Color
+
+Every color is a token. Components never use a raw value.
+
+| Ink            | Token                       | Job                                                                |
+| -------------- | --------------------------- | ------------------------------------------------------------------ |
+| Process cyan   | `--cyan`, `--rail`          | The masthead and current navigation item                           |
+| Deep cyan      | `--accent`, `--accent-text` | Links, selection, focus                                            |
+| Key black      | `--key`                     | Primary actions and body text                                      |
+| Proof magenta  | `--magenta`, `--bad`        | Deductions, violations, the blocked publication band               |
+| Process yellow | `--yellow`, `--code-hit`    | Evidence: highlighted source lines and the matching evidence chips |
+| Green          | `--ok`                      | Passed checks and accepted judge results                           |
+
+Neutrals (`--bg`, `--surface`, `--sunken`, `--border`, `--text`, `--muted`) are one cool family tinted toward cyan. Status always carries a word as well as a color.
+
+## Type
+
+- Archivo for all interface text; headings are heavy and close-set.
+- JetBrains Mono for code, ids and test data, with programming ligatures turned off so `<=` and `++` show exactly what the student typed.
+- Geist and Geist Mono are the fallbacks. Use no other families.
+
+## Signature elements
+
+- **Press control strip:** a thin four-ink bar under the cyan masthead.
+- **Galley source:** submitted code prints on paper-white with a tinted line-number gutter. An evidence line gets a yellow highlighter across the line and its number in magenta, and the evidence chips above the code use the same yellow.
+- **Crop marks:** the publication gate and the sign-in panel carry printer's crop marks: what must clear before marks go to press.
+
+Spend boldness only on these. Everything else stays quiet.
+
+## Shape, depth and motion
+
+- Radius 4px for controls and panels; square-cornered status tags with an ink border.
+- Depth comes from borders and surface tints; avoid soft drop shadows.
+- Motion is state feedback only (about 180ms). The evidence highlight sweeps in once. Everything stops under `prefers-reduced-motion`.
 
 ## Layout
 
-Start with a twelve-column desktop grid. Give a broad opening statement about nine columns and a narrow supporting or action area the remainder. In later sections, reserve the first three columns for an index and section heading; begin the main reading and content matrix on the same fourth-column line.
+- The navigation is a top masthead; content is centered at up to 1240px.
+- One primary action per view, in key black.
+- The review queue groups findings by submission, then shows each constraint's verdict, evidence and decision side by side.
 
-Continue this rail through text, capabilities, and editorial images. Related steps and benefits can share a full black field with white reading. Comparisons can use equal ruled columns, and a closing statement can echo the opening's broad heading beside a narrow action area. Finish with a fully divided footer aligned to the same grid.
+## Accessibility and responsive behavior
 
-Choose the patterns that fit the brief. Their relationships matter more than a fixed number of sections, entries, or columns of sample content.
+- Body text contrast at least 4.5:1; visible `:focus-visible` on every control.
+- Touch targets at least 44px on phones.
+- At 1080px the lab and finding layouts stack; at 860px the navigation wraps; at 640px tables become stacked rows and controls go full width. No horizontal page scroll at 375px.
 
-## Typography
+## Verifying a change
 
-Use Host Grotesk throughout, bound to "SwissMinimalistHost". Make display text heavy, tightly tracked, and close-set. The opening scale runs from 64px to 148px on wider layouts, with line height below one. Smaller headings remain forceful; paragraphs use a lighter weight and enough leading for sustained reading. Use plain small labels and numbers to make the index useful. Do not add a second decorative typeface.
-
-## Color and surfaces
-
-White is the main ground; black supplies ink, rules, and occasional full-width fields. Pale grey distinguishes a small amount of supporting content. Red is reserved for compact markers, featured labels, and selected emphasis.
-
-Keep corners square and dividing rules visible. Content should connect through edges and shared alignment. Avoid floating cards, shadows, translucent layers, and ornamental backgrounds.
-
-## Components
-
-Use rectangular controls with direct black-and-white states and a clearly visible focus outline. Small red marks can identify priority without becoming the only state cue.
-
-Features form a ruled matrix. Numbered steps share a continuous field instead of separate cards. If comparisons are needed, keep their columns equal and use a compact red flag for the featured option. Selection must have its own readable state. Disclosures use strong horizontal rules and a simple open/close marker.
-
-## Images
-
-Use grayscale editorial photographs in simple rectangular crops. A desktop image series can use tall proportions and align its captions to the shared grid. Repeating a subject is optional; choose imagery that explains the customer's content. Keep details legible without color and use alternative text for meaningful subjects.
-
-## Motion
-
-Use immediate visual feedback. The design relies on type, alignment, and contrast rather than animated entrances, image drift, or eased control movement.
-
-## Responsive behavior
-
-At 1050px, editorial items can become image-and-text rows and numbered steps become a vertical sequence. At 700px, place the index rail above its content, stack the major grids and comparisons, and turn facts into readable rows. Change tall image crops to wider proportions where needed. Keep the rules and black field continuous, with smaller gutters and two-column footer groups.
-
-## Design limits
-
-Preserve a clear hierarchy even when headings are large. Do not let display text collide with controls or run offscreen. Avoid decorative geometry, gradients, excessive red, and artificial content added to fill the grid. The structure must adapt to the actual information.
-
-## Authoritative tokens
-
-| CSS variable                   | Value                                    |
-| ------------------------------ | ---------------------------------------- |
-| --dp-color-ground              | #ffffff                                  |
-| --dp-color-ink                 | #000000                                  |
-| --dp-color-surface             | #f0f0f0                                  |
-| --dp-color-accent              | #c90000                                  |
-| --dp-typography-face           | "SwissMinimalistHost", Arial, sans-serif |
-| --dp-typography-body           | 16px                                     |
-| --dp-typography-label          | 12px                                     |
-| --dp-typography-metadata       | 14px                                     |
-| --dp-typography-lead           | 17px                                     |
-| --dp-typography-item-title     | 24px                                     |
-| --dp-typography-regular        | 400                                      |
-| --dp-typography-strong         | 700                                      |
-| --dp-typography-display        | 750                                      |
-| --dp-typography-label-tracking | 0.12em                                   |
-| --dp-typography-body-leading   | 1.5                                      |
-| --dp-spacing-gutter            | clamp(20px, 3.3333cqw, 64px)             |
-| --dp-radius-control            | 0                                        |
-| --dp-border-rule               | 2px                                      |
-| --dp-motion-feedback           | 0s                                       |
-
-</design-system>
-</prompt>
+Run the repository checks, then check the rendered screens at 375, 768 and 1440px. For a local walkthrough without the Go API, `apps/web/scripts/mock-pa3-api.mjs` serves preview data for the `/live` screens; it is a UI preview tool only and never evaluation evidence.

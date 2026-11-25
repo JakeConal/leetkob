@@ -29,13 +29,13 @@ export function SubmissionScreen({ submissionId }: { readonly submissionId: stri
     },
   });
   const notFound = useReplaceNotFound(submission.error);
-  if (!session.ready || session.closing) return <p className="live-muted">Loading…</p>;
+  if (!session.ready || session.closing) return <p className="live-loading">Loading…</p>;
   if (notFound) return <LiveNotFound />;
-  if (submission.isPending) return <p className="live-muted">Loading submission status…</p>;
+  if (submission.isPending) return <p className="live-loading">Loading submission status…</p>;
   if (submission.isError) return <LiveError error={submission.error} />;
   if (submission.data === undefined) return null;
   return (
-    <div className="live-stack">
+    <div className="live-page">
       <StudentSubmissionStatus payload={submission.data} />
       <button
         className="live-button live-button-secondary"

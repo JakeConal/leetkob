@@ -15,9 +15,13 @@ export function PublishControl(
 ) {
   if ("loading" in props) {
     return (
-      <section className="live-card" aria-labelledby="publication-heading">
-        <h2 id="publication-heading">Publication blocked</h2>
-        <p id="publication-explanation">Publication blocked. The review queue is still loading.</p>
+      <section className="live-gate" aria-labelledby="publication-heading">
+        <div>
+          <h2 id="publication-heading">Publication blocked</h2>
+          <p id="publication-explanation">
+            Publication blocked. The review queue is still loading.
+          </p>
+        </div>
         <button type="button" disabled aria-describedby="publication-explanation">
           Publish lab
         </button>
@@ -33,12 +37,20 @@ export function PublishControl(
         ? "Submission deadline has passed."
         : "Submission deadline has not passed.";
   return (
-    <section className="live-card" aria-labelledby="publication-heading">
-      <h2 id="publication-heading">{gate.title}</h2>
-      <p id="publication-explanation">{gate.explanation}</p>
-      <p>{deadline}</p>
-      <p>{gate.processingPending ? "Processing incomplete." : "Processing complete."}</p>
-      <p>Pending reviews: {gate.reviewPending}</p>
+    <section className="live-gate" aria-labelledby="publication-heading">
+      <div>
+        <h2 id="publication-heading">{gate.title}</h2>
+        <p id="publication-explanation">{gate.explanation}</p>
+        <ul className="live-gate-facts">
+          <li data-ok={gate.deadlinePassed === null ? undefined : String(gate.deadlinePassed)}>
+            {deadline}
+          </li>
+          <li data-ok={String(!gate.processingPending)}>
+            {gate.processingPending ? "Processing incomplete." : "Processing complete."}
+          </li>
+          <li data-ok={String(gate.reviewPending === 0)}>Pending reviews: {gate.reviewPending}</li>
+        </ul>
+      </div>
       <button type="button" disabled={gate.disabled} aria-describedby="publication-explanation">
         Publish lab
       </button>
