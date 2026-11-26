@@ -45,13 +45,17 @@ the CI evidence instead of a live URL.
 ## Gaps, stated plainly
 
 - **No public deployment.** Per the owner's decision, no hosting was
-  provisioned, so the rubric's live-flow criterion (and PA3.md's URL,
-  fallback recording, pushed `pa3` tag and archive) cannot be produced.
-  `deploy/` contains the prepared, locally verified artifacts and a $0
-  free-VM proposal.
+  provisioned, so the rubric's live-flow criterion is not met. `PA3.md`
+  therefore links this document and CI instead of a URL, claims no uptime
+  and no fallback recording. `deploy/` contains the prepared, locally
+  verified artifacts and a $0 free-VM proposal.
+- **No fallback recording.** The at-most-five-minute walkthrough was not
+  recorded; the local staging evidence above is the substitute, and the
+  submission does not claim a recording exists.
 - **Online semantic checks in the deployed worker are offline.** The worker
   runs the semantic checker against a deterministic offline model, so online
   semantic findings are `unsure`; the real-model path exists in the checker
   evaluation (committed above), not in the worker.
-- **No tag pushed.** The `pa3` tag job was added to CI but has never run on
-  a real tag, so no tag-run URL is claimed.
+- **No tag pushed at the time of writing.** The `pa3` tag job was added to CI
+  but has not run on a real tag, so no tag-run URL is claimed; `PA3.md` links
+  the filtered tag run list, which becomes valid only after the tag is pushed.

@@ -226,3 +226,13 @@
 - Changed: ran the authorized first dev-set evaluation with `minimaxai/minimax-m3.1-flash` through the checker image: 102 predictions, 0 wrongful deductions, 78.4 % recall, 3.9 % unsure, unmodified scorer exit 1. Committed predictions, scorer report and a call log with provider request IDs, tokens, elapsed time and cost; documented the 80-submission arithmetic at the free-tier price (7.4/7.5). A rate-limit retry and a missing CA bundle were found during the run and fixed before the committed run.
 - Rejected: inventing a deployment URL or tag-run evidence after the owner chose to skip hosting; counting the online worker's offline semantic results as real model calls; committing any part of the API key.
 - Evidence: `evaluation/dev-run/`, `docs/evidence/pa3-walkthrough.md`, `deploy/README.md`, CI run 45306355723, and PR #44.
+
+### 2026-11-26 — PA#3 release evidence and submission preparation
+
+- Tools: OpenCode with the GitHub API, Git history/CI inspection and a clean `origin/main` worktree. No model-provider request, no deployment and no tag push were made. The stale `codex/implement-pa3-go-prototype` checkout was left untouched.
+- Changed: adopted `origin/main` (`aeed538`) as the release base instead of the stale branch, which was 42 commits behind and carried an uncommitted second implementation. Confirmed issue #38 tasks 1.1-8.2 are delivered and 8.3-8.5 remain.
+- Added `PA3.md` as the evidence index: repository/protection links, the filtered `pa3` tag run list, the five synthetic accounts, the local staging and sandbox/checker commands, the committed first real-model run, and the official-byte reconciliation. It states plainly that no public deployment, URL, uptime or fallback recording exists.
+- Replaced the PA#2 `SELF_ASSESSMENT_REPORT.md` with an eight-row PA#3 assessment. Criterion 1 is claimed as 0 because no deployment exists; the other rows cite specific files and tests, with the 78.4 % recall and the missing tag run deducted rather than hidden. Claimed total: 77/100.
+- Changed `docs/evidence/pa3-walkthrough.md` so its gap section reflects the new `PA3.md` and the still-pending tag rather than saying the index cannot be produced.
+- Rejected: claiming a deployment URL, uptime, fallback recording or tag-run result that did not happen; merging the stale branch; pushing `pa3` before the documentation is reviewed and merged; running a new paid evaluation.
+- Still open after this preparation: public deployment (owner decision), the at-most-five-minute fallback recording, the `pa3` tag push and its `Sandbox attacks` run, the archive and the coursework upload (not authorized).
