@@ -18,3 +18,5 @@ npm-debug.log*
 Thumbs.db
 deploy/.env
 apps/backend/provision
+
+.local-dev/

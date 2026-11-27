@@ -18,9 +18,11 @@ ENV CGO_ENABLED=0 \
 
 COPY go.mod go.sum ./
 COPY cmd/checker ./cmd/checker
+COPY cmd/analyze-isolated ./cmd/analyze-isolated
 COPY internal ./internal
 
-RUN go build -o /checker ./cmd/checker
+RUN go build -o /checker ./cmd/checker \
+    && go build -o /analyze-isolated ./cmd/analyze-isolated
 
 FROM debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 
@@ -39,6 +41,7 @@ RUN LIBDIR="$(dirname "$(clang -print-file-name=libclang.so)")" \
     && rm /tmp/analyzer.c
 
 COPY --from=build /checker /checker
+COPY --from=build /analyze-isolated /analyze-isolated
 
 ENV CHECKER_ANALYZER=/usr/local/bin/cpp-analyzer
 

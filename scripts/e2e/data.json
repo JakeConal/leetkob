@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "statement": "Read n followed by n integers. Print the integers in ascending order, separated by spaces. This is synthetic local E2E data, not coursework evaluation evidence.",
+  "constraints": [
+    { "id": "C1", "text": "Do not call `std::sort`.", "deduction": 3 },
+    { "id": "C2", "text": "Implement merge sort.", "deduction": 4 }
+  ],
+  "tests": [
+    { "id": "sample", "input": "4\n9 1 4 2\n", "expectedOutput": "1 2 4 9\n", "sample": true },
+    {
+      "id": "duplicates",
+      "input": "5\n3 -1 3 0 -1\n",
+      "expectedOutput": "-1 -1 0 3 3\n",
+      "sample": false
+    },
+    { "id": "singleton", "input": "1\n7\n", "expectedOutput": "7\n", "sample": false }
+  ],
+  "scenarios": [
+    {
+      "key": "compliant",
+      "title": "E2E: compliant merge sort",
+      "student": "student1",
+      "source": "merge.cpp",
+      "judge": "AC",
+      "hardRule": "pass"
+    },
+    {
+      "key": "violation",
+      "title": "E2E: forbidden library sort",
+      "student": "student2",
+      "source": "sort.cpp",
+      "judge": "AC",
+      "hardRule": "violation"
+    },
+    {
+      "key": "injection",
+      "title": "E2E: prompt injection in a comment",
+      "student": "student1",
+      "source": "injection.cpp",
+      "judge": "AC",
+      "hardRule": "violation"
+    },
+    {
+      "key": "wrong-answer",
+      "title": "E2E: wrong answer bypasses checker",
+      "student": "student1",
+      "source": "wrong.cpp",
+      "judge": "WA"
+    },
+    {
+      "key": "compile-error",
+      "title": "E2E: compile error bypasses checker",
+      "student": "student2",
+      "source": "compile-error.cpp",
+      "judge": "CE"
+    }
+  ]
+}
