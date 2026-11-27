@@ -1,0 +1,205 @@
+/* The assessment routes keep their API and state boundaries inside the shared practice shell. */
+.live-workspace.practice-tools {
+  --bg: #fff;
+  --surface: #fff;
+  --sunken: #f0f0f0;
+  --border: #dedede;
+  --border-strong: #bdbdbd;
+  --text: #000;
+  --muted: #666;
+  --accent: #000;
+  --accent-hover: #333;
+  --accent-soft: #f0f0f0;
+  --accent-text: #000;
+  --on-accent: #fff;
+  --ok: #000;
+  --ok-soft: #f0f0f0;
+  --bad: #c90000;
+  --bad-soft: #f0f0f0;
+  --warn: #666;
+  --warn-soft: #f0f0f0;
+  --info: #000;
+  --info-soft: #f0f0f0;
+  --code-bg: #f0f0f0;
+  --code-text: #000;
+  --code-gutter: #777;
+  --code-hit: #e4e4e4;
+  --code-hit-num: #c90000;
+  --font-sans: var(--dp-typography-face);
+  --font-display: var(--dp-typography-face);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 0;
+  --radius-sm: 0;
+  --duration: 0s;
+  min-height: 0;
+  background: #fff;
+}
+.practice-tools .live-page {
+  max-width: none;
+  padding-block: 36px;
+}
+.practice-tools .live-page-head {
+  padding-bottom: 25px;
+  border-bottom: 2px solid #000;
+}
+.practice-tools h1 {
+  font-size: clamp(32px, 4vw, 58px);
+  font-weight: 750;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+.practice-tools h2 {
+  font-size: 24px;
+  letter-spacing: -0.035em;
+}
+.practice-tools .live-panel {
+  box-shadow: none;
+  border-radius: 0;
+}
+.practice-tools .live-auth {
+  max-width: 760px;
+  margin-inline: 0;
+  padding-block: 44px;
+}
+.practice-tools .live-auth-panel {
+  padding: 26px 0;
+  border: 0;
+  border-bottom: 1px solid #dedede;
+}
+.practice-tools .live-auth .live-heading-group {
+  margin-bottom: 20px;
+}
+.practice-tools .live-note {
+  border-left: 2px solid #000;
+}
+.practice-tools .live-status {
+  border-radius: 0;
+  font-size: 11px;
+}
+.practice-tools .live-facts {
+  border-radius: 0;
+}
+.practice-tools .live-crumbs {
+  font-size: 12px;
+}
+.practice-tools .live-crumbs a {
+  color: #000;
+}
+.practice-tools .live-table th {
+  background: #f0f0f0;
+}
+.practice-tools .live-table td,
+.practice-tools .live-table th {
+  border-bottom-color: #dedede;
+}
+.practice-tools .live-button {
+  font-size: 12px;
+}
+.practice-tools .live-empty {
+  border-radius: 0;
+}
+.practice-tools .coding-workspace {
+  min-height: 670px;
+}
+.practice-tools .problem-pane .panel-heading h2 {
+  font-size: 29px;
+}
+.practice-tools .problem-tabs button,
+.practice-tools .editor-heading button {
+  min-height: auto;
+  border: 0;
+  background: transparent;
+  color: #666;
+  border-radius: 0;
+  padding: 0 0 13px;
+  font-size: 11px;
+}
+.practice-tools .problem-tabs button {
+  border-bottom: 2px solid transparent;
+}
+.practice-tools .problem-tabs button[aria-pressed="true"] {
+  color: #000;
+  border-bottom-color: #c90000;
+}
+.practice-tools .editor-heading button {
+  padding: 0;
+}
+.practice-tools .editor-heading h2 {
+  font-size: 12px;
+}
+.practice-tools .code-editor textarea {
+  padding: 0 20px 0 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  color: #000;
+  min-height: 0;
+  font-size: 12px;
+  line-height: 23px;
+}
+.practice-tools .editor-submit-bar .primary-action {
+  background: #000;
+  color: #fff;
+  font-size: 11px;
+  min-height: 41px;
+  border-radius: 0;
+}
+.practice-tools .editor-submit-bar .primary-action:disabled {
+  background: #e4e4e4;
+  color: #777;
+}
+.practice-tools .submission-result .live-page {
+  padding: 20px;
+}
+.practice-tools .submission-result h1 {
+  font-size: 20px;
+}
+.practice-tools .submission-result .live-page-head {
+  padding-bottom: 16px;
+  border-bottom-width: 1px;
+}
+.practice-tools .submission-result .live-page .live-page {
+  padding: 0;
+}
+@media (max-width: 700px) {
+  .practice-tools .live-page {
+    padding-block: 25px;
+  }
+  .practice-tools .live-auth {
+    padding-block: 25px;
+  }
+  .practice-tools .coding-workspace {
+    min-height: 0;
+  }
+}
+
+.practice-tools .problem-tabs button:hover:not(:disabled),
+.practice-tools .problem-tabs button:active:not(:disabled),
+.practice-tools .editor-heading button:hover:not(:disabled),
+.practice-tools .editor-heading button:active:not(:disabled) {
+  background: transparent;
+  color: #000;
+  box-shadow: none;
+  transform: none;
+}
+.practice-tools .code-editor textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.practice-tools .model-notice h2 {
+  font-size: 17px;
+  margin-bottom: 12px;
+}
+.practice-tools .model-notice p {
+  margin-block: 8px;
+}
+.practice-tools .prose-block h3 {
+  margin-bottom: 12px;
+}
+.practice-tools .result-heading h3 {
+  font-size: 11px;
+}
+.practice-tools .submission-result > .inline-action {
+  display: inline-block;
+  margin: 0 20px 20px;
+}

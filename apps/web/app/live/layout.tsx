@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import "./live.css";
+import "./practice.css";
+
 export const metadata = {
   title: "LeeTKOB live",
   description: "Sign in, author a lab, submit code, and review findings.",
@@ -8,5 +11,5 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default function LiveLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return children;
+  return <div className="live-workspace practice-tools">{children}</div>;
 }
