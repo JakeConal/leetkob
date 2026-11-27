@@ -1,6 +1,6 @@
 # PA#3 live screens
 
-The signed-in workspace is at `/live`. The PA#2 home page stays at `/`. Browser calls use `fetch` with `credentials: "include"` against same-origin `/v2`. Next.js proxies those paths to `PA3_API_ORIGIN` (default `http://127.0.0.1:8080`). Mutations send `X-CSRF-Token` from the login response and an `Idempotency-Key`. Protected responses stay in memory and are removed on logout. A failed connection shows the connection error and does not invent a judged submission or a created lab.
+The home page at `/` is the searchable lab catalog. Sign-in is at `/live`, and existing class, lab, review and submission routes remain under `/live`. The result-release workflow preview is at `/publication`; its example data is separate from live lab progress. Browser calls use `fetch` with `credentials: "include"` against same-origin `/v2`. Next.js proxies those paths to `PA3_API_ORIGIN` (default `http://127.0.0.1:8080`). Mutations send `X-CSRF-Token` from the login response and an `Idempotency-Key`. Protected responses stay in memory and are removed on logout. A failed connection shows the connection error and does not invent a judged submission or a created lab.
 
 ## Routes
 
