@@ -23,7 +23,10 @@
     "test": "node --test scripts/evaluation/*.test.mjs && npm run test --workspaces --if-present && node scripts/go-check.mjs test",
     "security": "npm run security:secrets && npm audit --audit-level=high && node scripts/go-check.mjs security",
     "security:secrets": "node scripts/scan-secrets.mjs",
-    "check:openapi-drift": "node scripts/openapi-drift-check.mjs"
+    "check:openapi-drift": "node scripts/openapi-drift-check.mjs",
+    "dev:local": "bash scripts/run-local.sh",
+    "seed:local": "node scripts/e2e.mjs seed",
+    "test:local": "node scripts/e2e.mjs smoke"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

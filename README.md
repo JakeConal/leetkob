@@ -1,5 +1,7 @@
 # LeeTKOB
 
+Run `./scripts/run-local.sh` to start the local API, worker, Next.js and synthetic seed data. See [local setup](scripts/LOCAL.md).
+
 LeeTKOB is a teaching-assistant workflow for checking whether accepted C++ submissions follow lab constraints before marks are published. PA#2 establishes the repository harness, implements the contract of the irreversible publication step, and provides a reviewer-facing status dashboard.
 
 ## PA#2 scope

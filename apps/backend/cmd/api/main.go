@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -70,8 +71,12 @@ func run(logger *slog.Logger) error {
 		port = parsed
 	}
 
+	host := os.Getenv("API_HOST")
+	if host != "" && net.ParseIP(host) == nil {
+		return errors.New("invalid API_HOST: expected an IP address")
+	}
 	server := &http.Server{
-		Addr:              ":" + strconv.Itoa(port),
+		Addr:              net.JoinHostPort(host, strconv.Itoa(port)),
 		Handler:           mux,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,

@@ -1,0 +1,15 @@
+# Only source needed by the checker build may enter its context.
+**
+!go.mod
+!go.sum
+!cmd/
+!cmd/checker/
+!cmd/checker/**
+!cmd/analyze-isolated/
+!cmd/analyze-isolated/**
+!internal/
+!internal/**
+!native/
+!native/**
+**/.env
+**/.env.*

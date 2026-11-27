@@ -92,7 +92,11 @@ func checkService(ctx context.Context, store *postgres.Store, getenv func(string
 	analyze := func(context.Context, string) ([]byte, error) {
 		return []byte(`{"version":1,"status":"unsure","reason":"analyzer-not-configured","references":[]}`), nil
 	}
-	if binary := strings.TrimSpace(getenv("CHECKER_ANALYZER")); binary != "" {
+	if getenv("WORKER_ISOLATED_ANALYZER") == "1" {
+		boundary := sandbox.New()
+		boundary.Image = "leetkob-local-analyzer:pa3"
+		analyze = boundary.Analyze
+	} else if binary := strings.TrimSpace(getenv("CHECKER_ANALYZER")); binary != "" {
 		args, err := hardrule.CompilerArgs(ctx)
 		if err != nil {
 			logger.Error("checker compiler arguments failed", "error", err.Error())

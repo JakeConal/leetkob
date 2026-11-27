@@ -1,0 +1,21 @@
+# Only the local development database. Application processes run on the host.
+services:
+  postgres:
+    image: postgres@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
+    environment:
+      POSTGRES_USER: leetkob_local
+      POSTGRES_PASSWORD: synthetic-local-only
+      POSTGRES_DB: leetkob_local
+    ports:
+      - "127.0.0.1:${LOCAL_POSTGRES_PORT:-5545}:5432"
+    volumes:
+      - local_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "leetkob_local", "-d", "leetkob_local"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  local_pgdata:
