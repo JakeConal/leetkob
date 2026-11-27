@@ -376,9 +376,14 @@ export async function listClasses(): Promise<{ items: ClassSummary[]; nextCursor
 
 export async function listLabs(
   classId: string,
+  cursor: string | null = null,
 ): Promise<{ items: LabSummary[]; nextCursor: string | null }> {
   return parseLabList(
-    await liveFetch({ method: "GET", path: liveApi.classLabs(classId), expect: 200 }),
+    await liveFetch({
+      method: "GET",
+      path: withCursor(liveApi.classLabs(classId), cursor),
+      expect: 200,
+    }),
   );
 }
 

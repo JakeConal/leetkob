@@ -24,7 +24,7 @@ The repository is an npm-workspace modular monolith:
 - `apps/api` contains the NestJS 12 application, Fastify transport, framework-independent publication domain, signed-claim boundary, in-memory adapters, and contract tests.
 - `apps/web` contains the Next.js 16 App Router application. Most of the page is server-rendered; a small TanStack Query client boundary owns API-health loading, retry, and error states.
 - `apps/backend` contains the PA#3 Go module (`github.com/JakeConal/leetkob/backend`): the `cmd/api`, `cmd/worker` and `cmd/checker` commands share domain ports under `internal/`. See [`apps/backend/README.md`](apps/backend/README.md).
-- `docs/design/theme.md` is the authoritative "Press proof" UI and layout system; its tokens live in `apps/web/app/live/live.css` and `apps/web/app/live/theme.css`.
+- `docs/design/theme.md` documents the Swiss Minimalist practice workspace. Shared tokens live in `apps/web/app/globals.css`; assessment components use `apps/web/app/live/live.css` with `apps/web/app/live/practice.css`.
 
 ## Requirements
 
