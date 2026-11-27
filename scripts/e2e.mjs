@@ -14,6 +14,7 @@ const statePath = join(stateDir, "state.json");
 const dataset = JSON.parse(await readFile(join(root, "scripts/e2e/data.json"), "utf8"));
 const classA = "6f0c1a10-7b21-4a11-8c11-aaaaaaaaaaaa";
 const classB = "6f0c1a10-7b21-4a11-8c11-bbbbbbbbbbbb";
+const alphabetical = (left, right) => left.localeCompare(right);
 const delay = (ms) => new Promise((done) => setTimeout(done, ms));
 const sessions = new Map();
 let state;
@@ -54,12 +55,10 @@ async function load(create = false) {
     await save();
   }
   assert.equal(state.version, 1, "Unsupported E2E state version");
-  {
-    state.webPort = port(process.env.LOCAL_WEB_PORT, 3000);
-    state.apiPort = port(process.env.LOCAL_API_PORT, 8080);
-    state.postgresPort = port(process.env.LOCAL_POSTGRES_PORT, 5545);
-    await save();
-  }
+  state.webPort = port(process.env.LOCAL_WEB_PORT, 3000);
+  state.apiPort = port(process.env.LOCAL_API_PORT, 8080);
+  state.postgresPort = port(process.env.LOCAL_POSTGRES_PORT, 5545);
+  await save();
   for (const key of ["webPort", "apiPort", "postgresPort"]) port(state[key]);
 }
 
@@ -166,6 +165,14 @@ async function seed() {
     student1: ["student-a1@assessment.leetkob.test", "StudentA1", "student"],
     student2: ["student-a2@assessment.leetkob.test", "StudentA2", "student"],
   };
+  const database = new URL("postgres://127.0.0.1/leetkob_local?sslmode=disable");
+  database.username = "leetkob_local";
+  database.password = (await readFile(join(stateDir, "database-password"), "utf8")).trim();
+  assert(
+    /^[A-Za-z0-9_-]{32,}$/.test(database.password),
+    "Invalid generated local database password",
+  );
+  database.port = String(state.postgresPort);
   const passwords = {};
   for (const [name, [email, field, role]] of Object.entries(accounts)) {
     state.accounts[name] ??= { email, role, password: randomBytes(24).toString("base64url") };
@@ -176,7 +183,7 @@ async function seed() {
     cwd: root,
     env: {
       PATH: process.env.PATH,
-      DATABASE_URL: `postgres://leetkob_local:synthetic-local-only@127.0.0.1:${state.postgresPort}/leetkob_local?sslmode=disable`,
+      DATABASE_URL: database.href,
       ASSESSMENT_PASSWORDS: JSON.stringify(passwords),
     },
   });
@@ -184,7 +191,7 @@ async function seed() {
   const taOther = await login("ta2");
   const anchor = Date.parse(state.createdAt);
   assert(
-    Date.now() < anchor + 30 * 86400_000,
+    Date.now() < anchor + 30 * 86_400_000,
     "This dataset has expired; use a new E2E dataset after preserving the old volume",
   );
   const definitions = [
@@ -208,8 +215,8 @@ async function seed() {
     const body = {
       title: item.title,
       statement: dataset.statement,
-      opensAt: new Date(anchor - 2 * 86400_000).toISOString(),
-      deadline: new Date(anchor + (item.closed ? -1 : 30) * 86400_000).toISOString(),
+      opensAt: new Date(anchor - 2 * 86_400_000).toISOString(),
+      deadline: new Date(anchor + (item.closed ? -1 : 30) * 86_400_000).toISOString(),
       constraints: dataset.constraints,
       tests: dataset.tests,
       limits: { cpuSeconds: 2, memoryMiB: 128 },
@@ -230,13 +237,14 @@ async function seed() {
     };
     await save();
   }
+  const runSuffix = state.submissionRun ? `-run-${state.submissionRun}` : "";
   for (const item of dataset.scenarios) {
     const source = await readFile(join(root, "scripts/e2e/fixtures", item.source), "utf8");
     const { data } = await request(`/v2/labs/${state.labs[item.key].id}/submissions`, {
       method: "POST",
       body: { source },
       session: await login(item.student),
-      key: `e2e-v${dataset.version}-${item.key}${state.submissionRun ? `-run-${state.submissionRun}` : ""}`,
+      key: `e2e-v${dataset.version}-${item.key}${runSuffix}`,
       expected: 202,
     });
     if (state.submissions[item.key])
@@ -284,13 +292,13 @@ async function smoke() {
     });
     assert.equal(judged.judge.verdict, item.judge, `${item.key}: incorrect judge verdict`);
     assert.deepEqual(
-      Object.keys(judged).sort(),
+      Object.keys(judged).sort(alphabetical),
       ["id", "judge", "labId", "receivedAt", "state"],
       "Student result leaked private fields",
     );
     for (const test of judged.judge.tests) {
       assert.deepEqual(
-        Object.keys(test).sort(),
+        Object.keys(test).sort(alphabetical),
         ["id", "timeMs", "verdict"],
         "Per-test result leaked hidden test data",
       );

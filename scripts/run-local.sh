@@ -33,10 +33,9 @@ node -e 'const [a,b]=process.versions.node.split(".").map(Number);if(a<22||(a===
   echo 'Node.js 22.13 or later is required.' >&2; exit 1;
 }
 GO_COMMAND="${LOCAL_GO_BIN:-$(command -v go || true)}"
-if [[ -z "$GO_COMMAND" || "$("$GO_COMMAND" version 2>/dev/null || true)" != 'go version go1.27.4 '* ]]; then
-  if [[ -z "${LOCAL_GO_BIN:-}" && -x /snap/go/current/bin/go ]]; then
-    GO_COMMAND=/snap/go/current/bin/go
-  fi
+if [[ ( -z "$GO_COMMAND" || "$("$GO_COMMAND" version 2>/dev/null || true)" != 'go version go1.27.4 '* ) &&
+      -z "${LOCAL_GO_BIN:-}" && -x /snap/go/current/bin/go ]]; then
+  GO_COMMAND=/snap/go/current/bin/go
 fi
 if [[ -z "$GO_COMMAND" || "$("$GO_COMMAND" version 2>/dev/null || true)" != 'go version go1.27.4 '* ]]; then
   echo 'Go 1.27.4 is required. Set LOCAL_GO_BIN to its executable.' >&2
@@ -56,8 +55,18 @@ mkdir -p "$LOCAL_STATE/bin" "$LOCAL_STATE/logs" "$LOCAL_STATE/work"
 exec 9>"$LOCAL_STATE/run.lock"
 flock -n 9 || { echo 'The local launcher is already running.' >&2; exit 1; }
 
+# Generate only a synthetic local credential; never inherit an existing secret.
+node --input-type=module - "$LOCAL_STATE/database-password" <<'NODE'
+import { randomBytes } from 'node:crypto';
+import { writeFileSync, existsSync } from 'node:fs';
+const path = process.argv[2];
+if (!existsSync(path)) writeFileSync(path, randomBytes(32).toString('base64url'), {mode: 0o600, flag: 'wx'});
+NODE
+LOCAL_DATABASE_PASSWORD="$(<"$LOCAL_STATE/database-password")"
+[[ "$LOCAL_DATABASE_PASSWORD" =~ ^[A-Za-z0-9_-]{32,}$ ]] || { echo 'Invalid local database password file.' >&2; exit 1; }
+
 compose() {
-  env -i PATH="$PATH" LOCAL_POSTGRES_PORT="$LOCAL_POSTGRES_PORT" \
+  env -i PATH="$PATH" LOCAL_POSTGRES_PORT="$LOCAL_POSTGRES_PORT" LOCAL_DATABASE_PASSWORD="$LOCAL_DATABASE_PASSWORD" \
     docker --host unix:///var/run/docker.sock compose --ansi never --progress plain --project-name leetkob-local-v2 \
     --env-file /dev/null -f "$PROJECT_DIR/scripts/local-compose.yml" "$@"
 }
@@ -117,7 +126,12 @@ echo 'Starting the local database...'
 DATABASE_STARTED=1
 compose up -d --wait --wait-timeout 90 postgres
 
-LOCAL_DATABASE="postgres://leetkob_local:synthetic-local-only@127.0.0.1:$LOCAL_POSTGRES_PORT/leetkob_local?sslmode=disable"
+# Local socket access lets an existing synthetic volume adopt the persisted
+# generated password as well; no application records are removed.
+printf "ALTER ROLE leetkob_local PASSWORD '%s';\n" "$LOCAL_DATABASE_PASSWORD" | \
+  compose exec -T postgres psql -v ON_ERROR_STOP=1 -U leetkob_local -d leetkob_local >/dev/null
+
+LOCAL_DATABASE="postgres://leetkob_local:$LOCAL_DATABASE_PASSWORD@127.0.0.1:$LOCAL_POSTGRES_PORT/leetkob_local?sslmode=disable"
 LOCAL_ORIGIN="http://127.0.0.1:$LOCAL_WEB_PORT"
 start_service() {
   local name=$1
@@ -162,8 +176,8 @@ start_service web env -i PATH="$PATH" PA3_API_ORIGIN="http://127.0.0.1:$LOCAL_AP
   node "$PROJECT_DIR/node_modules/next/dist/bin/next" dev "$PROJECT_DIR/apps/web" \
   --hostname 127.0.0.1 --port "$LOCAL_WEB_PORT"
 wait_for "$LOCAL_ORIGIN/live"
-if (( WITH_SEED )); then node scripts/e2e.mjs seed --local "${SEED_OPTIONS[@]}"; fi
-if (( WITH_SMOKE )); then node scripts/e2e.mjs smoke --local; fi
+if (( WITH_SEED )); then node scripts/e2e.mjs seed "${SEED_OPTIONS[@]}"; fi
+if (( WITH_SMOKE )); then node scripts/e2e.mjs smoke; fi
 
 echo
 echo "Application ready: $LOCAL_ORIGIN/live"

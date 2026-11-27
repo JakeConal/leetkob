@@ -33,7 +33,7 @@ proxy. Passwords and direct lab links are saved in
 Seed scenarios cover compliant merge sort, a forbidden library call, a
 prompt-injection comment, WA, CE, an empty queue, an expired deadline and
 another class's lab. Repeated seeding reuses IDs and keeps existing passwords
-and review decisions. Keep the state file with the database volume.
+and review decisions. Keep the state file and generated `.local-dev/v2/database-password` with the database volume.
 
 ```bash
 ./scripts/run-local.sh --smoke  # also verify the real judge/check/review flow

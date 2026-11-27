@@ -4,7 +4,7 @@ services:
     image: postgres@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
     environment:
       POSTGRES_USER: leetkob_local
-      POSTGRES_PASSWORD: synthetic-local-only
+      POSTGRES_PASSWORD: ${LOCAL_DATABASE_PASSWORD:?Run scripts/run-local.sh to generate the local password}
       POSTGRES_DB: leetkob_local
     ports:
       - "127.0.0.1:${LOCAL_POSTGRES_PORT:-5545}:5432"
