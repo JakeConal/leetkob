@@ -110,6 +110,8 @@ jobs:
           cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm test
+      - name: Private NIM setup transport (synthetic token only)
+        run: python3 -m unittest discover -s deploy -p test_configure_nim.py -v
 
   sandbox-attacks:
     name: Sandbox attacks

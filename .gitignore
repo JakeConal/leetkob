@@ -20,3 +20,4 @@ deploy/.env
 apps/backend/provision
 
 .local-dev/
+__pycache__/

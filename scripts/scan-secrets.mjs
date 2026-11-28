@@ -9,6 +9,7 @@ const rules = [
   ["GitHub token", /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,})\b/g],
   ["Google API key", /\bAIza[0-9A-Za-z_-]{35}\b/g],
   ["model provider key", /\bsk-[A-Za-z0-9_-]{20,}\b/g],
+  ["NVIDIA NIM key", /\bnvapi-[A-Za-z0-9_-]{20,}\b/g],
   ["private key material", /-----BEGIN [A-Z ]*PRIVATE KEY-----/g],
 ];
 
