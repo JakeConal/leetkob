@@ -6,12 +6,14 @@ COPY apps/backend/go.mod apps/backend/go.sum ./
 COPY apps/backend/cmd ./cmd
 COPY apps/backend/internal ./internal
 COPY apps/backend/db ./db
-RUN go build -o /api ./cmd/api
+RUN go build -trimpath -o /api ./cmd/api \
+    && go build -trimpath -o /provision ./cmd/provision
 
 FROM debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /api /usr/local/bin/api
+COPY --from=build /provision /usr/local/bin/provision
 USER 65534:65534
 ENTRYPOINT ["/usr/local/bin/api"]

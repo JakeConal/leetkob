@@ -1,4 +1,4 @@
-# Repeatable PA#3 stack. Prepared, not provisioned; see deploy/README.md.
+# PA#3 release stack. Supply --env-file with a private file outside the source.
 name: leetkob
 
 x-database-url: &database-url "postgres://${POSTGRES_USER:-leetkob}:${POSTGRES_PASSWORD:?copy deploy/.env.example to deploy/.env and set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-leetkob}?sslmode=disable"
@@ -7,6 +7,7 @@ services:
   postgres:
     image: postgres@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-leetkob}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?copy deploy/.env.example to deploy/.env and set POSTGRES_PASSWORD}
@@ -26,6 +27,11 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile.backend
     restart: unless-stopped
+    mem_limit: 256m
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     environment:
       DATABASE_URL: *database-url
       PORT: "8080"
@@ -48,6 +54,10 @@ services:
       args:
         PA3_API_ORIGIN: http://api:8080
     restart: unless-stopped
+    mem_limit: 768m
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     environment:
       PA3_API_ORIGIN: http://api:8080
     ports:
@@ -55,24 +65,80 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
 
-  # Judging worker. Requires the host Docker daemon and the same absolute
-  # work path inside and outside the container (sandbox bind mounts).
+  # Only the trusted worker sees the socket. Current main copies inputs with
+  # docker cp: student and analyzer containers have no host bind mounts.
   worker:
-    profiles: ["worker"]
     build:
       context: ..
       dockerfile: deploy/Dockerfile.worker
     restart: unless-stopped
+    mem_limit: 512m
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    group_add: ["${DOCKER_GID:?set the numeric Docker socket group}"]
     environment:
       DATABASE_URL: *database-url
-      TMPDIR: ${WORK_ROOT:-/srv/leetkob-work}
+      MODEL_OFF: "1"
+      WORKER_ISOLATED_ANALYZER: "1"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${WORK_ROOT:-/srv/leetkob-work}:${WORK_ROOT:-/srv/leetkob-work}
     depends_on:
-      postgres:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "docker info >/dev/null 2>&1 && kill -0 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+    stop_grace_period: 2m
+
+  provision:
+    profiles: ["tools"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.backend
+    entrypoint: ["/usr/local/bin/provision"]
+    environment:
+      DATABASE_URL: *database-url
+      ASSESSMENT_PASSWORDS: ${ASSESSMENT_PASSWORDS:?set synthetic assessment passwords}
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+  caddy:
+    profiles: ["public"]
+    image: caddy:2-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      LEETKOB_DOMAIN: ${PUBLIC_HOST:-localhost}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
         condition: service_healthy
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

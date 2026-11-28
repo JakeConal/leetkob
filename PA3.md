@@ -4,11 +4,12 @@ This file is the evidence map for the `pa3` submission of LeeTKOB. The tag is
 checked out and verified with the commands in the repository README, the
 backend README and this file.
 
-> **Deployment status: no public deployment exists.** On 2026-11-24 the owner
-> decided to skip external provisioning, so this submission claims **no URL,
-> no uptime and no fallback recording**. The flow is evidenced by the local
-> staging run and by CI instead. `deploy/` contains the repeatable stack that
-> was verified locally, and the gaps are disclosed in
+> **Deployment status: not publicly deployed.** On November 28, 2026 the owner
+> selected the shared Azure subscription's `jenkins_group`; its active credit
+> balance and expiry still require confirmation before provisioning. There is
+> **no public URL, claimed uptime or fallback recording**. The current flow is
+> evidenced by local staging and CI. The Azure candidate was built and tested
+> locally; see [`deploy/AZURE.md`](deploy/AZURE.md). Remaining gaps are disclosed in
 > [`docs/evidence/pa3-walkthrough.md`](docs/evidence/pa3-walkthrough.md) and in
 > [`SELF_ASSESSMENT_REPORT.md`](SELF_ASSESSMENT_REPORT.md). No link here points
 > at a deployment, run or provider request that did not happen.
@@ -30,15 +31,16 @@ backend README and this file.
 
 ## Submitted tag and CI
 
-- Tag: `pa3` — created on the commit that contains this file.
+- Tag target: `pa3` — **not created or pushed yet**. This index is not evidence
+  that the tag or its run already exists.
 - CI run for the tag: [Quality Gate runs filtered to `pa3`](https://github.com/JakeConal/leetkob/actions/workflows/quality.yml?query=branch%3Apa3).
-  The **most recent** run in that list is the run for the submitted tag
-  commit; its head SHA must equal `git rev-parse pa3^{commit}`. A commit cannot
+  After the tag is pushed, the matching run's head SHA must equal
+  `git rev-parse pa3^{commit}`. A commit cannot
   contain the ID of the run that its own tag push triggers, so the filtered
   list is linked rather than a single run ID (the same convention as
   [`PA2.md`](PA2.md)).
 - The submission tag triggers the additive job **`Sandbox attacks`**, which runs only for
-  `refs/tags/pa3`. It builds the sandbox, analyzer and checker images, runs the
+  `refs/tags/pa3`. It builds the sandbox and bundled-analyzer checker images, runs the
   nine real container attacks, and fails on `--- SKIP` or on any provider
   credential in the environment. Definition:
   [`.github/workflows/quality.yml`](.github/workflows/quality.yml).
@@ -62,11 +64,20 @@ storage, and never committed or baked into an image.
 
 ## Deployment
 
-Status: **prepared, not provisioned** (owner decision, 2026-11-24). There is no
-public URL and no claimed availability. [`deploy/README.md`](deploy/README.md)
-documents the stack, the Docker-socket constraint for the worker, the
-free-tier hosting proposal, the health/restart/recovery/rollback steps and the
-zero-spend ceiling.
+November 28 update: the owner selected Azure student-credit hosting and then
+the existing shared `jenkins_group`. The deployment configuration has been
+updated and exercised locally; see [`deploy/AZURE.md`](deploy/AZURE.md).
+The shared billing profile's active credit balance/expiry still needs owner
+confirmation, so no VM, public URL or public recording exists yet. This later
+preparation supersedes the earlier decision to skip hosting, without claiming
+that public provisioning has occurred.
+
+Status: **prepared, not provisioned** (November 28, 2026). There is no public
+URL or claimed availability. [`deploy/AZURE.md`](deploy/AZURE.md) records the
+current shared-subscription target, isolated worker configuration, student-credit
+constraint, regional cost estimate, local verification and remaining work.
+[`deploy/README.md`](deploy/README.md) retains the earlier hosting proposal and
+health/restart/recovery/rollback procedures as historical preparation.
 
 Locally verified on 2026-11-24:
 

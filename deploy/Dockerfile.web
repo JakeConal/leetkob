@@ -15,7 +15,7 @@ RUN npm run build --workspace @leetkob/web
 FROM node@sha256:fa54405993eaa6bab6b6e460f5f3e945a2e2f07942ba31c0e297a7d9c2041f62
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app ./
+COPY --from=build --chown=65534:65534 /app ./
 USER 65534:65534
 EXPOSE 3000
 CMD ["sh", "-c", "cd apps/web && exec npx next start -H 0.0.0.0 -p 3000"]

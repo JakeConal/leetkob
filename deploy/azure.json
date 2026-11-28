@@ -1,0 +1,242 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "southeastasia",
+      "allowedValues": ["southeastasia", "eastasia", "koreacentral", "centralindia", "japanwest"]
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2als_v2",
+      "allowedValues": ["Standard_B2als_v2", "Standard_B2s"]
+    },
+    "imageVersion": {
+      "type": "string",
+      "defaultValue": "latest"
+    },
+    "sshPublicKey": {
+      "type": "string",
+      "minLength": 32
+    },
+    "dnsLabel": {
+      "type": "string",
+      "defaultValue": "leetkob-pa3-21ae08a0",
+      "minLength": 3,
+      "maxLength": 63
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "nsg-leetkob-pa3",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "LeeTKOB",
+        "environment": "coursework",
+        "milestone": "PA3",
+        "cost-policy": "student-credits-only"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "HTTPS",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "Internet",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "443"
+            }
+          },
+          {
+            "name": "HTTP",
+            "properties": {
+              "priority": 110,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "Internet",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2024-05-01",
+      "name": "pip-leetkob-pa3",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "LeeTKOB",
+        "environment": "coursework",
+        "milestone": "PA3",
+        "cost-policy": "student-credits-only"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('dnsLabel')]"
+        }
+      },
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-05-01",
+      "name": "vnet-leetkob-pa3",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "LeeTKOB",
+        "environment": "coursework",
+        "milestone": "PA3",
+        "cost-policy": "student-credits-only"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["10.30.0.0/16"]
+        },
+        "subnets": [
+          {
+            "name": "application",
+            "properties": {
+              "addressPrefix": "10.30.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups','nsg-leetkob-pa3')]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": ["[resourceId('Microsoft.Network/networkSecurityGroups','nsg-leetkob-pa3')]"]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2024-05-01",
+      "name": "nic-leetkob-pa3",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "LeeTKOB",
+        "environment": "coursework",
+        "milestone": "PA3",
+        "cost-policy": "student-credits-only"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "primary",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets','vnet-leetkob-pa3','application')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses','pip-leetkob-pa3')]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks','vnet-leetkob-pa3')]",
+        "[resourceId('Microsoft.Network/publicIPAddresses','pip-leetkob-pa3')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2024-07-01",
+      "name": "vm-leetkob-pa3",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "LeeTKOB",
+        "environment": "coursework",
+        "milestone": "PA3",
+        "cost-policy": "student-credits-only"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "ubuntu-24_04-lts",
+            "sku": "server",
+            "version": "[parameters('imageVersion')]"
+          },
+          "osDisk": {
+            "name": "disk-leetkob-pa3-os",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            },
+            "deleteOption": "Delete"
+          }
+        },
+        "osProfile": {
+          "computerName": "leetkob-pa3",
+          "adminUsername": "leetkobops",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "provisionVMAgent": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "/home/leetkobops/.ssh/authorized_keys",
+                  "keyData": "[parameters('sshPublicKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces','nic-leetkob-pa3')]",
+              "properties": {
+                "primary": true,
+                "deleteOption": "Delete"
+              }
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": false
+          }
+        },
+        "securityProfile": {
+          "securityType": "TrustedLaunch",
+          "uefiSettings": {
+            "secureBootEnabled": true,
+            "vTpmEnabled": true
+          }
+        }
+      },
+      "dependsOn": ["[resourceId('Microsoft.Network/networkInterfaces','nic-leetkob-pa3')]"]
+    }
+  ],
+  "outputs": {
+    "hostname": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses','pip-leetkob-pa3'),'2024-05-01').dnsSettings.fqdn]"
+    },
+    "publicIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses','pip-leetkob-pa3'),'2024-05-01').ipAddress]"
+    }
+  }
+}
