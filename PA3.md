@@ -71,8 +71,8 @@ it never silently resets an existing password or seeds the marked lab.
 - Repeatable configuration, costs, recovery, rollback and security review:
   [`deploy/AZURE.md`](deploy/AZURE.md). The approximately USD 42.91/month
   baseline excludes variable disk operations/egress and consumes student credits.
-- Actual-host sandbox qualification: [`sandbox.log`](docs/evidence/pa3-azure/sandbox.log),
-  [`checker-image.log`](docs/evidence/pa3-azure/checker-image.log),
+- Actual-host sandbox qualification: [`sandbox.txt`](docs/evidence/pa3-azure/sandbox.txt),
+  [`checker-image.txt`](docs/evidence/pa3-azure/checker-image.txt),
   [`host.json`](docs/evidence/pa3-azure/host.json). All nine attacks passed without skips.
 - Actual public verification and fallback recording:
   [`docs/evidence/pa3-walkthrough.md`](docs/evidence/pa3-walkthrough.md).

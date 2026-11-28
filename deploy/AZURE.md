@@ -143,8 +143,8 @@ one judge job for that submission. See the actual reports in
 The VM passed every test in `go test -count=1 -v ./internal/sandbox/`, including
 all nine live attacks and the disabled-control negative tests, without a skip.
 `TestImageMatchesTeamCaseLabels` passed on the same host with model requests off.
-See [`../docs/evidence/pa3-azure/sandbox.log`](../docs/evidence/pa3-azure/sandbox.log),
-[`checker-image.log`](../docs/evidence/pa3-azure/checker-image.log) and
+See [`../docs/evidence/pa3-azure/sandbox.txt`](../docs/evidence/pa3-azure/sandbox.txt),
+[`checker-image.txt`](../docs/evidence/pa3-azure/checker-image.txt) and
 [`host.json`](../docs/evidence/pa3-azure/host.json). The host runs Docker 29.10.1;
 the digest-pinned worker client was verified against it. The first Run Command
 bootstrap stopped before testing because its noninteractive environment lacked a
