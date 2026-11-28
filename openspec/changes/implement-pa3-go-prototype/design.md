@@ -2,7 +2,7 @@
 
 ## Context
 
-See [proposal.md](proposal.md) for the milestone boundary. Source reads on November 20 are recorded in [the acceptance matrix](../../../docs/requirements/acceptance-matrix.md#pa3-published-rubric-and-implementation-deltas). PA#3 is 100 points, 7% of the course, due November 25 at 22:00 Asia/Saigon.
+See [proposal.md](proposal.md) for the milestone boundary. Source reads on November 20 are recorded in [the acceptance matrix](../../../docs/requirements/acceptance-matrix.md#pa3-published-rubric-and-implementation-deltas). PA#3 is 100 points, 7% of the course, due November 29 at 22:00 Asia/Saigon.
 
 Observed checkout baseline is `ee31dcb` on `codex/pin-evaluation-sources`. The original staged `.opencode` files are unrelated user work and must remain untouched. No implementation or dependency installation is claimed by these planning artifacts.
 

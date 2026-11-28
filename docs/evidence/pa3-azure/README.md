@@ -3,7 +3,7 @@
 Public service: <https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live>.
 Five synthetic sign-ins are listed in [`../../../PA3.md`](../../../PA3.md).
 First host start: `2026-11-28T01:57:20Z`; first observed valid public HTTPS:
-`2026-11-28T01:57:30Z`. This is after the November 25 deadline; no earlier
+`2026-11-28T01:57:30Z`. This precedes the updated November 29, 22:00 Asia/Saigon deadline; no earlier
 availability is claimed. The owner confirmed Toàn's student-credit coverage.
 
 ## Recording and browser checks
@@ -50,9 +50,10 @@ Screenshots: [created lab](lab-created.png), [desktop reviews](desktop-reviews.p
 | [host.json](host.json)                       | Qualified source revision, Docker version, kernel and architecture.                                                                                                                                                                                                       |
 
 The qualified application/image source is commit
-`36e3caf92c8c5a3310dd0593610bd401aacc33b8`. Later release commits change documentation
-and evidence only; the final tag checkout is verified against these application
-and deployment sources before handoff. The original working checkout is preserved.
+`36e3caf92c8c5a3310dd0593610bd401aacc33b8`. This records the initial deployment. PR #50 subsequently adds the real-model
+worker, stricter isolation and byte-identical official inputs. Its live activation
+and final matching tag verification remain pending; the original recording does
+not prove those later changes. The original working checkout is preserved.
 No real marking lab is pre-seeded and no marks are published.
 
 ## Evaluation and limits

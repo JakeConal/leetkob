@@ -2,8 +2,9 @@
 
 The application is deployed at
 <https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live>.
-First public HTTPS verification was on November 28, 2026, after the November 25
-submission deadline. Availability since the deadline is not met.
+First public HTTPS verification was on November 28, 2026, before the updated
+November 29, 22:00 Asia/Saigon submission deadline. Retention until PA#4 marks
+remains an ongoing obligation.
 
 The actual **2:06.68 fallback recording**, browser screenshots, HTTP privacy and
 worker-recovery checks, direct PostgreSQL verdict count, actual-host sandbox

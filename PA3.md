@@ -7,7 +7,7 @@ backend README and this file.
 > **Azure release:** the synthetic assessment service is hosted at
 > <https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live> in the
 > shared student subscription's `jenkins_group`. Its actual first deployment
-> is November 28, 2026; availability since the November 25 deadline is not met.
+> is November 28, 2026, before the updated November 29, 22:00 Asia/Saigon deadline.
 > Hosting consumes Toàn’s confirmed student credits, with the spending limit On
 > and USD 50 monthly notification budget. Online semantic checks remain
 > offline/`unsure`; the committed real-model evaluation is separate evidence.
@@ -76,14 +76,15 @@ it never silently resets an existing password or seeds the marked lab.
   [`host.json`](docs/evidence/pa3-azure/host.json). All nine attacks passed without skips.
 - Actual public verification and fallback recording:
   [`docs/evidence/pa3-walkthrough.md`](docs/evidence/pa3-walkthrough.md).
-- `MODEL_OFF=1` and isolated analysis are fixed in Compose. No model key or
-  cloud credential is installed by the release. The trusted worker alone sees
+- The base Compose file selects `MODEL_OFF=1` and isolated analysis. The
+  [model overlay](deploy/docker-compose.model.yml) enables bounded real calls
+  after [private operator setup](deploy/NIM.md). Activation and a real deployed
+  model result remain pending; no live integration is claimed yet. The trusted worker alone sees
   the Docker socket; source parsing and compilation happen in qualified containers.
 
 The service is intended to remain up until PA#4 marks. Restart policies are
 configured, but future availability depends on the owner's credit expiry and
-operation of the VM. No earlier uptime is claimed. The previous Oracle proposal
-in `deploy/README.md` is historical and is superseded by `deploy/AZURE.md`.
+operation of the VM. No earlier uptime is claimed. The current deployment runbook is `deploy/AZURE.md`.
 
 ## End-to-end flow
 
@@ -144,6 +145,8 @@ Generic checker image and command:
 
 ```bash
 docker build -f apps/backend/checker/Dockerfile -t leetkob-checker:pa3 apps/backend
+checker_inputs=$(mktemp -u /tmp/leetkob-checker-inputs.XXXXXX)
+node scripts/evaluation/sources.mjs stage evaluation/team-cases "$checker_inputs"
 checker_out=$(mktemp -d /tmp/leetkob-checker.XXXXXX)
 chmod 0777 "$checker_out"  # synthetic predictions only; uid 65534 writes here
 
@@ -151,7 +154,7 @@ docker run --rm --network none --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m --cap-drop ALL \
   --security-opt no-new-privileges --pids-limit 64 \
   --memory 512m --memory-swap 512m --user 65534:65534 \
-  -v "$PWD/evaluation/team-cases:/data:ro" -v "$checker_out:/out" \
+  -v "$checker_inputs:/data:ro" -v "$checker_out:/out" \
   -e MODEL_OFF=1 \
   leetkob-checker:pa3 --data /data --predictions /out/predictions.jsonl
 ```
@@ -172,12 +175,11 @@ and prompt hashes; prompts, source, identities and the key are not logged.
 A lab of 80 submissions is ≈97.5k tokens and USD 0.00 at the free NVIDIA tier;
 the USD 0.25 cap is reserved before every dispatch.
 
-Official bytes: the repository commits the byte-hash manifest
-[`evaluation/official-source.json`](evaluation/official-source.json) and the
-verifier/stager. The marker re-fetches the pinned commit and verifies all 128
-files before and after scoring; upstream bytes are not redistributed because
-the pinned tree has no licence. This is the documented reconciliation, not a
-claim that the files are vendored.
+Official bytes: all 128 unchanged files are included in
+[`evaluation/official/`](evaluation/official/) under the lecturer’s course hand-in
+instruction, with [separate provenance](evaluation/official-provenance.md).
+`npm test` verifies every published SHA-256 before the test suites run. This
+course submission does not claim an upstream open-source redistribution license.
 
 ## Tests-first history and AI log
 
@@ -189,22 +191,22 @@ claim that the files are vendored.
 
 ## Rubric evidence map
 
-| Criterion                       | Evidence                                                                                                                       |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| End-to-end deployed flow        | Public HTTPS flow, actual-host qualification, restart/privacy proof and recorded walkthrough; late first deployment disclosed. |
-| Queue and sandbox               | Leased worker, fence/restart tests, nine sandbox attack tests, `pa3` tag job.                                                  |
-| Hard rules first                | Analyzer trap suite, model-off team cases (10/10), dev-run with 0 wrongful hard-rule deductions.                               |
-| Semantic model                  | Guarded adapter, sanitizer, budget, committed `evaluation/dev-run/` predictions, scorer report, call log.                      |
-| Initial limits and review queue | Schema/timeout unsure tests, review decision tests, private projections, no production Publish.                                |
-| Checker and first eval          | Dataset-independent image/command, `MODEL_OFF=1`, team cases, official byte manifest, honest metrics.                          |
-| Tests first and focused history | Commit order, AI-LOG fault entries, no weakened checks or labels.                                                              |
-| AI log                          | [`AI-LOG.md`](AI-LOG.md) tool/part entries and D1-D14 changed/rejected decisions.                                              |
+| Criterion                       | Evidence                                                                                                                                            |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| End-to-end deployed flow        | Public HTTPS flow, actual-host qualification, restart/privacy proof and recorded walkthrough; live-model official three-case demonstration pending. |
+| Queue and sandbox               | Leased worker, fence/restart tests, nine sandbox attack tests, `pa3` tag job.                                                                       |
+| Hard rules first                | Analyzer trap suite, model-off team cases (10/10), dev-run with 0 wrongful hard-rule deductions.                                                    |
+| Semantic model                  | Guarded adapter, sanitizer, budget, committed `evaluation/dev-run/` predictions, scorer report, call log.                                           |
+| Initial limits and review queue | Schema/timeout unsure tests, review decision tests, private projections, no production Publish.                                                     |
+| Checker and first eval          | Dataset-independent image/command, `MODEL_OFF=1`, team cases, unchanged official bytes, honest metrics.                                             |
+| Tests first and focused history | Commit order, AI-LOG fault entries, no weakened checks or labels.                                                                                   |
+| AI log                          | [`AI-LOG.md`](AI-LOG.md) tool/part entries and D1-D14 changed/rejected decisions.                                                                   |
 
 ## Known gaps
 
-- First deployment is November 28, after the November 25 deadline. The service
-  was not continuously available from the deadline, and future uptime is not
-  guaranteed by a one-time check.
+- The updated deadline is November 29, 22:00 Asia/Saigon. Deployment began
+  November 28; retention until PA#4 marks remains an ongoing obligation, and
+  future uptime is not guaranteed by a one-time check.
 - The online worker runs semantic checks offline (`unsure`); the real model
   path is the committed checker run, not the worker.
 - Recall is 78.4%, below the later PA#4 90% target. PA#3 imposes no overall
@@ -216,4 +218,6 @@ claim that the files are vendored.
   this release does not suppress the scanner or claim its PR check is green.
 - PR [#50](https://github.com/JakeConal/leetkob/pull/50) carries this release on
   the current implementation. It requests Toanapr and XuXinhNo1 and is not
-  automatically merged. Coursework upload is not performed.
+  merged yet. The owner authorized merge after final review and required
+  checks; current work still needs live-model verification. Coursework upload
+  is not performed.

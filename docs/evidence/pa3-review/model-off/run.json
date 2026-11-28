@@ -1,0 +1,13 @@
+{
+  "kind": "offline-published-dev-verification",
+  "pairs": 102,
+  "banListPairs": 55,
+  "semanticPairs": 47,
+  "wrongfulDeductions": 0,
+  "scorerExit": 1,
+  "network": "none",
+  "memoryMiB": 512,
+  "pids": 64,
+  "modelCalls": 0,
+  "predictionInputs": "staged without labels, tests or scorer"
+}

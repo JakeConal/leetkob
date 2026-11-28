@@ -75,6 +75,10 @@
       "apiVersion": "2024-05-01",
       "name": "pip-leetkob-pa3",
       "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
       "tags": {
         "project": "LeeTKOB",
         "environment": "coursework",
@@ -87,10 +91,6 @@
         "dnsSettings": {
           "domainNameLabel": "[parameters('dnsLabel')]"
         }
-      },
-      "sku": {
-        "name": "Standard",
-        "tier": "Regional"
       }
     },
     {
@@ -104,6 +104,7 @@
         "milestone": "PA3",
         "cost-policy": "student-credits-only"
       },
+      "dependsOn": ["[resourceId('Microsoft.Network/networkSecurityGroups','nsg-leetkob-pa3')]"],
       "properties": {
         "addressSpace": {
           "addressPrefixes": ["10.30.0.0/16"]
@@ -119,8 +120,7 @@
             }
           }
         ]
-      },
-      "dependsOn": ["[resourceId('Microsoft.Network/networkSecurityGroups','nsg-leetkob-pa3')]"]
+      }
     },
     {
       "type": "Microsoft.Network/networkInterfaces",
@@ -133,6 +133,10 @@
         "milestone": "PA3",
         "cost-policy": "student-credits-only"
       },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks','vnet-leetkob-pa3')]",
+        "[resourceId('Microsoft.Network/publicIPAddresses','pip-leetkob-pa3')]"
+      ],
       "properties": {
         "ipConfigurations": [
           {
@@ -148,11 +152,7 @@
             }
           }
         ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks','vnet-leetkob-pa3')]",
-        "[resourceId('Microsoft.Network/publicIPAddresses','pip-leetkob-pa3')]"
-      ]
+      }
     },
     {
       "type": "Microsoft.Compute/virtualMachines",
@@ -165,6 +165,7 @@
         "milestone": "PA3",
         "cost-policy": "student-credits-only"
       },
+      "dependsOn": ["[resourceId('Microsoft.Network/networkInterfaces','nic-leetkob-pa3')]"],
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('vmSize')]"
@@ -225,8 +226,7 @@
             "vTpmEnabled": true
           }
         }
-      },
-      "dependsOn": ["[resourceId('Microsoft.Network/networkInterfaces','nic-leetkob-pa3')]"]
+      }
     }
   ],
   "outputs": {

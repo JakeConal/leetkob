@@ -28,6 +28,7 @@ comparing tokens. The same test asserts the labels cover every
 solution/constraint pair exactly once with a valid verdict.
 
 Provenance: authored by the team for this repository; no official dataset
-bytes are copied here. The official dev set remains fetched-only under
-`evaluation/official-source.json` because its pinned tree carries no
-redistribution license.
+bytes are copied into these team cases. The byte-identical official dev set is
+separately included in `evaluation/official/` for the course hand-in, verified
+against `evaluation/official-source.json`. Its pinned tree carries no general
+redistribution license; see `../official-provenance.md` for the course instruction.

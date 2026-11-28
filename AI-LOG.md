@@ -276,3 +276,35 @@
 
 - Further review corrections: live worker mode now refuses a non-isolated analyzer, and its unsafe native-parser fallback was removed. Real checker mode also requires isolated parsing and explicit known prices; its hidden transport retries were removed so each physical dispatch has its own reservation. Provider logs distinguish unknown usage from measured zero cost. The old dev-run command is preserved as history with a safety warning, not presented as a safe current invocation.
 - CI verification exposed `TestMergedPipeline` depending on a sandbox image built by a different package. Its fixture now builds and qualifies its own compiler/analyzer images before the timed flow and uses isolated analysis, preserving every assertion and avoiding host-SDK skips. Local race-enabled merged flow passed without skips. The checker image test stages prediction-only data so labels, hidden tests and review records stay outside the prediction container; staging now supports the generic nested team layout with an independent exclusion test.
+
+### 2026-11-28 — Review documentation, exact-byte offline run and private setup
+
+- Tools/parts: Codex, Python/OpenSSL synthetic transfer tests, Azure metadata-only
+  checks, Windows Terminal, the qualified checker image, the unchanged scorer,
+  GitHub CI and repository documentation review. No replacement credential is
+  read or printed by the agent and no real provider request is claimed here.
+- Corrected the stale November 25 deadline in current evidence and deployment
+  documentation to the updated November 29, 22:00 Asia/Saigon assignment. Kept
+  earlier log entries as history. Included all 128 unchanged official files under
+  the lecturer's course hand-in instruction, with separate provenance and a
+  mandatory hash guard instead of the earlier manifest-only workaround.
+- Actual full model-off run produced 102 predictions: all 55 ban-list pairs
+  decided, all 47 semantic pairs unsure, zero wrongful deductions and zero model
+  requests. Inputs were staged without labels/tests/scorer. The network-none,
+  non-root, memory/PID-limited image and scorer artifacts are retained in
+  `docs/evidence/pa3-review/model-off/`. Scorer exit 1 is reported unchanged.
+- Added an operator-run setup helper: hidden prompt or private local `.env`,
+  RSA-OAEP/SHA-256 encryption before Azure Run Command, atomic private token file
+  on the VM, metadata-only success output. Three offline tests pass, including
+  actual RSA encryption/decryption of a synthetic token and rejection of ambiguous
+  input. Added the tests to CI and NVIDIA key detection to the existing scanner.
+- Rejected using a token pasted into chat; requested its revocation and a fresh
+  token entered locally. Created an ignored, mode-0600 `.env` template with an
+  empty key field. A claimed installation was checked and the VM still reported
+  the token file absent; no success was inferred from the confirmation alone.
+  Opened the helper in the owner's Windows Terminal so they can enter the new
+  token directly without sending it through chat or tool arguments.
+- CI run 46122872337 passed the six standard jobs on d3b17ff with real PostgreSQL
+  integration tests. The reviewed worker image is being prepared on the VM;
+  activation, a real semantic call, the updated public recording and the final
+  merge/tag/archive remain unclaimed until actually verified.

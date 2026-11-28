@@ -5,20 +5,19 @@ three separate responsibilities, per the assignment: the API never judges
 inline, the worker drains the durable queue, and the checker marks a
 dataset independently of the product.
 
-- `cmd/api` — production API on `/v2` (routes land with issue #38 tasks
-  2.2–2.4, 4 and 6, built against
-  [`docs/contract/pa3-openapi.json`](../../docs/contract/pa3-openapi.json)).
-  Currently serves `GET /healthz`. The PA#2 compatibility API
-  (`apps/api`, unprefixed `/labs/{labId}/publish`) keeps running
-  separately and is never registered against production storage.
-- `cmd/worker` — the separate judging worker. Task 2.1 provides the
-  shared PostgreSQL store and transactions. Job leasing arrives with
-  task 4.2; until then the worker starts, idles and shuts down cleanly.
-- `cmd/checker` — the dataset-independent marking command
-  (`--data <dir> --predictions <file>`). Argument validation and the
-  `MODEL_OFF=1` selection point are pinned; generic discovery lands with
-  task 7.1. Exit codes: `2` invalid invocation, `0`/`1` valid run
-  outcomes decided by the unmodified scorer.
+- `cmd/api` serves production `/v2` session, class/lab, submission and private
+  TA-review routes plus `/healthz`. The contract is
+  [`docs/contract/pa3-openapi.json`](../../docs/contract/pa3-openapi.json).
+  The PA#2 compatibility API in `apps/api` retains its separate fixture storage.
+- `cmd/worker` leases PostgreSQL jobs, compiles and judges C++ in qualified
+  containers, then checks Accepted submissions. Attempt fences and transactions
+  prevent duplicate verdicts after restart or competing workers. Hard rules use
+  isolated libclang; the bounded semantic adapter is selected explicitly.
+- `cmd/checker` discovers arbitrary datasets using
+  `--data <dir> --predictions <file>`. Its offline image decides ban-list pairs
+  and emits `unsure` for semantic pairs with `MODEL_OFF=1`. Exit 0 means a valid
+  prediction run; exit 2 means invalid invocation/data. Run the unmodified
+  upstream scorer separately; scorer exit 1 is a valid threshold failure.
 
 ## Toolchain and module pins
 
@@ -54,9 +53,8 @@ go run ./cmd/checker --data <dataset-dir> --predictions <output.jsonl>
 
 Untrusted C++17 compilation and execution go through
 `internal/sandbox`. The fixed image, the nine attack fixtures, and the
-exact `docker build` / `docker create` lines the future `pa3` tag job must
-run are in [`sandbox/README.md`](sandbox/README.md). This package does not
-map student verdicts (task 3.5) and it does not change CI (task 8.1).
+exact `docker build` / `docker create` lines the `pa3` tag job runs are in [`sandbox/README.md`](sandbox/README.md). The judge maps student verdicts separately from infrastructure failure.
+The tag job rejects skipped sandbox attacks.
 
 ```bash
 cd apps/backend
@@ -67,7 +65,7 @@ CGO_ENABLED=0 go test ./internal/sandbox/... -count=1 -timeout 20m
 `DATABASE_URL` set, the API opens a bounded connection pool (max 4
 connections), applies the additive schema, and health verifies the store.
 Without it, the process runs storeless and health reports process state
-only. The worker uses the same `DATABASE_URL` when job leasing lands.
+only. The worker uses the same `DATABASE_URL` for durable leasing and model budgets.
 
 ## Database
 
@@ -115,6 +113,5 @@ Non-GET methods receive a `405` problem response.
 
 All three commands install `SIGINT`/`SIGTERM` handlers. The API drains
 in-flight requests for up to 10 seconds before closing; the worker stops
-without abandoning any durable state (jobs remain leased-with-expiry once
-the queue adapter exists); the checker exits with its documented code.
+without abandoning durable state (leased jobs become eligible after expiry); the checker exits with its documented code.
 A clean API shutdown logs `api shut down cleanly`.

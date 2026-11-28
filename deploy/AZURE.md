@@ -67,7 +67,8 @@ student and analyzer containers receive no socket, host binds, application
 environment or credentials. Current main uses `docker cp` for task inputs, so
 the earlier same-path work-directory bind is no longer needed.
 
-`MODEL_OFF=1` is fixed in this deployment configuration. Hard rules use actual
+The base configuration selects `MODEL_OFF=1`. The live overlay and
+[private NIM setup](NIM.md) are available in PR #50 but activation remains pending. Hard rules use actual
 isolated libclang analysis; semantic findings remain unsure for TA review. No
 provider key is installed and this configuration makes no live semantic model
 request. The committed first real evaluation remains separate evidence in
@@ -198,4 +199,4 @@ roll back database migrations automatically. No destructive migration was used.
 Keep the service running until PA#4 marks, while monitoring the owner’s real
 credit expiry and the USD 50 budget notifications. No future uptime or credit
 balance can be guaranteed by a snapshot. The actual first deployment date is
-November 28, so availability from the November 25 deadline is not met.
+November 28, before the updated November 29, 22:00 Asia/Saigon deadline.

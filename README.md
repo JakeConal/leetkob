@@ -1,5 +1,47 @@
 # LeeTKOB
 
+## PA#3 prototype
+
+The current production prototype is the Go API/worker in `apps/backend` and the
+Next.js `/live` interface. [PA3.md](PA3.md) is the release/account/evidence index.
+The public application is
+<https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live>.
+The original PA#2 documentation below describes the preserved compatibility app.
+
+For a clean PA#3 checkout, install Node.js 22.13+ and Go **1.27.4**, then prepare
+both dependency caches before an offline check:
+
+```bash
+npm ci --ignore-scripts
+(cd apps/backend && go mod download)
+```
+
+The four marking commands are `npm run lint`, `npm run format:check`,
+`npm run typecheck` and `npm test`. They cover Go and the existing Node workspaces.
+CI supplies a disposable PostgreSQL 18.7 service so database integration tests
+fail on connection errors instead of silently skipping. For local integration
+checks, use a separate fixture instance and set `POSTGRES_URL`, as documented in
+[the backend README](apps/backend/README.md); never point tests at the deployment.
+`GOFLAGS=-p=1 npm test` serializes package scheduling on limited machines without
+removing the race detector or concurrent test scenarios. Docker sandbox attacks
+are proven by tag CI; the marker reads those results when Docker is unavailable.
+
+The official evaluation bytes are in `evaluation/official/`, independently
+verified by the published 128-file SHA-256 manifest at the start of `npm test`.
+They are excluded from format/lint rewriting to preserve those exact bytes;
+[provenance](evaluation/official-provenance.md) records the lecturer's course
+hand-in instruction. Team cases and predictions remain separate.
+
+The real semantic provider is NVIDIA NIM `minimaxai/minimax-m3.1-flash`.
+The committed first run used 46,336 tokens across 38 successful calls for 47
+solutions; an 80-submission lab at that measured batching is about
+`46,336 / 38 × 80 = 97,549` tokens. The confirmed developer trial endpoint has
+zero configured token price; the application still enforces USD 0.25 per lab,
+160 reserved calls per lab and 1,000 per UTC day across all labs. Unknown pricing
+is rejected; changing provider/tier requires a verified price schedule. See
+[deployment configuration](deploy/AZURE.md) and the measured
+[dev run](evaluation/dev-run/README.md). Unit/contract tests never call a live model.
+
 Run `./scripts/run-local.sh` to start the local API, worker, Next.js and synthetic seed data. See [local setup](scripts/LOCAL.md).
 
 LeeTKOB is a teaching-assistant workflow for checking whether accepted C++ submissions follow lab constraints before marks are published. PA#2 establishes the repository harness, implements the contract of the irreversible publication step, and provides a reviewer-facing status dashboard.

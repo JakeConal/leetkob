@@ -12,9 +12,10 @@ is referenced by the [reconciled class requirements](../docs/requirements/accept
 At this revision it has 6 problems, 47 solutions and 102 labelled pairs (65 pass,
 37 violation), as documented by upstream. The pinned tree has no license file,
 SPDX declaration, or explicit reuse grant. Do not infer an open-source license
-from public access. Fetch locally for course evaluation; obtain explicit upstream
-permission before redistributing or relicensing its contents. No upstream source
-or label content is vendored here.
+from public access. The lecturer explicitly requires unchanged dev-set bytes
+in the course submission; all 128 files are included in `official/` for that
+purpose. [Provenance](official-provenance.md) records the instruction without
+claiming a general open-source redistribution license.
 
 ## Fetch and verify
 
@@ -58,7 +59,7 @@ The staging command does not copy `labels.jsonl`, tags, tests, scorer, README,
 Git metadata, or other files. A fresh destination is mandatory; stale directories
 and all input symlinks are rejected. Problem IDs are discovered, not hard-coded.
 
-Run the future checker as `checker --data <prediction-inputs> --predictions
+Run the checker as `checker --data <prediction-inputs> --predictions
 <output.jsonl>` inside the separately qualified candidate execution boundary.
 Mount only staged inputs and a prediction output location. Keep the original
 source tree, labels, source manifest, team review records and trusted scorer
@@ -68,11 +69,11 @@ trusted host. Prediction generation receives no labels; the subsequent trusted
 scoring process receives labels and the prediction artifact. Never pass provider
 credentials to candidate code, including environment variables.
 
-This phase-0 deliverable verifies the input artifact boundary and scorer byte
-integrity. It does not implement or qualify the Go checker (5.1), scorer runner
-(5.7), credential-free trusted broker/gate (5.8/7.6), or run live models (5.9).
-Recheck the boundary through those real entry points when they exist. No checker
-quality or production isolation is claimed by the deterministic staging tests.
+The qualified checker image and execution commands are documented in
+[`apps/backend/checker/README.md`](../apps/backend/checker/README.md). The committed
+real first run is in [`dev-run/`](dev-run/README.md). The input preparation tests
+verify separation and integrity; the image and actual-host tests verify the
+execution boundary independently.
 
 ## Separate team dataset layout
 
@@ -101,8 +102,7 @@ revision and per-file SHA-256. Accepted validation records C++17 compilation
 (`g++ -std=c++17 -O2`), all test input/output hashes and token comparison results.
 Independent human label review records reviewer, reason, evidence, revision and
 date before checker predictions are inspected. Do not change labels to improve
-scores. Task 5.7 supplies and reviews actual team cases; no synthetic placeholder
-is presented as an approved team dataset here.
+scores. The actual team cases and their provenance are in `team-cases/`.
 
 ## Requirement-to-test design
 
@@ -116,24 +116,14 @@ Run `node --test scripts/evaluation/sources.test.mjs` (also included in `npm tes
 Verify the real pinned checkout with the command above. These are deterministic,
 free checks, with no provider access and no manipulation of upstream ground truth.
 
-## PA#3 reconciliation: in-repository bytes vs the no-license source
+## Official bytes in the submission
 
-The PA#3 rubric expects the published dev-set bytes to be preserved in the
-submitted repository. The pinned upstream tree has no redistribution
-license, so vendoring its bytes would violate the provenance policy above.
-The resolution recorded here (and in AI-LOG D14) is:
-
-- the repository commits the byte-hash manifest (`official-source.json`), the
-  verifier/stager, and the team's committed prediction run referenced by the
-  manifest revision, problem IDs and input hashes;
-- the marker re-fetches the pinned commit and verifies all 128 files before
-  and after scoring;
-- no upstream bytes are redistributed here. If the lecturer requires literal
-  in-repository bytes, that needs explicit upstream permission or a
-  marker-supplied dataset; the policy is not silently changed.
-
-Verification (2026-11-24): cloning the pinned commit and running
-`verifyOfficial` reported 128 files verified byte-identically.
+`evaluation/official/` contains the exact pinned published tree. The root
+`npm test` first verifies all 128 files against `official-source.json`.
+`.gitattributes` disables line-ending rewriting for those files; lint and format
+ignore only that immutable directory. Never edit labels, tests, scorer or source
+to improve the score. The course hand-in instruction and license limits are in
+[`official-provenance.md`](official-provenance.md).
 
 ## Team cases (task 7.3)
 
