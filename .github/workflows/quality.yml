@@ -82,6 +82,21 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
+        env:
+          POSTGRES_USER: leetkob
+          POSTGRES_PASSWORD: leetkob
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U leetkob"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      POSTGRES_URL: postgres://leetkob:leetkob@127.0.0.1:5432/postgres?sslmode=disable
+      # Serialize packages on the shared runner. Race and concurrent scenarios
+      # inside the suites still run unchanged against the real database.
+      GOFLAGS: -p=1
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -95,6 +110,8 @@ jobs:
           cache-dependency-path: apps/backend/go.sum
       - run: npm ci --ignore-scripts
       - run: npm test
+      - name: Private NIM setup transport (synthetic token only)
+        run: python3 -m unittest discover -s deploy -p test_configure_nim.py -v
 
   sandbox-attacks:
     name: Sandbox attacks

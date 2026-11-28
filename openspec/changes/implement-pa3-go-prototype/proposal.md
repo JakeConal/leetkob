@@ -2,7 +2,7 @@
 
 ## Why
 
-LeeTKOB currently has the PA#2 publication contract, a demonstration dashboard and pinned evaluation-source tooling, but cannot execute the flow assessed by PA#3. Deliver the Go prototype against the now-published eight-criterion rubric by November 25, 2026 at 22:00 Asia/Saigon, with reviewable evidence instead of treating the whole remaining product as one milestone.
+LeeTKOB currently has the PA#2 publication contract, a demonstration dashboard and pinned evaluation-source tooling, but cannot execute the flow assessed by PA#3. Deliver the Go prototype against the now-published eight-criterion rubric by November 29, 2026 at 22:00 Asia/Saigon, with reviewable evidence instead of treating the whole remaining product as one milestone.
 
 ## What Changes
 

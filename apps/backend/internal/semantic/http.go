@@ -12,6 +12,14 @@ import (
 
 const maxProviderBody = 1 << 20
 
+// ProviderStatusError exposes only a numeric HTTP status, never provider bodies,
+// headers or credentials. Operators can diagnose auth/rate failures safely.
+type ProviderStatusError struct{ Status int }
+
+func (e ProviderStatusError) Error() string {
+	return fmt.Sprintf("semantic: provider status %d", e.Status)
+}
+
 // HTTPAdapter is the standard-library provider transport. Token is sent
 // only when the caller set it; the adapter never reads credentials from
 // the environment or from the local filesystem.
@@ -88,7 +96,7 @@ func (h *HTTPAdapter) Complete(ctx context.Context, req CompletionRequest) (Mode
 		return ModelResponse{}, fmt.Errorf("semantic: provider response exceeds 1MiB")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return ModelResponse{}, fmt.Errorf("semantic: provider status %d", resp.StatusCode)
+		return ModelResponse{}, ProviderStatusError{Status: resp.StatusCode}
 	}
 	var decoded providerResponse
 	if err := json.Unmarshal(body, &decoded); err != nil || len(decoded.Choices) == 0 {
@@ -112,5 +120,10 @@ func (h *HTTPAdapter) client() *http.Client {
 	}
 	// ProxyFromEnvironment would forward the prompt to whatever proxy the
 	// process inherited. A fresh transport does not.
-	return &http.Client{Transport: &http.Transport{Proxy: nil}}
+	return &http.Client{
+		Transport: &http.Transport{Proxy: nil},
+		// A configured provider endpoint must not redirect credentials or data
+		// to a different endpoint, including an HTTPS-to-HTTP downgrade.
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
 }

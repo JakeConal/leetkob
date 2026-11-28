@@ -1,57 +1,30 @@
-# PA#3 rubric walkthrough — configuration, evidence and gaps
+# PA#3 public walkthrough
 
-Recorded 2026-11-24 on `codex/port-pa3-unique-evidence` (based on `main`
-after PRs #41/#42). No public deployment exists: the owner chose to skip
-external provisioning, so this document records the local staging run and
-the CI evidence instead of a live URL.
+The application is deployed at
+<https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live>.
+First public HTTPS verification was on November 28, 2026, before the updated
+November 29, 22:00 Asia/Saigon submission deadline. Retention until PA#4 marks
+remains an ongoing obligation.
 
-## Configuration exercised
+The final **2:06.60 uncut fallback recording** uses the real deployed NVIDIA NIM
+worker and the three official sort-merge cases:
+[watch/download](pa3-review/live-model/walkthrough.webm).
+Its [evidence index](pa3-review/live-model/README.md) includes actual provider IDs,
+sanitized requests, token/cost records, screenshots and runtime budget readback.
+Earlier HTTP privacy, worker-recovery, direct PostgreSQL verdict counts and
+actual-host sandbox qualification remain in
+[`pa3-azure/README.md`](pa3-azure/README.md), explicitly identified as initial evidence.
 
-| Element    | Configuration                                                                                                                         |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Database   | PostgreSQL 18.7, `postgres@sha256:eb63372c…`, disposable local instance                                                               |
-| API        | `cmd/api`, additive migrations at startup, `/healthz`, HttpOnly session cookies                                                       |
-| Worker     | `cmd/worker` with judge + check loops, `MODEL_OFF=1` (online semantic checks are offline/unsure)                                      |
-| Sandbox    | `leetkob-cpp17:pa3` built from `apps/backend/sandbox/cpp17`, all nine controls, live attacks                                          |
-| Hard rules | libclang `cpp-analyzer` (bundled in the worker image, `CHECKER_ANALYZER`)                                                             |
-| Web        | Next.js `/live/**` with `/v2` rewrites to the API through the same origin                                                             |
-| Checker    | `leetkob-checker:pa3` digest-pinned image with analyzer; `MODEL_OFF=1` for marking, real model only in the separately authorized eval |
+Sign-in credentials for the five intentionally public synthetic accounts are in
+[`../../PA3.md`](../../PA3.md). The recording creates a new lab through the UI,
+submits official compliant, forbidden-sort and injection-comment solutions,
+records an evidence-backed TA decision, verifies it after reload and demonstrates
+cross-class denial. No marking lab is pre-seeded and no marks are published.
+All three reach AC; live semantic results are pass, violation and violation.
+The separate first full evaluation remains at its original measured metrics.
 
-## What actually ran
-
-1. **CI on the submitted revision** — run
-   [45306355723](https://github.com/JakeConal/leetkob/actions/runs/45306355723)
-   (PR #44) completed green across Lint, Format, Typecheck, Build, Test and
-   Security. The Test job executed the merged pipeline, including
-   `TestMergedPipeline` (store → sandbox → hard rule → semantic),
-   `TestHTTPIngressToJudgedResultStaysOwnerPrivate` (ingress → judged →
-   owner/assigned-TA reads; other student and other-class TA get the
-   concealed 404), `TestStopSubmitRestartStoresExactlyOneVerdictSet`,
-   `TestTwoWorkersJudgeOneSubmissionExactlyOnce`, the sandbox attack suite
-   and the checker image test.
-2. **Local staging** — `docker compose` brought up PostgreSQL, the API and
-   the web app; `/healthz` returned `{"status":"ok"}`, `/live` returned 200,
-   `cmd/provision` created the five synthetic accounts, and signing in
-   through the web's same-origin `/v2` rewrite returned 200 with a session
-   cookie. Re-provisioning with different passwords reported no changes and
-   the original password still worked (idempotent, never silently reset).
-3. **Real-model checker run (authorized)** — the checker image ran on the
-   pinned official dev set with NVIDIA NIM `minimaxai/minimax-m3.1-flash`,
-   producing the committed evidence in `evaluation/dev-run/`: 102
-   predictions, **0 wrongful deductions**, 29/37 violations caught, **78.4 %
-   recall**, 3.9 % unsure, unmodified scorer exit 1 (valid PA#3 outcome; no
-   PA#3 pass threshold exists).
-
-## Gaps, stated plainly
-
-- **No public deployment.** Per the owner's decision, no hosting was
-  provisioned, so the rubric's live-flow criterion (and PA3.md's URL,
-  fallback recording, pushed `pa3` tag and archive) cannot be produced.
-  `deploy/` contains the prepared, locally verified artifacts and a $0
-  free-VM proposal.
-- **Online semantic checks in the deployed worker are offline.** The worker
-  runs the semantic checker against a deterministic offline model, so online
-  semantic findings are `unsure`; the real-model path exists in the checker
-  evaluation (committed above), not in the worker.
-- **No tag pushed.** The `pa3` tag job was added to CI but has never run on
-  a real tag, so no tag-run URL is claimed.
+The current runtime supersedes the November 24 local-only staging configuration.
+In particular, the trusted worker contains the Docker client and no native parser;
+libclang analysis runs in its own qualified isolated container. The historical
+choice to skip hosting was superseded by the owner's authorization to use Toàn's
+student credits. No uptime, recording, CI result or provider request is backdated.

@@ -1,0 +1,4 @@
+=== RUN   TestImageMatchesTeamCaseLabels
+--- PASS: TestImageMatchesTeamCaseLabels (6.89s)
+PASS
+ok  	github.com/JakeConal/leetkob/backend/internal/checker	6.890s

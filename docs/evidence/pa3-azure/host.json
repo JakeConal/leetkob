@@ -1,0 +1,6 @@
+{
+  "sourceRevision": "36e3caf92c8c5a3310dd0593610bd401aacc33b8",
+  "docker": "29.10.1",
+  "kernel": "7.0.0-1020-azure",
+  "architecture": "x86_64"
+}

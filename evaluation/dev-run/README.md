@@ -49,8 +49,8 @@ node /path/to/pinned/eval.mjs --data /path/to/pinned --predictions predictions.j
 The scorer reports a threshold failure because recall is below the PA#4
 90 % target. PA#3 imposes **no overall eval pass threshold**: the honest
 first-run metrics are recorded as-is, and no label, case or threshold was
-adjusted. The remaining misses are semantic constraints the model answered
-`pass` where the label is `violation`; the two provider errors in the call
+adjusted. The remaining misses include semantic constraints answered `pass` or `unsure`
+where the label is `violation`; the two provider errors in the call
 log are rate-limited dispatches that exhausted the bounded retries and
 became unsure.
 
@@ -84,3 +84,13 @@ From `call-log.jsonl` (38 successful dispatches, 2 rate-limited failures):
 Reproduction note: the marker should see exit **0 or 1** from their
 unmodified scorer for this file; exit 2 indicates invalid input and is
 never acceptable.
+
+## Release safety follow-up
+
+The command above records the historical November 24 run; it must not be reused
+to place a provider credential beside a native parser. The final release refuses
+live checker mode unless `CHECKER_ISOLATED_ANALYZER=1` selects the separately
+qualified Docker analyzer. The deployed worker always uses that isolation and
+loads its credential from an operator-only mount. Marker runs keep `MODEL_OFF=1`
+and never receive a provider credential. The predictions and call log above are
+unchanged historical evidence; no request or measured outcome was rewritten.

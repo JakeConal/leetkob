@@ -11,6 +11,7 @@ import (
 
 	"github.com/JakeConal/leetkob/backend/internal/checker/hardrule"
 	"github.com/JakeConal/leetkob/backend/internal/checker/schema"
+	"github.com/JakeConal/leetkob/backend/internal/sandbox"
 	"github.com/JakeConal/leetkob/backend/internal/semantic"
 )
 
@@ -31,10 +32,14 @@ type HardRuleEngine interface {
 type NativeAnalyzer struct {
 	Binary       string
 	CompilerArgs []string
+	Isolated     func(context.Context, string) ([]byte, error)
 }
 
 // Analyze executes the analyzer against one temporary source file.
 func (n *NativeAnalyzer) Analyze(ctx context.Context, source string) ([]byte, error) {
+	if n != nil && n.Isolated != nil {
+		return n.Isolated(ctx, source)
+	}
 	if n == nil || n.Binary == "" {
 		return nil, errors.New("checker: analyzer binary is not configured")
 	}
@@ -56,6 +61,14 @@ func (n *NativeAnalyzer) Analyze(ctx context.Context, source string) ([]byte, er
 // binary bundled in the image). It returns (nil, nil) when the variable is
 // empty so the CLI reports unsure hard-rule outcomes instead of failing.
 func NewNativeAnalyzer(ctx context.Context) (*NativeAnalyzer, error) {
+	if !ModelOff() {
+		if os.Getenv("CHECKER_ISOLATED_ANALYZER") != "1" {
+			return nil, errors.New("checker: live evaluation requires CHECKER_ISOLATED_ANALYZER=1")
+		}
+		boundary := sandbox.New()
+		boundary.Image = "leetkob-local-analyzer:pa3"
+		return &NativeAnalyzer{Isolated: boundary.Analyze}, nil
+	}
 	binary := os.Getenv("CHECKER_ANALYZER")
 	if binary == "" {
 		return nil, nil

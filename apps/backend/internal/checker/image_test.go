@@ -59,13 +59,22 @@ func TestImageMatchesTeamCaseLabels(t *testing.T) {
 
 	outputDir := t.TempDir()
 	predictionsPath := filepath.Join(outputDir, "predictions.jsonl")
+	inputs := filepath.Join(t.TempDir(), "inputs")
+	node, err := exec.LookPath("node")
+	if err != nil {
+		t.Fatal("Node is required for the dataset boundary preparer")
+	}
+	stage := exec.CommandContext(ctx, node, filepath.Join(root, "scripts", "evaluation", "sources.mjs"), "stage", cases, inputs)
+	if output, err := stage.CombinedOutput(); err != nil {
+		t.Fatalf("stage prediction-only inputs: %v\n%s", err, output)
+	}
 	run := exec.CommandContext(ctx, docker, "run", "--rm",
 		"--network", "none", "--read-only",
 		"--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
 		"--cap-drop", "ALL", "--security-opt", "no-new-privileges",
 		"--pids-limit", "64", "--memory", "768m", "--memory-swap", "768m",
 		"--user", fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
-		"-v", cases+":/data:ro", "-v", outputDir+":/out",
+		"-v", inputs+":/data:ro", "-v", outputDir+":/out",
 		"-e", "MODEL_OFF=1", image,
 		"--data", "/data", "--predictions", "/out/predictions.jsonl")
 	if output, err := run.CombinedOutput(); err != nil {

@@ -17,6 +17,7 @@ import { useReplaceNotFound } from "./live-feedback";
 import { LiveError, LiveNotFound } from "./live-status";
 import { useLiveSession } from "./live-shell";
 import { PublishControl } from "./publish-control";
+import { SavedTaDecision } from "./saved-ta-decision";
 
 const queryOptions = { retry: false, gcTime: 0, staleTime: 0 } as const;
 
@@ -149,7 +150,9 @@ function FindingReview({ labId, finding }: { readonly labId: string; readonly fi
   const configured = finding.deduction;
   const chosen =
     choice === null
-      ? "No deduction chosen yet."
+      ? finding.decision
+        ? "No new decision selected."
+        : "No deduction chosen yet."
       : choice === "pass"
         ? "Chosen deduction: 0. The configured deduction is not applied."
         : choice === "violation"
@@ -266,6 +269,7 @@ function FindingReview({ labId, finding }: { readonly labId: string; readonly fi
           </pre>
         </div>
         <form onSubmit={(event) => void onSubmit(event)}>
+          <SavedTaDecision decision={finding.decision} deduction={configured} />
           <fieldset className="live-fieldset">
             <legend>Decision</legend>
             <div className="live-segment">

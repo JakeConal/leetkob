@@ -1,0 +1,102 @@
+{"solution":"binary-search/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"binary-search/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"binary-search/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"binary-search/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"binary-search/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"binary-search/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"binary-search/s04","constraint":"C1","verdict":"violation","evidence":[{"line":14,"text":"        auto it = lower_bound(a.begin(), a.end(), x);"}]}
+{"solution":"binary-search/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"binary-search/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"binary-search/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"binary-search/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"binary-search/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"binary-search/s07","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"binary-search/s07","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s01","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s02","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s03","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s04","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s05","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s06","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s07","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s07","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s07","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s08","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"dynamic-array/s08","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"dynamic-array/s08","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"gcd-euclid/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"gcd-euclid/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"gcd-euclid/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"gcd-euclid/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"gcd-euclid/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"gcd-euclid/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"gcd-euclid/s04","constraint":"C1","verdict":"violation","evidence":[{"line":10,"text":"        long long g = __gcd(a, b);"}]}
+{"solution":"gcd-euclid/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"gcd-euclid/s05","constraint":"C1","verdict":"violation","evidence":[{"line":5,"text":"    long long l = std::lcm(a, b);"}]}
+{"solution":"gcd-euclid/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"gcd-euclid/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"gcd-euclid/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"gcd-euclid/s07","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"gcd-euclid/s07","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-recursive/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s01","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s02","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s03","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s04","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s05","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s06","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s07","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s07","constraint":"C2","verdict":"violation","evidence":[{"line":22,"text":"    copy(v.rbegin(), v.rend(), ostream_iterator\u003cint\u003e(cout, \" \"));"},{"line":24,"text":"    cout \u003c\u003c accumulate(v.begin(), v.end(), 0LL) \u003c\u003c \"\\n\";"}]}
+{"solution":"reverse-recursive/s08","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-recursive/s08","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"reverse-words/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-words/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-words/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-words/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-words/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-words/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-words/s04","constraint":"C1","verdict":"violation","evidence":[{"line":8,"text":"        reverse(w.begin(), w.end());"}]}
+{"solution":"reverse-words/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-words/s05","constraint":"C1","verdict":"violation","evidence":[{"line":7,"text":"    return string(w.rbegin(), w.rend());"}]}
+{"solution":"reverse-words/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-words/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-words/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-words/s07","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"reverse-words/s07","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"reverse-words/s08","constraint":"C1","verdict":"violation","evidence":[{"line":14,"text":"        std::reverse(s.begin() + b, s.begin() + e);"}]}
+{"solution":"reverse-words/s08","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"sort-merge/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"sort-merge/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"sort-merge/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s04","constraint":"C1","verdict":"violation","evidence":[{"line":11,"text":"    sort(a.begin(), a.end());"}]}
+{"solution":"sort-merge/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s05","constraint":"C1","verdict":"violation","evidence":[{"line":12,"text":"    stable_sort(a.begin() + lo, a.begin() + hi);"}]}
+{"solution":"sort-merge/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"sort-merge/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s07","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"sort-merge/s07","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s08","constraint":"C1","verdict":"violation","evidence":[{"line":25,"text":"    SORT(v);"}]}
+{"solution":"sort-merge/s08","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"sort-merge/s09","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"sort-merge/s09","constraint":"C2","verdict":"unsure","evidence":[]}

@@ -1,0 +1,15 @@
+**/.git
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+**/.local-dev
+**/.e2e
+**/*.log
+**/*.zip
+**/coverage
+**/dist
+.agents
+.opencode
+.aws
+.azure

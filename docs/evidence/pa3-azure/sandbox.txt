@@ -1,0 +1,84 @@
+=== RUN   TestAnalyzeRejectsInvalidSourceBeforeDocker
+--- PASS: TestAnalyzeRejectsInvalidSourceBeforeDocker (0.00s)
+=== RUN   TestCollectLimitedStopsAtTheCap
+--- PASS: TestCollectLimitedStopsAtTheCap (0.00s)
+=== RUN   TestCollectLimitedKeepsShortOutput
+--- PASS: TestCollectLimitedKeepsShortOutput (0.00s)
+=== RUN   TestDocumentedRunInvocation
+--- PASS: TestDocumentedRunInvocation (0.00s)
+=== RUN   TestDocumentedCompileInvocation
+--- PASS: TestDocumentedCompileInvocation (0.00s)
+=== RUN   TestCreateArgsDoNotCopyProcessEnvironment
+--- PASS: TestCreateArgsDoNotCopyProcessEnvironment (0.00s)
+=== RUN   TestProductionArgsRejectADisabledControl
+=== RUN   TestProductionArgsRejectADisabledControl/network
+=== RUN   TestProductionArgsRejectADisabledControl/user
+=== RUN   TestProductionArgsRejectADisabledControl/caps
+=== RUN   TestProductionArgsRejectADisabledControl/privileges
+=== RUN   TestProductionArgsRejectADisabledControl/pids
+=== RUN   TestProductionArgsRejectADisabledControl/memory
+=== RUN   TestProductionArgsRejectADisabledControl/swap
+=== RUN   TestProductionArgsRejectADisabledControl/cpu
+=== RUN   TestProductionArgsRejectADisabledControl/bind
+=== RUN   TestProductionArgsRejectADisabledControl/env
+=== RUN   TestProductionArgsRejectADisabledControl/privileged
+--- PASS: TestProductionArgsRejectADisabledControl (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/network (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/user (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/caps (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/privileges (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/pids (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/memory (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/swap (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/cpu (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/bind (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/env (0.00s)
+    --- PASS: TestProductionArgsRejectADisabledControl/privileged (0.00s)
+=== RUN   TestLiveCredentialCannotBePassedToANegativeControl
+--- PASS: TestLiveCredentialCannotBePassedToANegativeControl (0.00s)
+=== RUN   TestDockerfilePinsTheBaseImageAndUnprivilegedUser
+--- PASS: TestDockerfilePinsTheBaseImageAndUnprivilegedUser (0.00s)
+=== RUN   TestAttackFixturesExistForEachControl
+--- PASS: TestAttackFixturesExistForEachControl (0.00s)
+=== RUN   TestImageProvenanceAndIsolatedHello
+    live_test.go:66: image sha256:8d20a14aac370b8eb16fa9daa5ea37a6d1729ad2e57cebcee2982b7cddadf30d
+    live_test.go:67: compiler g++ (Debian 12.2.0-14+deb12u1) 12.2.0
+        Copyright (C) 2022 Free Software Foundation, Inc.
+        This is free software; see the source for copying conditions.  There is NO
+        warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    live_test.go:68: packages g++	4:12.2.0-3
+        gcc	4:12.2.0-3
+--- PASS: TestImageProvenanceAndIsolatedHello (6.60s)
+=== RUN   TestNetworkIsolation
+--- PASS: TestNetworkIsolation (7.35s)
+=== RUN   TestCPULimit
+--- PASS: TestCPULimit (8.19s)
+=== RUN   TestWallDeadlineRemovesTheContainer
+--- PASS: TestWallDeadlineRemovesTheContainer (6.72s)
+=== RUN   TestMemoryLimitIncludesSwapAndReadback
+    live_test.go:241: memory oom=true exit=137
+--- PASS: TestMemoryLimitIncludesSwapAndReadback (3.16s)
+=== RUN   TestProcessCeilingDoesNotAffectAnotherRun
+--- PASS: TestProcessCeilingDoesNotAffectAnotherRun (4.12s)
+=== RUN   TestOutputCollectionStaysBounded
+--- PASS: TestOutputCollectionStaysBounded (2.83s)
+=== RUN   TestNonRootIdentity
+--- PASS: TestNonRootIdentity (2.62s)
+=== RUN   TestNoHostMountOrDockerSocket
+--- PASS: TestNoHostMountOrDockerSocket (2.90s)
+=== RUN   TestSecretsStayOutOfEnvFilesAndIncludes
+--- PASS: TestSecretsStayOutOfEnvFilesAndIncludes (5.19s)
+=== RUN   TestParseInspectRejectsTheWrongShape
+--- PASS: TestParseInspectRejectsTheWrongShape (0.00s)
+=== RUN   TestExecuteRejectsAnEmptyProgram
+--- PASS: TestExecuteRejectsAnEmptyProgram (0.00s)
+=== RUN   TestJudgeRunPolicyTriplesCPU
+--- PASS: TestJudgeRunPolicyTriplesCPU (0.00s)
+=== RUN   TestJudgeRunPolicyRejectsOutOfRange
+--- PASS: TestJudgeRunPolicyRejectsOutOfRange (0.00s)
+=== RUN   TestRunPolicyRejectsDisabledLimits
+--- PASS: TestRunPolicyRejectsDisabledLimits (0.00s)
+=== RUN   TestCompileProfileIsLocked
+--- PASS: TestCompileProfileIsLocked (0.00s)
+PASS
+ok  	github.com/JakeConal/leetkob/backend/internal/sandbox	49.686s

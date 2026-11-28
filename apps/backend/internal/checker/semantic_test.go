@@ -103,11 +103,64 @@ func TestSemanticEngineDispatchesNothingUnderModelOff(t *testing.T) {
 }
 
 func TestSemanticEngineRequiresConfiguration(t *testing.T) {
+	t.Setenv("CHECKER_ISOLATED_ANALYZER", "1")
 	t.Setenv("MODEL_OFF", "")
 	t.Setenv("MODEL_URL", "")
 	t.Setenv("MODEL_NAME", "")
 	t.Setenv("MODEL_TOKEN", "")
 	if _, err := checker.NewSemanticEngineFromEnv(); err == nil {
 		t.Fatal("missing configuration must be refused")
+	}
+}
+
+func TestLiveSemanticEngineRefusesCredentialBearingNativeAnalysis(t *testing.T) {
+	t.Setenv("MODEL_OFF", "0")
+	t.Setenv("MODEL_URL", "https://fixture.invalid/v1/chat")
+	t.Setenv("MODEL_NAME", "synthetic-model")
+	t.Setenv("MODEL_TOKEN", "SYNTHETIC-NOT-A-LIVE-TOKEN")
+	t.Setenv("CHECKER_ISOLATED_ANALYZER", "")
+	if _, err := checker.NewSemanticEngineFromEnv(); err == nil {
+		t.Fatal("live mode accepted native parsing beside provider credentials")
+	}
+}
+
+func TestLiveAnalyzerSelectsIsolationWithoutInvokingNativeTools(t *testing.T) {
+	t.Setenv("MODEL_OFF", "0")
+	t.Setenv("CHECKER_ISOLATED_ANALYZER", "1")
+	t.Setenv("CHECKER_ANALYZER", "/must-not-execute-native-analyzer")
+	t.Setenv("PATH", t.TempDir())
+	engine, err := checker.NewNativeAnalyzer(context.Background())
+	if err != nil || engine == nil || engine.Isolated == nil || engine.Binary != "" || len(engine.CompilerArgs) != 0 {
+		t.Fatalf("live analysis did not stay isolated: engine=%+v err=%v", engine, err)
+	}
+}
+
+func TestIsolatedAnalysisFailureNeverFallsBackToNativeParsing(t *testing.T) {
+	calls := 0
+	denied := errors.New("fixture isolation failure")
+	engine := &checker.NativeAnalyzer{Binary: "/must-not-execute-native-analyzer", Isolated: func(context.Context, string) ([]byte, error) {
+		calls++
+		return nil, denied
+	}}
+	if _, err := engine.Analyze(context.Background(), "int main(){}"); !errors.Is(err, denied) || calls != 1 {
+		t.Fatalf("isolation failure fell through: calls=%d err=%v", calls, err)
+	}
+}
+
+func TestLiveSemanticEngineRequiresExplicitKnownPrices(t *testing.T) {
+	t.Setenv("MODEL_OFF", "0")
+	t.Setenv("CHECKER_ISOLATED_ANALYZER", "1")
+	t.Setenv("MODEL_URL", "https://fixture.invalid/v1/chat")
+	t.Setenv("MODEL_NAME", "synthetic-model")
+	t.Setenv("MODEL_TOKEN", "SYNTHETIC-NOT-A-LIVE-TOKEN")
+	t.Setenv("MODEL_INPUT_MICRO_USD_PER_TOKEN", "")
+	t.Setenv("MODEL_OUTPUT_MICRO_USD_PER_TOKEN", "")
+	if _, err := checker.NewSemanticEngineFromEnv(); err == nil {
+		t.Fatal("missing price silently became a free schedule")
+	}
+	t.Setenv("MODEL_INPUT_MICRO_USD_PER_TOKEN", "0")
+	t.Setenv("MODEL_OUTPUT_MICRO_USD_PER_TOKEN", "0")
+	if _, err := checker.NewSemanticEngineFromEnv(); err != nil {
+		t.Fatalf("explicit free-tier price was rejected: %v", err)
 	}
 }

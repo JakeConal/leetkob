@@ -49,5 +49,14 @@
       }
     },
     "note": "The current requiredApprovingReviewCount is 1 (ruleset), superseding the 0 recorded in the 2026-10-25 classic capture. The classic protection endpoint requires admin access, so the 2026-11-09 recapture used the public branch and rules endpoints."
+  },
+  "releaseRecapture": {
+    "capturedAt": "2026-11-28",
+    "source": "https://api.github.com/repos/JakeConal/leetkob/branches/main/protection",
+    "requiredStatusChecks": ["Lint", "Format", "Typecheck", "Test"],
+    "strict": true,
+    "requiredApprovingReviewCount": 0,
+    "enforceAdmins": true,
+    "note": "Read-only recapture during PA3 release: the active classic protection and ruleset both reported zero required approvals. Earlier snapshots are historical. No protection or CI permission was changed by this release; the release PR still requests both eligible non-author teammates and is not automatically merged."
   }
 }

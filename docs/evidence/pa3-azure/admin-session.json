@@ -1,0 +1,9 @@
+{
+  "kind": "synthetic-admin-session-verification",
+  "origin": "https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com",
+  "checkedAt": "2026-11-28T01:58:10.654Z",
+  "login": 200,
+  "authenticatedRead": 200,
+  "secureHttpOnlyCookie": true,
+  "csrfTokenPresent": true
+}

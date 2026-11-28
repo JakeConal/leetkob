@@ -12,6 +12,8 @@ export default tseslint.config(
       "**/next-env.d.ts",
       "node_modules/**",
       "openspec/**",
+      // Immutable course inputs are checked by the published hash manifest.
+      "evaluation/official/**",
     ],
   },
   js.configs.recommended,

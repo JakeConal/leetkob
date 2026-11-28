@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-11-28T02:01:34.261138+00:00",
+  "sourceRevision": "36e3caf92c8c5a3310dd0593610bd401aacc33b8",
+  "firstStart": "2026-11-28T01:57:20Z",
+  "apiHealth": {
+    "status": "ok"
+  },
+  "services": [
+    {
+      "Service": "api",
+      "Name": "leetkob-api-1",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "leetkob-api",
+      "Ports": "127.0.0.1:8080->8080/tcp"
+    },
+    {
+      "Service": "caddy",
+      "Name": "leetkob-caddy-1",
+      "State": "running",
+      "Health": "",
+      "Image": "caddy:2-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0",
+      "Ports": "0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp"
+    },
+    {
+      "Service": "postgres",
+      "Name": "leetkob-postgres-1",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "postgres@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a",
+      "Ports": "127.0.0.1:5432->5432/tcp"
+    },
+    {
+      "Service": "web",
+      "Name": "leetkob-web-1",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "leetkob-web",
+      "Ports": "127.0.0.1:3000->3000/tcp"
+    },
+    {
+      "Service": "worker",
+      "Name": "leetkob-worker-1",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "leetkob-worker",
+      "Ports": ""
+    }
+  ]
+}

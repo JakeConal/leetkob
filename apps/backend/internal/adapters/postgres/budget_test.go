@@ -128,6 +128,62 @@ func TestConcurrentReservationsStayInsideTheCap(t *testing.T) {
 	}
 }
 
+func TestFreeModelCallLimitsPersistAcrossBudgetInstances(t *testing.T) {
+	store, ctx := openSchema(t)
+	lab := insertLab(t, ctx, store)
+	budget := &Budget{Store: store, MaxLabCalls: 2, MaxDailyCalls: 10}
+	for i := 0; i < 2; i++ {
+		held, err := budget.Reserve(ctx, lab, 0, semantic.LabCapMicroUSD)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := budget.Settle(ctx, held.ID, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A new worker/budget instance cannot reset the free-tier request quota.
+	restarted := &Budget{Store: store, MaxLabCalls: 2, MaxDailyCalls: 10}
+	if _, err := restarted.Reserve(ctx, lab, 0, semantic.LabCapMicroUSD); !errors.Is(err, semantic.ErrBudgetExceeded) {
+		t.Fatalf("free call cap after restart: %v", err)
+	}
+	var count int
+	if err := store.pool.QueryRow(ctx, `SELECT count(*) FROM budget_reservations WHERE lab_id=$1`, lab).Scan(&count); err != nil || count != 2 {
+		t.Fatalf("rejected free call changed stored reservations: count=%d err=%v", count, err)
+	}
+}
+
+func TestConcurrentLabsCannotOversubscribeDailyFreeCalls(t *testing.T) {
+	store, ctx := openSchema(t)
+	labs := []string{insertLab(t, ctx, store), insertLab(t, ctx, store)}
+	budget := &Budget{Store: store, MaxLabCalls: 20, MaxDailyCalls: 1}
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	var admitted atomic.Int32
+	errorsSeen := make(chan error, 2)
+	for _, lab := range labs {
+		wg.Add(1)
+		go func(lab string) {
+			defer wg.Done()
+			<-start
+			_, err := budget.Reserve(ctx, lab, 0, semantic.LabCapMicroUSD)
+			if err == nil {
+				admitted.Add(1)
+			} else if !errors.Is(err, semantic.ErrBudgetExceeded) {
+				errorsSeen <- err
+			}
+		}(lab)
+	}
+	close(start)
+	wg.Wait()
+	close(errorsSeen)
+	for err := range errorsSeen {
+		t.Error(err)
+	}
+	if admitted.Load() != 1 {
+		t.Fatalf("daily quota admitted %d calls, want exactly one", admitted.Load())
+	}
+}
+
 func TestSemanticCheckerReservesInPostgresWithoutNetwork(t *testing.T) {
 	store, ctx := openSchema(t)
 	budget := &Budget{Store: store}

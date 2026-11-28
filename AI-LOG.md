@@ -233,3 +233,165 @@
 - Changed: added five synthetic accounts, two classes, eight labs and five real submissions, plus repeatable HTTP smoke checks. The database password is generated privately and persisted alongside the seed manifest; existing synthetic volumes adopt it without deleting records. Private generated passwords, state, logs and reports stay in the ignored `.local-dev/v2/` directory. Re-seeding preserved all lab/submission IDs. The v2 project and state stay separate from the earlier prototype schema.
 - Rejected: merging the older duplicate implementation over main, parsing submitted C++ on the host, forwarding production environment variables, or counting offline semantic `unsure` findings as model evaluation evidence. Model requests remain off; current main's concealed review-access responses and fixture judge/hard-rule labels are preserved.
 - Evidence: local `npm ci --ignore-scripts`, lint, formatting, type checking, production build and security checks passed. The full `npm test` passed with `POSTGRES_URL` pointing to the dedicated synthetic local PostgreSQL instance; the machine's default port belongs to another application. A real `--smoke` run passed AC/hard-rule pass, forbidden-sort violation, injection-comment violation, WA, CE, student result privacy, class/role isolation, expired deadline, empty queue and logout checks. These are local HTTP checks, not browser, deployment or paid-provider evidence.
+
+### 2026-11-26 — PA#3 release evidence and submission preparation
+
+- Tools: OpenCode with the GitHub API, Git history/CI inspection and a clean `origin/main` worktree. No model-provider request, no deployment and no tag push were made. The stale `codex/implement-pa3-go-prototype` checkout was left untouched.
+- Changed: adopted `origin/main` (`aeed538`) as the release base instead of the stale branch, which was 42 commits behind and carried an uncommitted second implementation. Confirmed issue #38 tasks 1.1-8.2 are delivered and 8.3-8.5 remain.
+- Added `PA3.md` as the evidence index: repository/protection links, the filtered `pa3` tag run list, the five synthetic accounts, the local staging and sandbox/checker commands, the committed first real-model run, and the official-byte reconciliation. It states plainly that no public deployment, URL, uptime or fallback recording exists.
+- Replaced the PA#2 `SELF_ASSESSMENT_REPORT.md` with an eight-row PA#3 assessment. Criterion 1 is claimed as 0 because no deployment exists; the other rows cite specific files and tests, with the 78.4 % recall and the missing tag run deducted rather than hidden. Claimed total: 77/100.
+- Changed `docs/evidence/pa3-walkthrough.md` so its gap section reflects the new `PA3.md` and the still-pending tag rather than saying the index cannot be produced.
+- Rejected: claiming a deployment URL, uptime, fallback recording or tag-run result that did not happen; merging the stale branch; pushing `pa3` before the documentation is reviewed and merged; running a new paid evaluation.
+- Still open after this preparation: public deployment (owner decision), the at-most-five-minute fallback recording, the `pa3` tag push and its `Sandbox attacks` run, the archive and the coursework upload (not authorized).
+
+### 2026-11-28 — Prepare the shared-subscription Azure release
+
+- Tools: Codex, OpenSpec CLI, GitHub CLI, Azure CLI, local Docker and the root Node/Go checks. No paid Azure resource, live model request, public deployment or submission tag was created.
+- Changed: prepared a separate worktree from current main rather than merging the obsolete parallel implementation or disturbing the owner's dirty checkout. Reused the existing evidence-index commits and preserved both AI-log histories when resolving their append conflict.
+- Changed: fixed the deployment worker image to include the Docker client and select the already-tested isolated analyzer path. Removed compiler/parser tooling and the unnecessary host work bind from the trusted worker. Added a one-shot provisioner, health checks, explicit resource limits, a digest-pinned TLS front door and build-context exclusions for credentials and local caches.
+- Changed: prepared a bounded Azure template and documented the actual allowed Asian regions, regional price estimate, shared billing profile and existing USD 50 notification budget in `deploy/AZURE.md`. Confirmed that `jenkins_group` and `rg-leetkob` share one subscription, and that its billing profile belongs to teammate 23120175. Corrected the earlier inference that subscription access identifies whose credit funds it.
+- Rejected: treating an Enabled student subscription, a budget, or the signed-in user's separate expired credit as proof of funded hosting; switching billing plans; inventing a public URL or backdating uptime; supplying any model credential to the deployment.
+- Verification: root lint, formatting, type checks, security and release image builds passed. Full tests passed against a dedicated disposable PostgreSQL instance with serial package scheduling after database-cleanup timeouts; no tests, labels, race checks or containment controls were weakened. The candidate Compose stack became healthy and the actual HTTP walkthrough passed compliant/violation/injection/WA/CE, private results, cross-class access rejection and stop-submit-restart checks.
+- Remaining: the subscription owner must confirm active credit balance/expiry before billable provisioning. Public HTTPS verification, recording, final tag CI and archive remain unfinished and are not claimed by these local checks.
+- Changed after the owner selected the original group: restored `jenkins_group` as the active project target and marked `rg-leetkob` standby. Only free resource-group tags changed; role assignments, billing ownership, spending limits and cloud resources were preserved.
+
+### 2026-11-28 — Authorized Azure deployment and release evidence
+
+- Tools/parts: OpenSpec apply for issue #38 tasks 8.3–8.5; Git/GitHub CLI for an isolated release branch, PR #50, reviewer requests and actual CI; official Azure CLI for ARM validation, provisioning and Run Command; Docker/Go for actual-host qualification; Node HTTP assertions and the official Playwright image for public browser interaction; Playwright's FFmpeg for media inspection; the unchanged pinned official scorer for independent rescoring. No live credential was read or printed.
+- Changed: after the owner confirmed Toàn's student-credit coverage, provisioned the bounded B2als v2/64 GiB Standard SSD host in allowed Southeast Asia within `jenkins_group`. Preserved spending limit On and verified the USD 50 monthly alerts. Used platform-managed disk encryption, disabled public disk export, exposed only HTTP/HTTPS, and installed no model key or Azure identity. The estimated USD 42.91/month baseline excludes variable usage; it is not a free-tier or hard-budget promise.
+- Changed: built from `36e3caf`, qualified every sandbox test and the real checker image on the host without skips, then started PostgreSQL/API/worker/web/Caddy with persistent volumes and HTTPS. The first noninteractive bootstrap lacked Go cache variables; explicit cache/workspace paths corrected the setup before testing. No sandbox control or expected result changed.
+- Changed: public HTTP tests passed AC/pass, AC/violation, injection, WA/CE bypass, student-safe projections and concealed cross-class/other-student reads. Stop/submit/restart recovered queued work; a direct PostgreSQL query confirmed exactly one verdict set, three test results and one judge job. The fifth synthetic admin account's secure session was separately verified without recording cookie/token values.
+- Changed: captured a genuine 2:06.68 public-browser recording with TA lab authoring, two student submissions, an original-line-backed TA decision, pending-review publication block and other-class denial. Desktop/mobile checks passed without unexpected errors or page overflow. Native Chromium lacked system libraries; the official Playwright container supplied them. A first automation attempt targeted an input behind its custom label; the successful attempt clicked the visible label and asserted the selection, preserving the actual user flow.
+- Changed: independent rescoring reproduced the committed 102-pair summary exactly (0 wrongful, 78.4% recall, 3.9% unsure); all 128 official files verified unchanged before and after. Corrected the earlier shorthand that all eight uncaught violations were predicted pass: several were unsure. No new model call was made.
+- Changed: prepared the actual URL/accounts/evidence index, eight-row 91/100 self-assessment, immutable `pa3` tag procedure and clean-clone archive including `.git`. The release remains on PR #50 with Toanapr and XuXinhNo1 requested; no merge or coursework upload is performed. A read-only branch-protection recapture records the current zero required approvals without changing any setting.
+- Rejected: backdating availability to the November 25 deadline, claiming future uptime from one snapshot, treating offline semantic findings as live model evaluation, installing a provider key on the VM, publishing marks with unresolved reviews, changing labels/thresholds, or bypassing protected-main checks. SonarCloud's ARM identity/encryption findings remain explicitly open for review; Azure reports platform-managed encryption, and no scanner rule was suppressed or falsely reported green.
+
+### 2026-11-28 — Requirements re-read and worker model integration
+
+- Tools/parts: Codex with OpenSpec verification, connected Google Drive for the current rubric/brief and Composio Classroom read for the current assignment; Go/Docker/PostgreSQL and injected HTTP transports for regression checks; GitHub PR/CI inspection. The current Classroom assignment and both updated attachments give **November 29, 2026 at 22:00 Asia/Saigon**, superseding the earlier November 25 planning baseline. The previous late-deployment claim was based on stale sources and must not be carried into the final assessment.
+- Changed: found that the production worker always selected `offlineModel`, despite the existing real checker adapter and committed dev run. Added explicit live configuration with an operator-mounted token file, required known pricing, bounded input/output/deadline, PostgreSQL reservations and persistent per-lab/global daily request ceilings even when token price is zero. Model-off remains explicit and never reads provider settings or a credential. No new runtime dependency or HTTP contract was added.
+- Changed: retained exact sanitized prompts and actual request/token/time/cost provenance in a private operator audit volume, separate from general logs and student APIs. Provider redirects are refused. No live credential is read, printed, committed or transferred by the agent; the user configures the NIM file directly on the VM. Real-provider deployment verification is still pending at this implementation commit.
+- Verification: network-free worker/semantic/checking tests pass with an injected fake transport, real sanitization/schema/evidence checks and metadata assertions. PostgreSQL tests prove zero-price quotas persist across budget instances and serialize competing labs. Replacing the configured provider with the previous offline stub made the regression fail for the intended reason (`calls=0`, unsure instead of pass); restoring it passed. Disabling the per-lab request cap admitted the forbidden third free reservation and failed its test; restoring it passed. No expected verdict, fixture, label or required check was loosened. An initial test incorrectly searched the system instruction's word “deduction”; it now validates the actual data object's exact three-field allowlist instead.
+- Rejected: reporting an offline deployment as a running LLM feature, inventing missing credentials/provider IDs, sending a key through chat or a sandbox, assuming a free model needs no request cap, or treating an old deadline as current. The final evidence and self-assessment are updated only after the corresponding operations really succeed.
+
+- Further review corrections: live worker mode now refuses a non-isolated analyzer, and its unsafe native-parser fallback was removed. Real checker mode also requires isolated parsing and explicit known prices; its hidden transport retries were removed so each physical dispatch has its own reservation. Provider logs distinguish unknown usage from measured zero cost. The old dev-run command is preserved as history with a safety warning, not presented as a safe current invocation.
+- CI verification exposed `TestMergedPipeline` depending on a sandbox image built by a different package. Its fixture now builds and qualifies its own compiler/analyzer images before the timed flow and uses isolated analysis, preserving every assertion and avoiding host-SDK skips. Local race-enabled merged flow passed without skips. The checker image test stages prediction-only data so labels, hidden tests and review records stay outside the prediction container; staging now supports the generic nested team layout with an independent exclusion test.
+
+### 2026-11-28 — Review documentation, exact-byte offline run and private setup
+
+- Tools/parts: Codex, Python/OpenSSL synthetic transfer tests, Azure metadata-only
+  checks, Windows Terminal, the qualified checker image, the unchanged scorer,
+  GitHub CI and repository documentation review. No replacement credential is
+  read or printed by the agent and no real provider request is claimed here.
+- Corrected the stale November 25 deadline in current evidence and deployment
+  documentation to the updated November 29, 22:00 Asia/Saigon assignment. Kept
+  earlier log entries as history. Included all 128 unchanged official files under
+  the lecturer's course hand-in instruction, with separate provenance and a
+  mandatory hash guard instead of the earlier manifest-only workaround.
+- Actual full model-off run produced 102 predictions: all 55 ban-list pairs
+  decided, all 47 semantic pairs unsure, zero wrongful deductions and zero model
+  requests. Inputs were staged without labels/tests/scorer. The network-none,
+  non-root, memory/PID-limited image and scorer artifacts are retained in
+  `docs/evidence/pa3-review/model-off/`. Scorer exit 1 is reported unchanged.
+- Added an operator-run setup helper: hidden prompt or private local `.env`,
+  RSA-OAEP/SHA-256 encryption before Azure Run Command, atomic private token file
+  on the VM, metadata-only success output. Three offline tests pass, including
+  actual RSA encryption/decryption of a synthetic token and rejection of ambiguous
+  input. Added the tests to CI and NVIDIA key detection to the existing scanner.
+- Rejected using a token pasted into chat; requested its revocation and a fresh
+  token entered locally. Created an ignored, mode-0600 `.env` template with an
+  empty key field. A claimed installation was checked and the VM still reported
+  the token file absent; no success was inferred from the confirmation alone.
+  Opened the helper in the owner's Windows Terminal so they can enter the new
+  token directly without sending it through chat or tool arguments.
+- CI run 46122872337 passed the six standard jobs on d3b17ff with real PostgreSQL
+  integration tests. The reviewed worker image is being prepared on the VM;
+  activation, a real semantic call, the updated public recording and the final
+  merge/tag/archive remain unclaimed until actually verified.
+
+### 2026-11-28 — Current Classroom review and official public three-case flow
+
+- Tools/parts: Composio Classroom and connected Drive re-read the live assignment,
+  rubric and brief; their modification times still match the November 28 source
+  register. GitHub verified public visibility, four required protected-main checks,
+  zero required approvals and no bypass actors. CI 46124559341 passed all six
+  standard jobs on 63953c4. The owner explicitly requested review, merge and ZIP.
+- Actual official sort-merge browser flow passed at the public Azure URL: the TA
+  authored the exact statement, both constraints/deductions and all five official
+  tests through the product UI; students submitted s01, s04 and s09, all AC.
+  Review snapshots were captured before same-student supersession, the TA saved
+  the original-line-backed C1 violation, student review reads and other-class TA
+  reads returned 404, mobile had no overflow, and Publish stayed blocked. The
+  uncut capture is 2:11.96. The first automation attempt incorrectly expected
+  automatic navigation; the successful script clicks Open submission details.
+  No application behavior or verdict assertion was changed to fit automation.
+- Azure metadata still reported the token absent; the live-model worker image
+  built successfully but the original model-off process remains active. Semantic
+  observations were unsure/schema-invalid, not live provider evidence. The user
+  requested the private setup terminal reopened after an input mistake; it was
+  reopened and brought into view. No token content was read or printed.
+- The recording exposed a display defect: after reload a saved TA decision badge
+  remained, but draft text incorrectly said no deduction had been chosen. Added
+  a stateless persisted-decision summary with its actual deduction and reason,
+  leaving new decision inputs unselected. Three regression tests cover saved
+  violation, saved pass with zero deduction, and an unreviewed finding. A deliberate
+  fault applying the configured deduction to a saved pass failed its test;
+  restoring the implementation passed. Web tests, lint, typecheck and production
+  build passed. No API contract, dependency or publication gate changed.
+
+### 2026-11-28 — Repair the operator setup CLI launcher
+
+- Tools/parts: OpenCode, WSL, Python unittest and Azure CLI startup/account metadata
+  checks. The owner reported a generic local-prerequisite failure after the hidden
+  token prompt. No live credential was read, printed or transmitted by the agent.
+- Found the relocated bundled `az` script's shebang points to a missing build-time
+  interpreter. The earlier PATH instruction selected that broken launcher; invoking
+  the bundled Python with `-m azure.cli` works and reports an Enabled student
+  subscription. The helper now prefers that interpreter and checks CLI startup
+  before asking for any token. Updated the operator instructions.
+- Added regression tests first: the old code selected the broken launcher and
+  lacked the preflight. After the fix, all seven offline tests passed, including
+  synthetic RSA transfer, fallback selection, sanitized failures and refusal to
+  prompt after startup failure. Actual CLI preflight passed without reading a
+  token or sending a VM command.
+- Rejected requesting the replacement key in chat, logging raw CLI exceptions or
+  output, or treating a local launcher fix as proof of successful installation.
+  Private operator installation and deployed live-model verification remain pending.
+
+### 2026-11-28 — Complete authorized live NIM release verification
+
+- Tools/parts: OpenCode, Git/GitHub CLI, the signed-in bundled Azure CLI,
+  Docker/Playwright 1.65.1 browser capture, FFmpeg media metadata, Python evidence
+  verification, and all six root quality commands. The owner explicitly authorized
+  the existing deployment update, three bounded synthetic NIM cases, normal
+  protected merge, `pa3` replacement and ZIP, but not coursework upload.
+- Verified only token-file presence and mode/owner/group (`0400`, `65534:65534`);
+  never read its contents. Built/recreated worker and web from `b8a0b53` with the
+  model overlay, retaining the database/TLS volumes and qualified secret-free
+  compiler/analyzer boundary. All application services became healthy.
+- Actual official UI walkthrough: TA authored the exact sort-merge statement,
+  two constraints/deductions and five tests. s01, s04 and s09 each passed all five
+  tests; live C2 results were pass, violation and violation. Original-line evidence,
+  student-safe fields, student review 404, other-class TA 404, narrow view and
+  blocked publication passed. A saved C1 violation and its deduction survived
+  reload without selecting a new decision. The uncut video is 2:06.60.
+- Retained three actual provider IDs and exact sanitized public-fixture requests
+  in `docs/evidence/pa3-review/live-model/`. Independently verified prompt hashes,
+  original evidence and C2-only dispatch; the injection comment is absent. Usage
+  totals 2,820 input + 481 output tokens, configured free-tier cost USD 0.00,
+  no repair/failure. SQL readback confirmed the USD 0.25 cap and exactly three
+  settled zero-cost reservations. A first read-only SQL command had a shell-quoting
+  error; a quoted input heredoc corrected it without changing data or controls.
+- All six root quality commands passed against a dedicated disposable PostgreSQL
+  instance with package scheduling serialized and the race detector retained.
+  CI 46128979287 passed all six standard jobs on the tested application revision.
+  npm audit reports nine moderate development-tool advisories below its configured
+  high-severity failure threshold; optional Sonar findings remain open. Neither
+  scanner, check, threshold nor dependency was changed to obtain green.
+- Finalized the eight-row evidence-based claim at 95/100, preserving first-run
+  recall 78.4%, zero wrongful deductions and 3.9% unsure. Rejected treating the
+  successful three-case walkthrough as a replacement full evaluation, inferring
+  teammate approval from an agent review, fabricating future uptime, or packaging
+  the worktree's `.git` pointer instead of a clean clone's real Git directory.
+  The final ZIP remains conditional on actual protected merge, matching tag jobs
+  and clean extraction verification.
