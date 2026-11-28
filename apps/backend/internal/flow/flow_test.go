@@ -38,6 +38,7 @@ int main() {
 // that is not asked to judge that ban. HTTP admission and the worker queue
 // are not part of this path.
 func TestMergedPipeline(t *testing.T) {
+	prepareFlowImages(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
@@ -190,44 +191,39 @@ func compileAndRun(t *testing.T, ctx context.Context) sandbox.Observation {
 
 func decideBan(t *testing.T, ctx context.Context, constraint string) hardrule.Decision {
 	t.Helper()
-	binary := buildAnalyzer(t)
-	args, err := hardrule.CompilerArgs(ctx)
-	if err != nil {
-		t.Fatalf("compiler args: %v", err)
-	}
-	dir := t.TempDir()
-	path := filepath.Join(dir, "main.cpp")
-	if err := os.WriteFile(path, []byte(source), 0o600); err != nil {
-		t.Fatalf("write source: %v", err)
-	}
-	// Temp directories on macOS sit behind a symlink. The analyzer only
-	// keeps references whose file matches the real path it was given.
-	if real, err := filepath.EvalSymlinks(path); err == nil {
-		path = real
-	}
-	raw, err := hardrule.RunAnalyzer(ctx, binary, path, args)
+	boundary := sandbox.New()
+	boundary.Image = "leetkob-local-analyzer:pa3"
+	raw, err := boundary.Analyze(ctx, source)
 	if err != nil {
 		t.Fatalf("analyzer: %v", err)
 	}
 	return hardrule.Evaluate(constraint, source, raw)
 }
 
-func buildAnalyzer(t *testing.T) string {
+func prepareFlowImages(t *testing.T) {
 	t.Helper()
+	docker, err := exec.LookPath("docker")
+	if err != nil {
+		t.Skip("Docker is unavailable; sandbox CI provides this evidence")
+	}
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("cannot locate flow test")
 	}
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
-	src := filepath.Join(root, "native", "cpp-analyzer", "analyzer.c")
-	out, err := hardrule.CompileAnalyzer(t.TempDir(), src)
-	if errors.Is(err, hardrule.ErrToolMissing) {
-		t.Skipf("merged flow was not run: %v", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	if _, err := sandbox.New().Build(ctx, filepath.Join(root, "sandbox", "cpp17")); err != nil {
+		t.Fatalf("qualify sandbox image: %v", err)
 	}
-	if err != nil {
-		t.Fatal(err)
+	for _, args := range [][]string{
+		{"build", "-q", "-f", filepath.Join(root, "checker", "Dockerfile"), "-t", "leetkob-local-checker:pa3", root},
+		{"build", "-q", "-f", filepath.Join(root, "..", "..", "scripts", "local-analyzer.Dockerfile"), "-t", "leetkob-local-analyzer:pa3", root},
+	} {
+		if output, err := exec.CommandContext(ctx, docker, args...).CombinedOutput(); err != nil {
+			t.Fatalf("prepare isolated analyzer: %v\n%s", err, output)
+		}
 	}
-	return out
 }
 
 func openFlowStore(t *testing.T, ctx context.Context) *postgres.Store {

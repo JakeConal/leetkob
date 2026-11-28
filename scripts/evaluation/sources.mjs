@@ -46,7 +46,7 @@ export function stagePredictionInputs(root, destination) {
     throw new Error("Prediction destination must be outside the source dataset");
   }
   const paths = filesAt(source).filter((path) =>
-    /^(problems\/[a-z0-9-]+\/(statement\.md|constraints\.json)|solutions\/[a-z0-9-]+\/s\d+\.cpp)$/.test(
+    /^(problems\/[a-z0-9-]+\/(statement\.md|constraints\.json|solutions\/[a-zA-Z0-9_-]+\.(cpp|cc|cxx))|solutions\/[a-z0-9-]+\/[a-zA-Z0-9_-]+\.(cpp|cc|cxx))$/.test(
       path,
     ),
   );

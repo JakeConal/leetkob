@@ -60,6 +60,27 @@ test("staging rejects stale destination, nesting, and symlink label smuggling", 
   assert.throws(() => stagePredictionInputs(data, `${output}-new`), /Symlink rejected/);
 });
 
+test("nested team solution layout stages source without labels, tests or review metadata", (t) => {
+  const { data, output } = fixture(t);
+  mkdirSync(join(data, "problems/unseen-id/solutions"));
+  writeFileSync(
+    join(data, "problems/unseen-id/solutions/accepted.cpp"),
+    "int main() { return 0; }\n",
+  );
+  writeFileSync(join(data, "problems/unseen-id/solutions/review.json"), "SECRET_REVIEW");
+  writeFileSync(join(data, "problems/unseen-id/labels.jsonl"), "SECRET_NESTED_LABEL");
+  const paths = stagePredictionInputs(data, output);
+  assert.deepEqual(paths.sort(), [
+    "problems/unseen-id/constraints.json",
+    "problems/unseen-id/solutions/accepted.cpp",
+    "problems/unseen-id/statement.md",
+    "solutions/unseen-id/s01.cpp",
+  ]);
+  assert.deepEqual(readdirSync(join(output, "problems/unseen-id/solutions")), ["accepted.cpp"]);
+  for (const path of paths)
+    assert.doesNotMatch(readFileSync(join(output, path), "utf8"), /SECRET_/);
+});
+
 test("official verifier rejects missing, extra, and changed scorer files", (t) => {
   const { root } = fixture(t);
   const source = join(root, "official");
