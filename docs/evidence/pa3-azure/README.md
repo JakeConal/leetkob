@@ -63,7 +63,7 @@ No real marking lab is pre-seeded and no marks are published.
 ## Evaluation and limits
 
 At initial deployment the public worker ran `MODEL_OFF=1` with isolated libclang analysis. Its semantic
-findings remain `unsure`; no provider key is installed and no new model call was
+findings were `unsure`; no provider key was installed and no new model call was
 made for that initial release. The separate authorized real-model evaluation is committed
 in [`../../../evaluation/dev-run/`](../../../evaluation/dev-run/README.md).
 November 28 rescoring with the unchanged pinned official scorer reproduced the

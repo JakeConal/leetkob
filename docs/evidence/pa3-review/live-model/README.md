@@ -21,6 +21,8 @@ The agent checked only credential-file presence and mode/ownership, never its co
 - [Runtime readback](runtime.txt): live mode, isolated analyzer, persistent
   USD 0.25 lab cap, three settled zero-cost reservations, request ceilings and
   the unauthenticated session boundary.
+- [Independent evidence verification](verification.json): call-to-fixture mapping,
+  prompt/source hashes, original-line checks and recording duration/SHA-256.
 
 ## Observed results
 

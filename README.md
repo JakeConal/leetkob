@@ -156,7 +156,7 @@ compiler/analyzer boundary or API responses.
 - PA#2 evidence index: [`PA2.md`](PA2.md)
 - Assistant decisions: [`AI-LOG.md`](AI-LOG.md)
 - Rubric self-assessment: [`SELF_ASSESSMENT_REPORT.md`](SELF_ASSESSMENT_REPORT.md)
-- OpenSpec change: [`openspec/changes/establish-pa2-quality-gate`](openspec/changes/establish-pa2-quality-gate)
+- Historical PA#2 OpenSpec change: [`openspec/changes/archive/2026-10-25-establish-pa2-quality-gate`](openspec/changes/archive/2026-10-25-establish-pa2-quality-gate)
 
 ## License
 
