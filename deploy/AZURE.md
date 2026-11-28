@@ -1,18 +1,16 @@
-# PA#3 Azure release preparation
+# PA#3 Azure deployment
 
-Status on November 28, 2026: **locally verified; not deployed to Azure**.
-The intended target is the existing `jenkins_group` in the shared Azure for
-Students subscription. Both it and `rg-leetkob` belong to the same subscription;
-changing resource groups does not change which billing profile funds usage.
-The group tags now identify `jenkins_group` as active and `rg-leetkob` as
-standby. This metadata change created no billable resource and changed no role.
+The owner confirmed Toàn’s student-credit coverage on November 28, 2026 and
+authorized completion of PA#3 in `jenkins_group`. A single VM was provisioned
+successfully in Southeast Asia using `azure.json`, Canonical Ubuntu 24.04
+image version `24.04.202611170`, `Standard_B2als_v2` and a 64 GiB Standard SSD.
+The subscription spending limit was re-read from Azure and remains **On**.
+No billing-plan upgrade was made. Credit balances and expiry are not fabricated:
+the deployment account cannot read Toàn’s billing-profile credit summary.
 
-The subscription's linked billing profile belongs to the teammate who owns the
-shared subscription. Its credit summary is not readable by the deployment
-account, even though that account has subscription Owner access. The owner's
-active credit balance and expiry must be confirmed before creating resources.
-The signed-in user's separate billing profile showed expired credit; it is not
-evidence of the shared subscription's balance. No paid resources were created.
+Both `jenkins_group` and the standby `rg-leetkob` belong to the same shared
+subscription. The signed-in user’s separate expired credit was not evidence of
+that subscription’s balance. The original working checkout was preserved.
 
 ## Hosting configuration
 
@@ -81,7 +79,7 @@ example `/etc/leetkob/deploy.env`, with mode 0600. Set `WEB_ORIGIN` and
 the numeric socket group, and supply only synthetic assessment passwords.
 Never commit that file or print a rendered Compose configuration containing it.
 
-After provisioning is authorized and credit coverage is confirmed:
+Start or recover the authorized deployment:
 
 ```bash
 docker compose --env-file /etc/leetkob/deploy.env -f deploy/docker-compose.yml up -d --wait
@@ -110,9 +108,9 @@ test projections, and acceptance while the worker was stopped followed by
 successful judging after restart. This is local HTTP evidence, not a public
 deployment or browser recording.
 
-The browser check could not start: the installed headless Chromium lacks the
+The first native browser attempt could not start: the installed headless Chromium lacks the
 system library `libnspr4.so`. No browser interaction or screenshot success is
-claimed. Browser verification and the public fallback recording remain open.
+claimed. This failed attempt was superseded by the isolated Playwright browser used for the public recording.
 
 Root lint, formatting, type checking, security and production image builds
 passed. Root tests passed with a dedicated disposable PostgreSQL instance and
@@ -122,17 +120,82 @@ assertions, sandbox controls and expected labels were unchanged. An earlier
 run failed because the machine's default PostgreSQL port belongs to another
 application; that failure is not hidden as a successful integration run.
 
-## Still required for release
+## Public service
 
-- Confirm the shared billing profile's active credits and expiry.
-- Validate and provision the bounded template in an allowed region.
-- Qualify isolation on the actual host and verify the HTTPS walkthrough and
-  worker recovery there.
-- Capture the actual at-most-five-minute public walkthrough; do not label the
-  local smoke as that recording.
-- Update PA3.md and the self-assessment with real public URL/accounts/evidence,
-  run CI on the final `pa3` tag and verify the complete submission archive.
-- Record the actual first deployment date. Availability since the November 25
-  deadline cannot be claimed retrospectively.
+The real service first passed public HTTPS verification at
+`2026-11-28T01:57:30Z`:
+<https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live>.
+Caddy obtained a valid Let's Encrypt certificate for the actual Azure hostname;
+HTTPS negotiation and the secure/HttpOnly session attributes were checked.
+The subscription was re-read after provisioning: Enabled, spending limit On,
+USD 50 monthly budget and every configured actual/forecast alert enabled.
+
+The public HTTP smoke passed all five fixture scenarios and concealed other-class
+and other-student reads. Worker stop/submit/restart accepted queued work and then
+judged it; PostgreSQL contains exactly one verdict set, three test results and
+one judge job for that submission. See the actual reports in
+[`../docs/evidence/pa3-azure/`](../docs/evidence/pa3-azure/README.md).
 
 [retail]: https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices
+
+## Actual-host qualification and security review
+
+The VM passed every test in `go test -count=1 -v ./internal/sandbox/`, including
+all nine live attacks and the disabled-control negative tests, without a skip.
+`TestImageMatchesTeamCaseLabels` passed on the same host with model requests off.
+See [`../docs/evidence/pa3-azure/sandbox.log`](../docs/evidence/pa3-azure/sandbox.log),
+[`checker-image.log`](../docs/evidence/pa3-azure/checker-image.log) and
+[`host.json`](../docs/evidence/pa3-azure/host.json). The host runs Docker 29.10.1;
+the digest-pinned worker client was verified against it. The first Run Command
+bootstrap stopped before testing because its noninteractive environment lacked a
+Go build cache; explicit `GOCACHE` and `GOPATH` paths fixed the setup. No test or
+sandbox setting was changed.
+
+Azure reports the OS disk encryption as `EncryptionAtRestWithPlatformKey`.
+Public disk access was disabled and `networkAccessPolicy` set to `DenyAll`;
+these properties control export, not the VM's attached-disk access. Reapply after
+recreating the disk:
+
+```bash
+az disk update -g jenkins_group -n disk-leetkob-pa3-os \
+  --network-access-policy DenyAll --public-network-access Disabled
+```
+
+The VM has no managed identity, Azure role assignments, model key or cloud
+credential installed by the release. It needs no Azure API access; administration
+uses the Azure control-plane Run Command agent. Only TCP 80/443 are allowed
+inbound. HTTPS sessions remain secure/HttpOnly and database/API/web ports are
+bound to loopback. Docker starts at boot and services restart unless stopped.
+
+SonarCloud flags the ARM template's omitted managed identity and missing
+customer-managed disk encryption/host encryption. These findings remain open for
+review; this release does not disable the rules or claim that Sonar is green.
+Azure's platform-managed encryption is enabled by default, as documented in
+[managed disk encryption](https://learn.microsoft.com/en-us/azure/virtual-machines/disk-encryption).
+Encryption at host is a separate option and is not claimed as enabled. Adding
+an unused identity or a paid key-management service merely to quiet the scanner
+would change the deployment's permissions or cost without a demonstrated need.
+
+## Operations and retention
+
+Use Azure Run Command with commands below; do not print `/etc/leetkob/deploy.env`
+or a rendered Compose configuration. Its generated database credential stays on
+the host outside the source checkout and build contexts.
+
+```bash
+cd /opt/leetkob
+docker compose --env-file /etc/leetkob/deploy.env -f deploy/docker-compose.yml ps
+curl -fsS http://127.0.0.1:8080/healthz
+docker compose --env-file /etc/leetkob/deploy.env -f deploy/docker-compose.yml restart worker
+```
+
+For an application update, fetch and check out a reviewed immutable revision,
+rebuild the three application images sequentially and run `up -d --wait`.
+Preserve the PostgreSQL and Caddy volumes. To roll back an application image,
+check out the preceding tested revision and rebuild/up; do not run `down -v` or
+roll back database migrations automatically. No destructive migration was used.
+
+Keep the service running until PA#4 marks, while monitoring the owner’s real
+credit expiry and the USD 50 budget notifications. No future uptime or credit
+balance can be guaranteed by a snapshot. The actual first deployment date is
+November 28, so availability from the November 25 deadline is not met.

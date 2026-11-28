@@ -1,0 +1,54 @@
+{
+  "kind": "public-azure-release-verification",
+  "origin": "https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com",
+  "startedAt": "2026-11-28T01:57:30.467Z",
+  "modelOff": true,
+  "checks": [
+    {
+      "scenario": "worker-stop-submit-restart",
+      "queuedBeforeRestart": true
+    },
+    {
+      "scenario": "compliant",
+      "submissionId": "fac541e3-2684-4f65-ae36-abcc55fb2604",
+      "labId": "c954056e-a41c-4a98-8bfd-42d1f5e6fe58",
+      "verdict": "AC",
+      "hardRule": "pass",
+      "privacy": "passed"
+    },
+    {
+      "scenario": "violation",
+      "submissionId": "b0c031fc-4e64-4a24-a300-fb3570e5b7c7",
+      "labId": "4ecc587e-8f65-45ac-b000-a61422bb3e08",
+      "verdict": "AC",
+      "hardRule": "violation",
+      "privacy": "passed"
+    },
+    {
+      "scenario": "injection",
+      "submissionId": "d7fac387-7be8-4431-8477-e6644030a1d3",
+      "labId": "31ea69d9-e226-41d4-957f-6306fdf56ed6",
+      "verdict": "AC",
+      "hardRule": "violation",
+      "privacy": "passed"
+    },
+    {
+      "scenario": "wrong-answer",
+      "submissionId": "ed396a90-497d-44e5-8616-a3f1140979f9",
+      "labId": "5fed7bec-6785-4ba9-a7db-5c008c313e46",
+      "verdict": "WA",
+      "hardRule": null,
+      "privacy": "passed"
+    },
+    {
+      "scenario": "compile-error",
+      "submissionId": "3cc572b9-73b0-4071-bfaf-9a7a6aa807bc",
+      "labId": "cd7edc8e-c694-4be8-a4a2-a7960a2e4363",
+      "verdict": "CE",
+      "hardRule": null,
+      "privacy": "passed"
+    }
+  ],
+  "finishedAt": "2026-11-28T02:00:27.401Z",
+  "status": "passed"
+}

@@ -1,0 +1,25 @@
+{
+  "kind": "public-browser-walkthrough",
+  "status": "passed",
+  "origin": "https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com",
+  "startedAt": "2026-11-28T02:01:10.096Z",
+  "finishedAt": "2026-11-28T02:01:53.080Z",
+  "browser": "Chromium 159 / Playwright 1.65.1",
+  "labId": "fd5de3f7-b7ec-4a9e-bf36-ea4cb8f2e40d",
+  "submissionIds": ["07c3dfeb-ab1b-4bcb-b55c-3a1320bb50aa", "a770676a-52d9-4b00-835f-bd2d0c50c12a"],
+  "viewports": ["1440x900", "390x844"],
+  "flow": [
+    "TA creates lab with two constraints, sample and hidden test",
+    "Student A1 submits merge sort and receives AC",
+    "Student A2 submits forbidden std::sort and receives AC",
+    "Assigned TA sees original evidence, saves a revision-bound violation decision; semantic findings stay unsure and no marks publish",
+    "Other-class TA receives concealed 404"
+  ],
+  "pageErrors": [],
+  "unexpectedConsoleErrors": [],
+  "modelOff": true,
+  "recording": "walkthrough.webm",
+  "recordingDurationSeconds": 126.68,
+  "recordingDimensions": "1440x900",
+  "recordingAudio": false
+}

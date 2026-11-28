@@ -4,15 +4,13 @@ This file is the evidence map for the `pa3` submission of LeeTKOB. The tag is
 checked out and verified with the commands in the repository README, the
 backend README and this file.
 
-> **Deployment status: not publicly deployed.** On November 28, 2026 the owner
-> selected the shared Azure subscription's `jenkins_group`; its active credit
-> balance and expiry still require confirmation before provisioning. There is
-> **no public URL, claimed uptime or fallback recording**. The current flow is
-> evidenced by local staging and CI. The Azure candidate was built and tested
-> locally; see [`deploy/AZURE.md`](deploy/AZURE.md). Remaining gaps are disclosed in
-> [`docs/evidence/pa3-walkthrough.md`](docs/evidence/pa3-walkthrough.md) and in
-> [`SELF_ASSESSMENT_REPORT.md`](SELF_ASSESSMENT_REPORT.md). No link here points
-> at a deployment, run or provider request that did not happen.
+> **Azure release:** the synthetic assessment service is hosted at
+> <https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live> in the
+> shared student subscription's `jenkins_group`. Its actual first deployment
+> is November 28, 2026; availability since the November 25 deadline is not met.
+> Hosting consumes Toàn’s confirmed student credits, with the spending limit On
+> and USD 50 monthly notification budget. Online semantic checks remain
+> offline/`unsure`; the committed real-model evaluation is separate evidence.
 
 ## Repository and protected branch
 
@@ -21,7 +19,9 @@ backend README and this file.
 - Protection API: <https://api.github.com/repos/JakeConal/leetkob/branches/main/protection>
 - Captured settings: [`docs/evidence/main-branch-protection.json`](docs/evidence/main-branch-protection.json)
 - Required checks: `Lint`, `Format`, `Typecheck` and `Test`, with strict
-  up-to-date enforcement, one required approval and no bypass actors.
+  up-to-date enforcement and no bypass actors. The November 28 read-only
+  recapture reports zero required approvals; earlier captures are historical.
+  This release changes no protection setting and requests both teammates for review.
 - Pull requests: [#39](https://github.com/JakeConal/leetkob/pull/39) (Go
   foundation), [#41](https://github.com/JakeConal/leetkob/pull/41)
   (submission, judging, review), [#44](https://github.com/JakeConal/leetkob/pull/44)
@@ -31,10 +31,10 @@ backend README and this file.
 
 ## Submitted tag and CI
 
-- Tag target: `pa3` — **not created or pushed yet**. This index is not evidence
-  that the tag or its run already exists.
+- Release tag: `pa3`. Verify the remote tag and matching run before treating
+  an archive as the final release: `git rev-parse pa3^{commit}`.
 - CI run for the tag: [Quality Gate runs filtered to `pa3`](https://github.com/JakeConal/leetkob/actions/workflows/quality.yml?query=branch%3Apa3).
-  After the tag is pushed, the matching run's head SHA must equal
+  The matching run's head SHA must equal
   `git rev-parse pa3^{commit}`. A commit cannot
   contain the ID of the run that its own tag push triggers, so the filtered
   list is linked rather than a single run ID (the same convention as
@@ -50,49 +50,40 @@ backend README and this file.
 
 ## Synthetic accounts
 
-`go run ./cmd/provision` creates these identities and two classes. Passwords
-are supplied in `ASSESSMENT_PASSWORDS` for one provisioning run, hashed before
-storage, and never committed or baked into an image.
+These deliberately public identities contain only synthetic assessment data.
+They grant no Azure, GitHub or model-provider access. Sign in through `/live`.
+The provisioner hashes these synthetic passwords before storage and is idempotent;
+it never silently resets an existing password or seeds the marked lab.
 
-| Account                              | Role    | Class         |
-| ------------------------------------ | ------- | ------------- |
-| `admin@assessment.leetkob.test`      | admin   | none          |
-| `ta-a@assessment.leetkob.test`       | TA      | `PA3 Class A` |
-| `ta-b@assessment.leetkob.test`       | TA      | `PA3 Class B` |
-| `student-a1@assessment.leetkob.test` | student | `PA3 Class A` |
-| `student-a2@assessment.leetkob.test` | student | `PA3 Class A` |
+| Account                              | Role    | Class       | Synthetic password                           |
+| ------------------------------------ | ------- | ----------- | -------------------------------------------- |
+| `admin@assessment.leetkob.test`      | admin   | none        | `Synthetic-PA3-Demo-2026!Admin`              |
+| `ta-a@assessment.leetkob.test`       | TA      | PA3 Class A | `Synthetic-PA3-Demo-2026!TeachingAssistantA` |
+| `ta-b@assessment.leetkob.test`       | TA      | PA3 Class B | `Synthetic-PA3-Demo-2026!TeachingAssistantB` |
+| `student-a1@assessment.leetkob.test` | student | PA3 Class A | `Synthetic-PA3-Demo-2026!StudentA1`          |
+| `student-a2@assessment.leetkob.test` | student | PA3 Class A | `Synthetic-PA3-Demo-2026!StudentA2`          |
 
 ## Deployment
 
-November 28 update: the owner selected Azure student-credit hosting and then
-the existing shared `jenkins_group`. The deployment configuration has been
-updated and exercised locally; see [`deploy/AZURE.md`](deploy/AZURE.md).
-The shared billing profile's active credit balance/expiry still needs owner
-confirmation, so no VM, public URL or public recording exists yet. This later
-preparation supersedes the earlier decision to skip hosting, without claiming
-that public provisioning has occurred.
+- URL: <https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live>
+- Host: Ubuntu 24.04 image `24.04.202611170`, B2als v2 (2 vCPU / 4 GiB),
+  64 GiB Standard SSD, Docker 29.10.1, Southeast Asia. Only TCP 80/443 is public.
+- Repeatable configuration, costs, recovery, rollback and security review:
+  [`deploy/AZURE.md`](deploy/AZURE.md). The approximately USD 42.91/month
+  baseline excludes variable disk operations/egress and consumes student credits.
+- Actual-host sandbox qualification: [`sandbox.log`](docs/evidence/pa3-azure/sandbox.log),
+  [`checker-image.log`](docs/evidence/pa3-azure/checker-image.log),
+  [`host.json`](docs/evidence/pa3-azure/host.json). All nine attacks passed without skips.
+- Actual public verification and fallback recording:
+  [`docs/evidence/pa3-walkthrough.md`](docs/evidence/pa3-walkthrough.md).
+- `MODEL_OFF=1` and isolated analysis are fixed in Compose. No model key or
+  cloud credential is installed by the release. The trusted worker alone sees
+  the Docker socket; source parsing and compilation happen in qualified containers.
 
-Status: **prepared, not provisioned** (November 28, 2026). There is no public
-URL or claimed availability. [`deploy/AZURE.md`](deploy/AZURE.md) records the
-current shared-subscription target, isolated worker configuration, student-credit
-constraint, regional cost estimate, local verification and remaining work.
-[`deploy/README.md`](deploy/README.md) retains the earlier hosting proposal and
-health/restart/recovery/rollback procedures as historical preparation.
-
-Locally verified on 2026-11-24:
-
-```bash
-cp deploy/.env.example deploy/.env      # synthetic values, never committed
-docker compose -f deploy/docker-compose.yml config
-docker compose -f deploy/docker-compose.yml up -d --build postgres api web
-```
-
-- PostgreSQL 18.7 + API health check returned `{"status":"ok"}`; the web app
-  served `/live`; sign-in through the same-origin `/v2` rewrite returned a
-  session cookie; provisioning was idempotent on a second run.
-- The worker requires a Docker daemon and a same-path host work directory, so
-  it cannot run on a free PaaS tier; a Docker-capable VM is required. That
-  external step was not authorized or performed.
+The service is intended to remain up until PA#4 marks. Restart policies are
+configured, but future availability depends on the owner's credit expiry and
+operation of the VM. No earlier uptime is claimed. The previous Oracle proposal
+in `deploy/README.md` is historical and is superseded by `deploy/AZURE.md`.
 
 ## End-to-end flow
 
@@ -153,12 +144,14 @@ Generic checker image and command:
 
 ```bash
 docker build -f apps/backend/checker/Dockerfile -t leetkob-checker:pa3 apps/backend
+checker_out=$(mktemp -d /tmp/leetkob-checker.XXXXXX)
+chmod 0777 "$checker_out"  # synthetic predictions only; uid 65534 writes here
 
 docker run --rm --network none --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m --cap-drop ALL \
   --security-opt no-new-privileges --pids-limit 64 \
   --memory 512m --memory-swap 512m --user 65534:65534 \
-  -v "$PWD/evaluation/team-cases:/data:ro" -v /tmp/checker-out:/out \
+  -v "$PWD/evaluation/team-cases:/data:ro" -v "$checker_out:/out" \
   -e MODEL_OFF=1 \
   leetkob-checker:pa3 --data /data --predictions /out/predictions.jsonl
 ```
@@ -196,24 +189,31 @@ claim that the files are vendored.
 
 ## Rubric evidence map
 
-| Criterion                       | Evidence                                                                                                  |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| End-to-end deployed flow        | Local staging + flow tests above. **No public deployment; criterion not fully met.**                      |
-| Queue and sandbox               | Leased worker, fence/restart tests, nine sandbox attack tests, `pa3` tag job.                             |
-| Hard rules first                | Analyzer trap suite, model-off team cases (10/10), dev-run with 0 wrongful hard-rule deductions.          |
-| Semantic model                  | Guarded adapter, sanitizer, budget, committed `evaluation/dev-run/` predictions, scorer report, call log. |
-| Initial limits and review queue | Schema/timeout unsure tests, review decision tests, private projections, no production Publish.           |
-| Checker and first eval          | Dataset-independent image/command, `MODEL_OFF=1`, team cases, official byte manifest, honest metrics.     |
-| Tests first and focused history | Commit order, AI-LOG fault entries, no weakened checks or labels.                                         |
-| AI log                          | [`AI-LOG.md`](AI-LOG.md) tool/part entries and D1-D14 changed/rejected decisions.                         |
+| Criterion                       | Evidence                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| End-to-end deployed flow        | Public HTTPS flow, actual-host qualification, restart/privacy proof and recorded walkthrough; late first deployment disclosed. |
+| Queue and sandbox               | Leased worker, fence/restart tests, nine sandbox attack tests, `pa3` tag job.                                                  |
+| Hard rules first                | Analyzer trap suite, model-off team cases (10/10), dev-run with 0 wrongful hard-rule deductions.                               |
+| Semantic model                  | Guarded adapter, sanitizer, budget, committed `evaluation/dev-run/` predictions, scorer report, call log.                      |
+| Initial limits and review queue | Schema/timeout unsure tests, review decision tests, private projections, no production Publish.                                |
+| Checker and first eval          | Dataset-independent image/command, `MODEL_OFF=1`, team cases, official byte manifest, honest metrics.                          |
+| Tests first and focused history | Commit order, AI-LOG fault entries, no weakened checks or labels.                                                              |
+| AI log                          | [`AI-LOG.md`](AI-LOG.md) tool/part entries and D1-D14 changed/rejected decisions.                                              |
 
 ## Known gaps
 
-- No public URL, no fallback recording and no claimed uptime. The deployment
-  stack is prepared and locally verified only.
-- The tag CI run and its `Sandbox attacks` job appear only after `pa3` is
-  pushed; nothing in this file asserts that run before it exists.
+- First deployment is November 28, after the November 25 deadline. The service
+  was not continuously available from the deadline, and future uptime is not
+  guaranteed by a one-time check.
 - The online worker runs semantic checks offline (`unsure`); the real model
   path is the committed checker run, not the worker.
 - Recall is 78.4%, below the later PA#4 90% target. PA#3 imposes no overall
-  evaluation threshold, and the result is not adjusted.
+  evaluation threshold, and the result is not adjusted. Rescoring on November 28
+  reproduced the committed summary exactly, with all 128 official files verified
+  before and after scoring.
+- SonarCloud's Azure identity/encryption findings remain open for review. The
+  standard Quality Gate jobs and actual sandbox results are linked separately;
+  this release does not suppress the scanner or claim its PR check is green.
+- PR [#50](https://github.com/JakeConal/leetkob/pull/50) carries this release on
+  the current implementation. It requests Toanapr and XuXinhNo1 and is not
+  automatically merged. Coursework upload is not performed.

@@ -4,6 +4,8 @@ The dataset-independent marking command from the assignment:
 
 ```bash
 docker build -f apps/backend/checker/Dockerfile -t leetkob-checker:pa3 apps/backend
+checker_out=$(mktemp -d /tmp/leetkob-checker.XXXXXX)
+chmod 0777 "$checker_out"  # synthetic predictions only; uid 65534 writes here
 
 docker run --rm --network none --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
@@ -11,7 +13,7 @@ docker run --rm --network none --read-only \
   --pids-limit 64 --memory 512m --memory-swap 512m \
   --user 65534:65534 \
   -v "$PWD/evaluation/team-cases:/data:ro" \
-  -v /tmp/checker-out:/out \
+  -v "$checker_out:/out" \
   -e MODEL_OFF=1 \
   leetkob-checker:pa3 --data /data --predictions /out/predictions.jsonl
 ```
@@ -24,8 +26,10 @@ Behavior:
 - Ban-list constraints (`Do not use`/`Do not call` with a backticked name) are
   decided by the bundled libclang analyzer. Every other constraint is written
   as `unsure`: the offline image never calls a provider, so `MODEL_OFF=1` is a
-  statement of fact, not a switch that could be forgotten. Online semantic
-  checking runs in the worker, behind the guarded adapter and budget.
+  statement of fact, not a switch that could be forgotten. The guarded provider
+  adapter and budget are exercised by the separately authorized real-model
+  evaluation mode below. The current online worker uses an offline model and
+  reports semantic findings as `unsure`; it makes no live provider call.
 - Output is one validated JSONL line per solution/constraint pair, written
   atomically. An unconfigured analyzer never fabricates a violation; it yields
   unsure.
