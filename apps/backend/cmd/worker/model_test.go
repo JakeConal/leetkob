@@ -21,6 +21,7 @@ func liveFixture() map[string]string {
 	return map[string]string{
 		"MODEL_OFF": "0", "MODEL_URL": "https://fixture.invalid/v1/chat/completions",
 		"MODEL_NAME": "synthetic-model", "MODEL_TOKEN_FILE": "/fixture/token",
+		"WORKER_ISOLATED_ANALYZER":        "1",
 		"MODEL_INPUT_MICRO_USD_PER_TOKEN": "0", "MODEL_OUTPUT_MICRO_USD_PER_TOKEN": "0",
 	}
 }
@@ -57,6 +58,7 @@ func TestOfflineWorkerNeverReadsProviderSettingsOrCredential(t *testing.T) {
 func TestLiveWorkerRejectsInvalidConfigurationBeforeCredentialRead(t *testing.T) {
 	for _, tc := range []struct{ name, value string }{
 		{"MODEL_OFF", "maybe"}, {"MODEL_URL", "http://fixture.invalid"},
+		{"WORKER_ISOLATED_ANALYZER", "0"},
 		{"MODEL_URL", "https://user:synthetic@fixture.invalid"}, {"MODEL_URL", "https://fixture.invalid?token=synthetic"},
 		{"MODEL_NAME", ""}, {"MODEL_TOKEN_FILE", ""},
 		{"MODEL_INPUT_MICRO_USD_PER_TOKEN", ""}, {"MODEL_OUTPUT_MICRO_USD_PER_TOKEN", "-1"},

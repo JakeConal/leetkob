@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/JakeConal/leetkob/backend/internal/adapters/postgres"
-	"github.com/JakeConal/leetkob/backend/internal/checker/hardrule"
 	"github.com/JakeConal/leetkob/backend/internal/checking"
 	"github.com/JakeConal/leetkob/backend/internal/judge"
 	"github.com/JakeConal/leetkob/backend/internal/sandbox"
@@ -68,7 +67,7 @@ func run(ctx context.Context, logger *slog.Logger, getenv func(string) string) e
 	}
 	checks := &checking.Runner{
 		Queue:   store,
-		Service: checkService(ctx, store, getenv, logger, model),
+		Service: checkService(store, getenv, model),
 		ID:      id,
 		Now:     now,
 	}
@@ -92,7 +91,7 @@ func run(ctx context.Context, logger *slog.Logger, getenv func(string) string) e
 	}
 }
 
-func checkService(ctx context.Context, store *postgres.Store, getenv func(string) string, logger *slog.Logger, model modelSettings) *checking.Service {
+func checkService(store *postgres.Store, getenv func(string) string, model modelSettings) *checking.Service {
 	analyze := func(context.Context, string) ([]byte, error) {
 		return []byte(`{"version":1,"status":"unsure","reason":"analyzer-not-configured","references":[]}`), nil
 	}
@@ -100,15 +99,6 @@ func checkService(ctx context.Context, store *postgres.Store, getenv func(string
 		boundary := sandbox.New()
 		boundary.Image = "leetkob-local-analyzer:pa3"
 		analyze = boundary.Analyze
-	} else if binary := strings.TrimSpace(getenv("CHECKER_ANALYZER")); binary != "" {
-		args, err := hardrule.CompilerArgs(ctx)
-		if err != nil {
-			logger.Error("checker compiler arguments failed", "error", err.Error())
-		} else {
-			analyze = func(ctx context.Context, source string) ([]byte, error) {
-				return checking.AnalyzeSource(ctx, binary, args, source)
-			}
-		}
 	}
 	return &checking.Service{
 		Store:   &postgres.FindingRepo{Store: store},

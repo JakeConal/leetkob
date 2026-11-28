@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -44,7 +45,8 @@ type callRecord struct {
 	InputTokens   int64  `json:"inputTokens"`
 	OutputTokens  int64  `json:"outputTokens"`
 	ElapsedMillis int64  `json:"elapsedMs"`
-	CostMicroUSD  int64  `json:"costMicroUSD"`
+	CostMicroUSD  *int64 `json:"costMicroUSD,omitempty"`
+	UsageKnown    bool   `json:"usageKnown"`
 	PromptSHA256  string `json:"promptSha256"`
 	Attempts      int    `json:"attempts"`
 	Error         string `json:"error,omitempty"`
@@ -59,29 +61,19 @@ type loggingModel struct {
 	inPrice  int64
 	outPrice int64
 	mu       sync.Mutex
+	maxInput int64
 }
 
 // Complete implements semantic.Model.
 func (m *loggingModel) Complete(ctx context.Context, req semantic.CompletionRequest) (semantic.ModelResponse, error) {
-	started := time.Now()
-	var response semantic.ModelResponse
-	var err error
-	attempts := 0
-	// Provider rate limiting (HTTP 429) is a transport condition, not a
-	// semantic verdict: retry a bounded number of times with backoff and
-	// record every final outcome. Auth, schema and timeout failures are not
-	// retried here.
-	for attempts < 4 {
-		attempts++
-		response, err = m.inner.Complete(ctx, req)
-		if err == nil || !isRateLimited(err) {
-			break
-		}
-		select {
-		case <-ctx.Done():
-		case <-time.After(time.Duration(1<<attempts) * time.Second):
-		}
+	if m.maxInput > 0 && int64(len(req.System))+int64(len(req.UserJSON)) > m.maxInput {
+		return semantic.ModelResponse{}, fmt.Errorf("checker: input exceeds the priced token bound")
 	}
+	started := time.Now()
+	// One dispatch per reservation. Only the guarded checker's schema repair
+	// may retry, and it reserves again before doing so.
+	response, err := m.inner.Complete(ctx, req)
+	attempts := 1
 	if err != nil {
 		m.record(callRecord{
 			Time: time.Now().UTC().Format(time.RFC3339Nano), Model: m.model,
@@ -92,6 +84,12 @@ func (m *loggingModel) Complete(ctx context.Context, req semantic.CompletionRequ
 	}
 	if m.logPath != "" {
 		digest := sha256.Sum256([]byte(req.System + "\n" + req.UserJSON))
+		var cost *int64
+		actual, known := (semantic.Price{Known: response.TokensKnown, MaxInputTokens: response.InputTokens, MaxOutputTokens: response.OutputTokens,
+			InputMicroUSDPerToken: m.inPrice, OutputMicroUSDPerToken: m.outPrice}).ConservativeMicroUSD()
+		if known && response.InputTokens <= m.maxInput && response.OutputTokens <= req.MaxOutputTokens {
+			cost = &actual
+		}
 		record := callRecord{
 			Time:          time.Now().UTC().Format(time.RFC3339Nano),
 			Model:         m.model,
@@ -100,7 +98,8 @@ func (m *loggingModel) Complete(ctx context.Context, req semantic.CompletionRequ
 			InputTokens:   response.InputTokens,
 			OutputTokens:  response.OutputTokens,
 			ElapsedMillis: time.Since(started).Milliseconds(),
-			CostMicroUSD:  response.InputTokens*m.inPrice + response.OutputTokens*m.outPrice,
+			CostMicroUSD:  cost,
+			UsageKnown:    response.TokensKnown,
 			PromptSHA256:  hex.EncodeToString(digest[:]),
 		}
 		m.record(record)
@@ -127,12 +126,6 @@ func (m *loggingModel) record(record callRecord) {
 	_ = file.Close()
 }
 
-// isRateLimited recognizes the provider's 429 response text without
-// coupling to a provider SDK.
-func isRateLimited(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "status 429")
-}
-
 func promptDigest(req semantic.CompletionRequest) string {
 	digest := sha256.Sum256([]byte(req.System + "\n" + req.UserJSON))
 	return hex.EncodeToString(digest[:])
@@ -146,15 +139,22 @@ func NewSemanticEngineFromEnv() (SemanticEngine, error) {
 	if os.Getenv("MODEL_OFF") == "1" {
 		return nil, nil
 	}
+	if os.Getenv("CHECKER_ISOLATED_ANALYZER") != "1" {
+		return nil, fmt.Errorf("checker: live evaluation requires isolated analysis; run the qualified analyzer separately from provider credentials")
+	}
 	providerURL := strings.TrimSpace(os.Getenv("MODEL_URL"))
+	parsed, err := url.Parse(providerURL)
+	if err != nil || parsed.Scheme != "https" || parsed.Hostname() == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return nil, fmt.Errorf("checker: MODEL_URL must be an HTTPS endpoint without credentials or query parameters")
+	}
 	modelName := strings.TrimSpace(os.Getenv("MODEL_NAME"))
 	token := strings.TrimSpace(os.Getenv("MODEL_TOKEN"))
 	if providerURL == "" || modelName == "" || token == "" {
 		return nil, fmt.Errorf("checker: MODEL_URL, MODEL_NAME and MODEL_TOKEN are required unless MODEL_OFF=1")
 	}
 	timeout := envInt64("MODEL_TIMEOUT_SECONDS", 90)
-	inPrice := envInt64("MODEL_INPUT_MICRO_USD_PER_TOKEN", 0)
-	outPrice := envInt64("MODEL_OUTPUT_MICRO_USD_PER_TOKEN", 0)
+	inPrice := envInt64("MODEL_INPUT_MICRO_USD_PER_TOKEN", -1)
+	outPrice := envInt64("MODEL_OUTPUT_MICRO_USD_PER_TOKEN", -1)
 	maxInput := envInt64("MODEL_MAX_INPUT_TOKENS", 16000)
 	maxOutput := envInt64("MODEL_MAX_OUTPUT_TOKENS", 1500)
 	if timeout <= 0 || inPrice < 0 || outPrice < 0 || maxInput <= 0 || maxOutput <= 0 {
@@ -166,6 +166,7 @@ func NewSemanticEngineFromEnv() (SemanticEngine, error) {
 		inner: adapter, model: modelName,
 		logPath: strings.TrimSpace(os.Getenv("MODEL_CALL_LOG")),
 		inPrice: inPrice, outPrice: outPrice,
+		maxInput: maxInput,
 	}
 	checker := &semantic.Checker{
 		Model:   logging,

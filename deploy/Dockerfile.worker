@@ -16,7 +16,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/lib/leetkob/model-audit \
-    && chown 65534:65534 /var/lib/leetkob/model-audit
+    && chown 65534:65534 /var/lib/leetkob/model-audit \
+    && chmod 0700 /var/lib/leetkob/model-audit
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=build /worker /usr/local/bin/worker
 ENV MODEL_OFF=1 WORKER_ISOLATED_ANALYZER=1 HOME=/tmp

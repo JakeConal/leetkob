@@ -40,6 +40,9 @@ func configureModel(getenv func(string) string, readToken func(string) (string, 
 	if mode != "0" {
 		return modelSettings{}, errors.New("worker: MODEL_OFF must be 0 or 1")
 	}
+	if getenv("WORKER_ISOLATED_ANALYZER") != "1" {
+		return modelSettings{}, errors.New("worker: live model requires WORKER_ISOLATED_ANALYZER=1")
+	}
 	endpoint, err := url.Parse(strings.TrimSpace(getenv("MODEL_URL")))
 	if err != nil || endpoint.Scheme != "https" || endpoint.Hostname() == "" || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" {
 		return modelSettings{}, errors.New("worker: MODEL_URL must be an HTTPS endpoint without credentials or query parameters")
@@ -136,6 +139,10 @@ func (m *auditedModel) Complete(ctx context.Context, req semantic.CompletionRequ
 	fields := []any{"model", m.name, "elapsedMs", time.Since(started).Milliseconds(), "promptSha256", hex.EncodeToString(digest[:]), "repair", req.Repair}
 	if err != nil {
 		// Provider/transport errors can carry URLs. Do not log raw errors.
+		var status semantic.ProviderStatusError
+		if errors.As(err, &status) {
+			fields = append(fields, "providerHTTPStatus", status.Status)
+		}
 		m.log.Warn("semantic provider call failed", fields...)
 		return semantic.ModelResponse{}, err
 	}
