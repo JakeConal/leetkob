@@ -12,6 +12,11 @@ Prerequisites: Python 3, OpenSSL and Azure CLI signed in with access to
 python3 deploy/configure-nim.py
 ```
 
+On the prepared WSL workstation, the helper invokes the relocated Azure CLI
+through its bundled Python interpreter. Its `az` launcher has a stale absolute
+shebang; adding that launcher to `PATH` does not fix it. The helper checks CLI
+startup before requesting a token. No `PATH` change is needed.
+
 Enter the replacement token at the hidden terminal prompt. Alternatively, create
 a private local `.env` with `NVIDIA_NIM_API_KEY` and run
 `python3 deploy/configure-nim.py --env-file /absolute/path/to/.env`.

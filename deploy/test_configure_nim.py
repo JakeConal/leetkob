@@ -47,12 +47,59 @@ class ConfigureNimTest(unittest.TestCase):
 
             output = io.StringIO()
             with patch.object(setup, "az_command", return_value=["fixture-az"]), \
+                    patch.object(setup, "verify_az"), \
                     patch.object(setup, "read_token", return_value=synthetic.encode()), \
                     patch.object(setup, "run_remote", side_effect=remote), \
                     patch("sys.argv", ["configure-nim.py"]), contextlib.redirect_stdout(output):
                 setup.main()
             self.assertEqual(len(scripts), 2)
             self.assertNotIn(synthetic, output.getvalue())
+
+    def test_relocated_bundled_python_precedes_broken_path_launcher(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            home = Path(temporary)
+            python = home / ".local/share/leetkob-tools/azure-cli/opt/az/bin/python3"
+            python.parent.mkdir(parents=True)
+            python.touch()
+            with patch.object(setup.Path, "home", return_value=home), \
+                    patch.object(setup.shutil, "which", return_value="/broken/az"):
+                self.assertEqual(setup.az_command(), [str(python), "-m", "azure.cli"])
+
+    def test_system_cli_fallback_when_no_bundle_exists(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(setup.Path, "home", return_value=Path(temporary)), \
+                    patch.object(setup.shutil, "which", return_value="/usr/bin/az"):
+                self.assertEqual(setup.az_command(), ["/usr/bin/az"])
+            with patch.object(setup.Path, "home", return_value=Path(temporary)), \
+                    patch.object(setup.shutil, "which", return_value=None):
+                with self.assertRaisesRegex(RuntimeError, "Azure CLI is required"):
+                    setup.az_command()
+
+    def test_cli_preflight_hides_raw_errors_and_output(self):
+        for failure in (
+            FileNotFoundError("private-local-detail"),
+            subprocess.TimeoutExpired(["private-local-detail"], 30),
+        ):
+            with self.subTest(failure=type(failure).__name__), \
+                    patch.object(setup.subprocess, "run", side_effect=failure):
+                with self.assertRaisesRegex(RuntimeError, "Azure CLI could not start") as error:
+                    setup.verify_az(["fixture-az"])
+                self.assertNotIn("private-local-detail", str(error.exception))
+        with patch.object(setup.subprocess, "run", return_value=subprocess.CompletedProcess(
+            ["fixture-az"], 1, stdout="private-local-detail", stderr="private-local-detail",
+        )):
+            with self.assertRaisesRegex(RuntimeError, "Azure CLI could not start") as error:
+                setup.verify_az(["fixture-az"])
+            self.assertNotIn("private-local-detail", str(error.exception))
+
+    def test_cli_failure_precedes_secret_prompt(self):
+        with patch.object(setup, "az_command", return_value=["fixture-az"]), \
+                patch.object(setup, "verify_az", side_effect=RuntimeError("Azure CLI could not start.")), \
+                patch.object(setup, "read_token") as read_token, \
+                patch("sys.argv", ["configure-nim.py"]):
+            with self.assertRaisesRegex(RuntimeError, "Azure CLI could not start"):
+                setup.main()
+            read_token.assert_not_called()
 
     def test_env_is_parsed_as_data_and_ambiguous_credentials_are_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -20,13 +20,31 @@ VM = "vm-leetkob-pa3"
 
 
 def az_command():
-    executable = shutil.which("az")
-    if executable:
-        return [executable]
+    # The relocated CLI's az script has an absolute build-time shebang.
+    # Invoke its bundled interpreter directly, before considering PATH (which
+    # may also contain a Windows launcher that cannot consume WSL temp paths).
     bundled = Path.home() / ".local/share/leetkob-tools/azure-cli/opt/az/bin/python3"
     if bundled.is_file():
         return [str(bundled), "-m", "azure.cli"]
+    executable = shutil.which("az")
+    if executable:
+        return [executable]
     raise RuntimeError("Azure CLI is required; sign in to the hosting subscription first.")
+
+
+def verify_az(command):
+    # No credential is requested until we know the selected launcher can start.
+    # Do not include raw CLI output, paths or subprocess exceptions in errors.
+    message = "Azure CLI could not start. Check its Python interpreter and CLI installation."
+    try:
+        result = subprocess.run(
+            command + ["version", "--output", "json", "--only-show-errors"],
+            capture_output=True, text=True, check=False, timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        raise RuntimeError(message) from None
+    if result.returncode:
+        raise RuntimeError(message)
 
 
 def run_remote(command, script, directory):
@@ -75,6 +93,7 @@ def main():
     parser.add_argument("--env-file", help="Optional private local .env; otherwise prompt without echo")
     arguments = parser.parse_args()
     command = az_command()
+    verify_az(command)
     if not shutil.which("openssl"):
         raise RuntimeError("OpenSSL is required on this trusted computer.")
     token = read_token(arguments.env_file)

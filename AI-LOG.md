@@ -338,3 +338,22 @@
   fault applying the configured deduction to a saved pass failed its test;
   restoring the implementation passed. Web tests, lint, typecheck and production
   build passed. No API contract, dependency or publication gate changed.
+
+### 2026-11-28 — Repair the operator setup CLI launcher
+
+- Tools/parts: OpenCode, WSL, Python unittest and Azure CLI startup/account metadata
+  checks. The owner reported a generic local-prerequisite failure after the hidden
+  token prompt. No live credential was read, printed or transmitted by the agent.
+- Found the relocated bundled `az` script's shebang points to a missing build-time
+  interpreter. The earlier PATH instruction selected that broken launcher; invoking
+  the bundled Python with `-m azure.cli` works and reports an Enabled student
+  subscription. The helper now prefers that interpreter and checks CLI startup
+  before asking for any token. Updated the operator instructions.
+- Added regression tests first: the old code selected the broken launcher and
+  lacked the preflight. After the fix, all seven offline tests passed, including
+  synthetic RSA transfer, fallback selection, sanitized failures and refusal to
+  prompt after startup failure. Actual CLI preflight passed without reading a
+  token or sending a VM command.
+- Rejected requesting the replacement key in chat, logging raw CLI exceptions or
+  output, or treating a local launcher fix as proof of successful installation.
+  Private operator installation and deployed live-model verification remain pending.
