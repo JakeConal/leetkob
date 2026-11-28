@@ -4,6 +4,8 @@ Status on November 28, 2026: **locally verified; not deployed to Azure**.
 The intended target is the existing `jenkins_group` in the shared Azure for
 Students subscription. Both it and `rg-leetkob` belong to the same subscription;
 changing resource groups does not change which billing profile funds usage.
+The group tags now identify `jenkins_group` as active and `rg-leetkob` as
+standby. This metadata change created no billable resource and changed no role.
 
 The subscription's linked billing profile belongs to the teammate who owns the
 shared subscription. Its credit summary is not readable by the deployment
