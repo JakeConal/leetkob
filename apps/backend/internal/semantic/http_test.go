@@ -109,3 +109,18 @@ func TestHTTPAdapterDoesNotReadFileURLOrEnvironmentKey(t *testing.T) {
 func errorsIsDeadline(err error) bool {
 	return err != nil && (strings.Contains(err.Error(), context.DeadlineExceeded.Error()) || err == context.DeadlineExceeded)
 }
+
+func TestProviderRedirectCannotForwardCredentialOrPrompt(t *testing.T) {
+	adapter := &HTTPAdapter{URL: "https://model.example/v1/chat", Model: "fixture-model", Token: "synthetic-token"}
+	client := adapter.client()
+	calls := 0
+	client.Transport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		calls++
+		return &http.Response{StatusCode: http.StatusFound, Header: http.Header{"Location": []string{"http://model.example/leak"}}, Body: io.NopCloser(strings.NewReader(""))}, nil
+	})
+	adapter.Client = client
+	_, err := adapter.Complete(context.Background(), CompletionRequest{System: SystemPrompt, UserJSON: `{}`, MaxOutputTokens: 8})
+	if err == nil || calls != 1 {
+		t.Fatalf("redirect was followed: calls=%d err=%v", calls, err)
+	}
+}

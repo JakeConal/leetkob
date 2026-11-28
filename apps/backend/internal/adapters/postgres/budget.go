@@ -16,6 +16,10 @@ import (
 // default that column to USD 0.25 (250000 micro-dollars).
 type Budget struct {
 	Store *Store
+	// Optional deployment limits also bound free-tier calls. They count every
+	// reservation, including retries and failures, and survive worker restarts.
+	MaxLabCalls   int64
+	MaxDailyCalls int64
 }
 
 var _ semantic.ReservationStore = (*Budget)(nil)
@@ -48,6 +52,13 @@ func (b *Budget) Reserve(ctx context.Context, labID string, amountMicroUSD, capM
 	}
 	var reserved semantic.Reservation
 	err := b.Store.Within(ctx, func(ctx context.Context, tx *Tx) error {
+		if b.MaxDailyCalls > 0 {
+			// Serialize the global quota before taking a lab lock, so different
+			// labs cannot both consume the final daily request allowance.
+			if err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(73402183)`); err != nil {
+				return err
+			}
+		}
 		var labCap int64
 		err := tx.QueryRow(ctx, `SELECT budget_cap_micros FROM labs WHERE id = $1::uuid FOR UPDATE`, labID).Scan(&labCap)
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -55,6 +66,18 @@ func (b *Budget) Reserve(ctx context.Context, labID string, amountMicroUSD, capM
 		}
 		if err != nil {
 			return err
+		}
+		if b.MaxLabCalls > 0 || b.MaxDailyCalls > 0 {
+			var labCalls, dailyCalls int64
+			if err := tx.QueryRow(ctx, `
+				SELECT count(*) FILTER (WHERE lab_id=$1::uuid),
+				       count(*) FILTER (WHERE created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')
+				FROM budget_reservations`, labID).Scan(&labCalls, &dailyCalls); err != nil {
+				return err
+			}
+			if (b.MaxLabCalls > 0 && labCalls >= b.MaxLabCalls) || (b.MaxDailyCalls > 0 && dailyCalls >= b.MaxDailyCalls) {
+				return semantic.ErrBudgetExceeded
+			}
 		}
 		var charged int64
 		if err := tx.QueryRow(ctx, chargedSQL, labID).Scan(&charged); err != nil {

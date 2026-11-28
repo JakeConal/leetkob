@@ -9,12 +9,14 @@ COPY apps/backend/internal ./internal
 COPY apps/backend/db ./db
 RUN go build -o /worker ./cmd/worker
 
-FROM docker:29-cli@sha256:34507eb5069d8be82c95dd3b6987d4250fd5fee49b82e2509b7d7a7030740d6d AS docker-cli
+FROM docker@sha256:34507eb5069d8be82c95dd3b6987d4250fd5fee49b82e2509b7d7a7030740d6d AS docker-cli
 
 FROM debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/lib/leetkob/model-audit \
+    && chown 65534:65534 /var/lib/leetkob/model-audit
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=build /worker /usr/local/bin/worker
 ENV MODEL_OFF=1 WORKER_ISOLATED_ANALYZER=1 HOME=/tmp

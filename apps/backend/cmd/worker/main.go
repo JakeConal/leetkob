@@ -40,6 +40,10 @@ func run(ctx context.Context, logger *slog.Logger, getenv func(string) string) e
 	if databaseURL == "" {
 		return errors.New("worker: DATABASE_URL is required")
 	}
+	model, err := configureModel(getenv, readModelToken, logger)
+	if err != nil {
+		return err
+	}
 	store, err := postgres.New(ctx, databaseURL)
 	if err != nil {
 		return err
@@ -64,7 +68,7 @@ func run(ctx context.Context, logger *slog.Logger, getenv func(string) string) e
 	}
 	checks := &checking.Runner{
 		Queue:   store,
-		Service: checkService(ctx, store, getenv, logger),
+		Service: checkService(ctx, store, getenv, logger, model),
 		ID:      id,
 		Now:     now,
 	}
@@ -88,7 +92,7 @@ func run(ctx context.Context, logger *slog.Logger, getenv func(string) string) e
 	}
 }
 
-func checkService(ctx context.Context, store *postgres.Store, getenv func(string) string, logger *slog.Logger) *checking.Service {
+func checkService(ctx context.Context, store *postgres.Store, getenv func(string) string, logger *slog.Logger, model modelSettings) *checking.Service {
 	analyze := func(context.Context, string) ([]byte, error) {
 		return []byte(`{"version":1,"status":"unsure","reason":"analyzer-not-configured","references":[]}`), nil
 	}
@@ -110,17 +114,13 @@ func checkService(ctx context.Context, store *postgres.Store, getenv func(string
 		Store:   &postgres.FindingRepo{Store: store},
 		Analyze: analyze,
 		Checker: &semantic.Checker{
-			Model:   offlineModel{},
-			Store:   &postgres.Budget{Store: store},
-			Timeout: 2 * time.Second,
+			Model: model.model,
+			Store: &postgres.Budget{
+				Store: store, MaxLabCalls: model.maxLabCalls, MaxDailyCalls: model.maxDailyCalls,
+			},
+			Timeout: model.timeout,
 		},
-		Price: semantic.Price{
-			Known:                  true,
-			MaxInputTokens:         1000,
-			MaxOutputTokens:        200,
-			InputMicroUSDPerToken:  1,
-			OutputMicroUSDPerToken: 1,
-		},
+		Price: model.price,
 	}
 }
 

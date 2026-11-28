@@ -112,5 +112,10 @@ func (h *HTTPAdapter) client() *http.Client {
 	}
 	// ProxyFromEnvironment would forward the prompt to whatever proxy the
 	// process inherited. A fresh transport does not.
-	return &http.Client{Transport: &http.Transport{Proxy: nil}}
+	return &http.Client{
+		Transport: &http.Transport{Proxy: nil},
+		// A configured provider endpoint must not redirect credentials or data
+		// to a different endpoint, including an HTTPS-to-HTTP downgrade.
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
 }
