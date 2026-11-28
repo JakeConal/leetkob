@@ -67,12 +67,15 @@ student and analyzer containers receive no socket, host binds, application
 environment or credentials. Current main uses `docker cp` for task inputs, so
 the earlier same-path work-directory bind is no longer needed.
 
-The base configuration selects `MODEL_OFF=1`. The live overlay and
-[private NIM setup](NIM.md) are available in PR #50 but activation remains pending. Hard rules use actual
-isolated libclang analysis; semantic findings remain unsure for TA review. No
-provider key is installed and this configuration makes no live semantic model
-request. The committed first real evaluation remains separate evidence in
-`evaluation/dev-run/`.
+The base configuration selects `MODEL_OFF=1`. After
+[private operator setup](NIM.md), the owner authorized activating the live overlay
+on November 28. The public worker now uses NVIDIA NIM with isolated libclang
+analysis, known zero developer-tier prices, a durable USD 0.25 per-lab cap and
+persistent 160-per-lab/1,000-per-UTC-day call ceilings.
+[Three actual calls and the official UI walkthrough](../docs/evidence/pa3-review/live-model/README.md)
+verify this change at application revision `b8a0b53`. The token is mounted only
+into the trusted worker; compilation and parsing remain credential-free.
+The first full evaluation in `evaluation/dev-run/` is separate historical evidence.
 
 Keep the completed runtime configuration outside the source checkout, for
 example `/etc/leetkob/deploy.env`, with mode 0600. Set `WEB_ORIGIN` and
@@ -80,12 +83,20 @@ example `/etc/leetkob/deploy.env`, with mode 0600. Set `WEB_ORIGIN` and
 the numeric socket group, and supply only synthetic assessment passwords.
 Never commit that file or print a rendered Compose configuration containing it.
 
-Start or recover the authorized deployment:
+For the initial model-off bootstrap:
 
 ```bash
 docker compose --env-file /etc/leetkob/deploy.env -f deploy/docker-compose.yml up -d --wait
 docker compose --env-file /etc/leetkob/deploy.env -f deploy/docker-compose.yml --profile tools run --rm provision
 docker compose --env-file /etc/leetkob/deploy.env -f deploy/docker-compose.yml --profile public up -d caddy
+```
+
+For the **current live deployment**, retain both Compose files on every `up`
+or rebuild/recreate operation:
+
+```bash
+docker compose --env-file /etc/leetkob/deploy.env \
+  -f deploy/docker-compose.yml -f deploy/docker-compose.model.yml up -d --wait
 ```
 
 Provisioning creates five synthetic accounts and two classes, without seeding
@@ -162,8 +173,10 @@ az disk update -g jenkins_group -n disk-leetkob-pa3-os \
   --network-access-policy DenyAll --public-network-access Disabled
 ```
 
-The VM has no managed identity, Azure role assignments, model key or cloud
-credential installed by the release. It needs no Azure API access; administration
+The VM has no managed identity, Azure role assignments or cloud credential
+installed by the release. The operator subsequently installed the private NIM
+token file; it is never mounted into compiler/analyzer containers. The VM needs
+no Azure API access; administration
 uses the Azure control-plane Run Command agent. Only TCP 80/443 are allowed
 inbound. HTTPS sessions remain secure/HttpOnly and database/API/web ports are
 bound to loopback. Docker starts at boot and services restart unless stopped.
@@ -191,7 +204,8 @@ docker compose --env-file /etc/leetkob/deploy.env -f deploy/docker-compose.yml r
 ```
 
 For an application update, fetch and check out a reviewed immutable revision,
-rebuild the three application images sequentially and run `up -d --wait`.
+rebuild the three application images sequentially and run `up -d --wait` with
+both Compose files as shown above.
 Preserve the PostgreSQL and Caddy volumes. To roll back an application image,
 check out the preceding tested revision and rebuild/up; do not run `down -v` or
 roll back database migrations automatically. No destructive migration was used.

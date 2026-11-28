@@ -1,0 +1,45 @@
+{
+  "deployedRevision": "b8a0b5304bc136bdeaaabdc799fe9715a050a62f",
+  "labId": "ec398a45-3b0a-495c-9df1-68b0e79236a8",
+  "dispatches": 3,
+  "inputTokens": 2820,
+  "outputTokens": 481,
+  "configuredCostMicroUSD": 0,
+  "noRepairsOrFailures": true,
+  "allPromptHashesVerified": true,
+  "onlyC2Sent": true,
+  "injectionCommentAbsent": true,
+  "evidenceMatchesOriginalLines": true,
+  "callMapping": [
+    {
+      "fixture": "sort-merge/s01",
+      "submissionId": "66927247-b579-4834-b6fd-bcc970b13eec",
+      "providerRequestId": "chatcmpl-c50fc8d8-fcec-4fb2-9622-a87a84ece171",
+      "originalSourceSha256": "0ee34763366e5767dbe5d357fcd2400f765f91127b45baf129892ded1466d6ae",
+      "outboundConstraints": ["C2"],
+      "semanticVerdict": "pass"
+    },
+    {
+      "fixture": "sort-merge/s04",
+      "submissionId": "db8b86ec-2f1f-49b0-90d0-1115bf2e0ceb",
+      "providerRequestId": "chatcmpl-42936eef-e877-4c41-a6d7-b4e529335207",
+      "originalSourceSha256": "0fd449d007b5c595a04e3b807f44fe128f9f71815315ba157152d67cbb71b864",
+      "outboundConstraints": ["C2"],
+      "semanticVerdict": "violation"
+    },
+    {
+      "fixture": "sort-merge/s09",
+      "submissionId": "6cc447ef-a5c2-4a59-8e02-c36a2d6fa583",
+      "providerRequestId": "chatcmpl-f1f990ce-14ae-451b-9388-bccf639cfdf8",
+      "originalSourceSha256": "912257512a40b26b8965449d55e0aec57f916d3526c18b43a57fa290bc6075e0",
+      "outboundConstraints": ["C2"],
+      "semanticVerdict": "violation"
+    }
+  ],
+  "recording": {
+    "file": "walkthrough.webm",
+    "encodedDurationSeconds": 126.6,
+    "bytes": 7850245,
+    "sha256": "434fe797087cc16488c3879625248b4c25cd34578300ae737c02ac2cac1957de"
+  }
+}

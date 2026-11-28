@@ -20,6 +20,10 @@ containers are created through the qualified controller with no network,
 application environment, provider key, Docker socket or host binds. Task files
 are copied into those containers; a same-path host work mount is unnecessary.
 The real-model overlay adds a private token file only to the trusted worker.
+It is active on the public VM and verified by the
+[official live walkthrough](../docs/evidence/pa3-review/live-model/README.md).
+Always retain both Compose files when recreating/updating the live worker;
+using only the base file selects model-off.
 
 Use the private runtime configuration at `/etc/leetkob/deploy.env` on the VM.
 For a separate synthetic local deployment, copy `.env.example` into an ignored

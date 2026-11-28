@@ -357,3 +357,41 @@
 - Rejected requesting the replacement key in chat, logging raw CLI exceptions or
   output, or treating a local launcher fix as proof of successful installation.
   Private operator installation and deployed live-model verification remain pending.
+
+### 2026-11-28 — Complete authorized live NIM release verification
+
+- Tools/parts: OpenCode, Git/GitHub CLI, the signed-in bundled Azure CLI,
+  Docker/Playwright 1.65.1 browser capture, FFmpeg media metadata, Python evidence
+  verification, and all six root quality commands. The owner explicitly authorized
+  the existing deployment update, three bounded synthetic NIM cases, normal
+  protected merge, `pa3` replacement and ZIP, but not coursework upload.
+- Verified only token-file presence and mode/owner/group (`0400`, `65534:65534`);
+  never read its contents. Built/recreated worker and web from `b8a0b53` with the
+  model overlay, retaining the database/TLS volumes and qualified secret-free
+  compiler/analyzer boundary. All application services became healthy.
+- Actual official UI walkthrough: TA authored the exact sort-merge statement,
+  two constraints/deductions and five tests. s01, s04 and s09 each passed all five
+  tests; live C2 results were pass, violation and violation. Original-line evidence,
+  student-safe fields, student review 404, other-class TA 404, narrow view and
+  blocked publication passed. A saved C1 violation and its deduction survived
+  reload without selecting a new decision. The uncut video is 2:06.60.
+- Retained three actual provider IDs and exact sanitized public-fixture requests
+  in `docs/evidence/pa3-review/live-model/`. Independently verified prompt hashes,
+  original evidence and C2-only dispatch; the injection comment is absent. Usage
+  totals 2,820 input + 481 output tokens, configured free-tier cost USD 0.00,
+  no repair/failure. SQL readback confirmed the USD 0.25 cap and exactly three
+  settled zero-cost reservations. A first read-only SQL command had a shell-quoting
+  error; a quoted input heredoc corrected it without changing data or controls.
+- All six root quality commands passed against a dedicated disposable PostgreSQL
+  instance with package scheduling serialized and the race detector retained.
+  CI 46128979287 passed all six standard jobs on the tested application revision.
+  npm audit reports nine moderate development-tool advisories below its configured
+  high-severity failure threshold; optional Sonar findings remain open. Neither
+  scanner, check, threshold nor dependency was changed to obtain green.
+- Finalized the eight-row evidence-based claim at 95/100, preserving first-run
+  recall 78.4%, zero wrongful deductions and 3.9% unsure. Rejected treating the
+  successful three-case walkthrough as a replacement full evaluation, inferring
+  teammate approval from an agent review, fabricating future uptime, or packaging
+  the worktree's `.git` pointer instead of a clean clone's real Git directory.
+  The final ZIP remains conditional on actual protected merge, matching tag jobs
+  and clean extraction verification.

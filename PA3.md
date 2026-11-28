@@ -9,8 +9,9 @@ backend README and this file.
 > shared student subscription's `jenkins_group`. Its actual first deployment
 > is November 28, 2026, before the updated November 29, 22:00 Asia/Saigon deadline.
 > Hosting consumes Toàn’s confirmed student credits, with the spending limit On
-> and USD 50 monthly notification budget. Online semantic checks remain
-> offline/`unsure`; the committed real-model evaluation is separate evidence.
+> and USD 50 monthly notification budget. Online semantic checks now use bounded
+> NVIDIA NIM calls, verified by the [official live walkthrough](docs/evidence/pa3-review/live-model/README.md).
+> The first full real-model evaluation remains separate, unchanged evidence.
 
 ## Repository and protected branch
 
@@ -44,7 +45,10 @@ backend README and this file.
   nine real container attacks, and fails on `--- SKIP` or on any provider
   credential in the environment. Definition:
   [`.github/workflows/quality.yml`](.github/workflows/quality.yml).
-- Green pre-tag evidence: [run 45672213230](https://github.com/JakeConal/leetkob/actions/runs/45672213230)
+- Green reviewed-implementation evidence: [run 46128979287](https://github.com/JakeConal/leetkob/actions/runs/46128979287)
+  on `b8a0b53`, the application revision exercised by the live walkthrough.
+  Final merge/tag checks must match the release revision as described above.
+- Earlier pre-tag evidence: [run 45672213230](https://github.com/JakeConal/leetkob/actions/runs/45672213230)
   on `main` (`aeed538`) and [run 45306355723](https://github.com/JakeConal/leetkob/actions/runs/45306355723)
   on PR #44, which executed the merged pipeline and sandbox tests.
 
@@ -78,8 +82,9 @@ it never silently resets an existing password or seeds the marked lab.
   [`docs/evidence/pa3-walkthrough.md`](docs/evidence/pa3-walkthrough.md).
 - The base Compose file selects `MODEL_OFF=1` and isolated analysis. The
   [model overlay](deploy/docker-compose.model.yml) enables bounded real calls
-  after [private operator setup](deploy/NIM.md). Activation and a real deployed
-  model result remain pending; no live integration is claimed yet. The trusted worker alone sees
+  after [private operator setup](deploy/NIM.md). The live overlay is active:
+  [three actual calls and runtime readback](docs/evidence/pa3-review/live-model/README.md)
+  prove deployed integration. The trusted worker alone sees
   the Docker socket; source parsing and compilation happen in qualified containers.
 
 The service is intended to remain up until PA#4 marks. Restart policies are
@@ -191,24 +196,27 @@ course submission does not claim an upstream open-source redistribution license.
 
 ## Rubric evidence map
 
-| Criterion                       | Evidence                                                                                                                                            |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| End-to-end deployed flow        | Public HTTPS flow, actual-host qualification, restart/privacy proof and recorded walkthrough; live-model official three-case demonstration pending. |
-| Queue and sandbox               | Leased worker, fence/restart tests, nine sandbox attack tests, `pa3` tag job.                                                                       |
-| Hard rules first                | Analyzer trap suite, model-off team cases (10/10), dev-run with 0 wrongful hard-rule deductions.                                                    |
-| Semantic model                  | Guarded adapter, sanitizer, budget, committed `evaluation/dev-run/` predictions, scorer report, call log.                                           |
-| Initial limits and review queue | Schema/timeout unsure tests, review decision tests, private projections, no production Publish.                                                     |
-| Checker and first eval          | Dataset-independent image/command, `MODEL_OFF=1`, team cases, unchanged official bytes, honest metrics.                                             |
-| Tests first and focused history | Commit order, AI-LOG fault entries, no weakened checks or labels.                                                                                   |
-| AI log                          | [`AI-LOG.md`](AI-LOG.md) tool/part entries and D1-D14 changed/rejected decisions.                                                                   |
+| Criterion                       | Evidence                                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| End-to-end deployed flow        | Public HTTPS flow, actual-host qualification, restart/privacy proof and the official three-case live NIM recording. |
+| Queue and sandbox               | Leased worker, fence/restart tests, nine sandbox attack tests, `pa3` tag job.                                       |
+| Hard rules first                | Analyzer trap suite, model-off team cases (10/10), dev-run with 0 wrongful hard-rule deductions.                    |
+| Semantic model                  | Guarded adapter, sanitizer, budget, committed `evaluation/dev-run/` predictions, scorer report, call log.           |
+| Initial limits and review queue | Schema/timeout unsure tests, review decision tests, private projections, no production Publish.                     |
+| Checker and first eval          | Dataset-independent image/command, `MODEL_OFF=1`, team cases, unchanged official bytes, honest metrics.             |
+| Tests first and focused history | Commit order, AI-LOG fault entries, no weakened checks or labels.                                                   |
+| AI log                          | [`AI-LOG.md`](AI-LOG.md) tool/part entries and D1-D14 changed/rejected decisions.                                   |
 
 ## Known gaps
 
 - The updated deadline is November 29, 22:00 Asia/Saigon. Deployment began
   November 28; retention until PA#4 marks remains an ongoing obligation, and
   future uptime is not guaranteed by a one-time check.
-- The online worker runs semantic checks offline (`unsure`); the real model
-  path is the committed checker run, not the worker.
+- Live worker verification is in
+  [`docs/evidence/pa3-review/live-model/`](docs/evidence/pa3-review/live-model/README.md):
+  all three official cases reached AC; C2 returned pass/violation/violation.
+  The 2:06.60 uncut fallback recording includes privacy, TA confirmation and
+  blocked publication. The older model-off recordings are historical evidence.
 - Recall is 78.4%, below the later PA#4 90% target. PA#3 imposes no overall
   evaluation threshold, and the result is not adjusted. Rescoring on November 28
   reproduced the committed summary exactly, with all 128 official files verified
@@ -216,8 +224,8 @@ course submission does not claim an upstream open-source redistribution license.
 - SonarCloud's Azure identity/encryption findings remain open for review. The
   standard Quality Gate jobs and actual sandbox results are linked separately;
   this release does not suppress the scanner or claim its PR check is green.
-- PR [#50](https://github.com/JakeConal/leetkob/pull/50) carries this release on
-  the current implementation. It requests Toanapr and XuXinhNo1 and is not
-  merged yet. The owner authorized merge after final review and required
-  checks; current work still needs live-model verification. Coursework upload
-  is not performed.
+- PR [#50](https://github.com/JakeConal/leetkob/pull/50) carries this release.
+  Review was requested from Toanapr and XuXinhNo1; agent review is not represented
+  as teammate approval. The owner authorized normal merge after validation,
+  `pa3` replacement and a clean archive. Verify the actual PR state, remote tag
+  and matching tag checks before using the ZIP. Coursework upload is not performed.

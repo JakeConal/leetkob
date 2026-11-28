@@ -1,5 +1,9 @@
 # PA#3 public Azure release evidence
 
+This directory preserves the **initial model-off deployment**. The final
+official three-case recording with actual deployed NIM calls is in
+[`../pa3-review/live-model/`](../pa3-review/live-model/README.md).
+
 Public service: <https://leetkob-pa3-21ae08a0.southeastasia.cloudapp.azure.com/live>.
 Five synthetic sign-ins are listed in [`../../../PA3.md`](../../../PA3.md).
 First host start: `2026-11-28T01:57:20Z`; first observed valid public HTTPS:
@@ -52,15 +56,15 @@ Screenshots: [created lab](lab-created.png), [desktop reviews](desktop-reviews.p
 The qualified application/image source is commit
 `36e3caf92c8c5a3310dd0593610bd401aacc33b8`. This records the initial deployment. PR #50 subsequently adds the real-model
 worker, stricter isolation and byte-identical official inputs. Its live activation
-and final matching tag verification remain pending; the original recording does
-not prove those later changes. The original working checkout is preserved.
+is now independently verified in the final evidence linked above; this original
+recording does not prove those later changes. The original working checkout is preserved.
 No real marking lab is pre-seeded and no marks are published.
 
 ## Evaluation and limits
 
-The public worker runs `MODEL_OFF=1` with isolated libclang analysis. Its semantic
+At initial deployment the public worker ran `MODEL_OFF=1` with isolated libclang analysis. Its semantic
 findings remain `unsure`; no provider key is installed and no new model call was
-made for the release. The separate authorized real-model evaluation is committed
+made for that initial release. The separate authorized real-model evaluation is committed
 in [`../../../evaluation/dev-run/`](../../../evaluation/dev-run/README.md).
 November 28 rescoring with the unchanged pinned official scorer reproduced the
 committed JSON summary exactly: zero wrongful deductions, 78.4% recall, 3.9%

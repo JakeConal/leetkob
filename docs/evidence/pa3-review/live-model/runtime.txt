@@ -1,0 +1,19 @@
+Enable succeeded: 
+[stdout]
+REVISION
+b8a0b5304bc136bdeaaabdc799fe9715a050a62f
+WORKER_SAFE_CONFIGURATION
+0
+minimaxai/minimax-m3.1-flash
+160
+1000
+0
+0
+1
+DURABLE_LAB_BUDGET
+250000
+settled|3|0|0
+PUBLIC_AUTH_BOUNDARY
+401
+
+[stderr]
