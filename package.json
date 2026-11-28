@@ -20,7 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check . && node scripts/go-check.mjs format",
     "typecheck": "npm run typecheck --workspaces --if-present && npm run check:openapi-drift && node scripts/go-check.mjs build",
-    "test": "node --test scripts/evaluation/*.test.mjs && npm run test --workspaces --if-present && node scripts/go-check.mjs test",
+    "test": "node scripts/evaluation/sources.mjs verify evaluation/official && node --test scripts/evaluation/*.test.mjs && npm run test --workspaces --if-present && node scripts/go-check.mjs test",
     "security": "npm run security:secrets && npm audit --audit-level=high && node scripts/go-check.mjs security",
     "security:secrets": "node scripts/scan-secrets.mjs",
     "check:openapi-drift": "node scripts/openapi-drift-check.mjs",

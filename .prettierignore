@@ -7,3 +7,5 @@ openspec/
 package-lock.json
 
 .local-dev/
+# Immutable lecturer inputs: npm test verifies the published SHA-256 hashes.
+evaluation/official/
