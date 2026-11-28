@@ -308,3 +308,33 @@
   integration tests. The reviewed worker image is being prepared on the VM;
   activation, a real semantic call, the updated public recording and the final
   merge/tag/archive remain unclaimed until actually verified.
+
+### 2026-11-28 — Current Classroom review and official public three-case flow
+
+- Tools/parts: Composio Classroom and connected Drive re-read the live assignment,
+  rubric and brief; their modification times still match the November 28 source
+  register. GitHub verified public visibility, four required protected-main checks,
+  zero required approvals and no bypass actors. CI 46124559341 passed all six
+  standard jobs on 63953c4. The owner explicitly requested review, merge and ZIP.
+- Actual official sort-merge browser flow passed at the public Azure URL: the TA
+  authored the exact statement, both constraints/deductions and all five official
+  tests through the product UI; students submitted s01, s04 and s09, all AC.
+  Review snapshots were captured before same-student supersession, the TA saved
+  the original-line-backed C1 violation, student review reads and other-class TA
+  reads returned 404, mobile had no overflow, and Publish stayed blocked. The
+  uncut capture is 2:11.96. The first automation attempt incorrectly expected
+  automatic navigation; the successful script clicks Open submission details.
+  No application behavior or verdict assertion was changed to fit automation.
+- Azure metadata still reported the token absent; the live-model worker image
+  built successfully but the original model-off process remains active. Semantic
+  observations were unsure/schema-invalid, not live provider evidence. The user
+  requested the private setup terminal reopened after an input mistake; it was
+  reopened and brought into view. No token content was read or printed.
+- The recording exposed a display defect: after reload a saved TA decision badge
+  remained, but draft text incorrectly said no deduction had been chosen. Added
+  a stateless persisted-decision summary with its actual deduction and reason,
+  leaving new decision inputs unselected. Three regression tests cover saved
+  violation, saved pass with zero deduction, and an unreviewed finding. A deliberate
+  fault applying the configured deduction to a saved pass failed its test;
+  restoring the implementation passed. Web tests, lint, typecheck and production
+  build passed. No API contract, dependency or publication gate changed.

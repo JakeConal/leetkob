@@ -46,7 +46,7 @@ cd apps/backend
 go build ./...
 PORT=8080 DATABASE_URL=postgres://... go run ./cmd/api
 go run ./cmd/worker
-go run ./cmd/checker --data <dataset-dir> --predictions <output.jsonl>
+MODEL_OFF=1 go run ./cmd/checker --data <dataset-dir> --predictions <output.jsonl>
 ```
 
 ## Sandbox
